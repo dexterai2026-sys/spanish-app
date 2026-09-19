@@ -260,9 +260,21 @@ All under the `calle_` prefix in `localStorage`:
 | `calle_totals` | lifetime reviews, shadow reps, attempts, drills, best combo |
 | `calle_settings` | chosen voice, speech rate, sound on/off |
 
+### Backup and restore
+
+Settings → **Backup** exports every key above as one dated JSON file (`calle-progress-2026-09-19.json`), and **Import** restores it — on the same device or a new one.
+
+Import only writes keys it recognises, so a file from elsewhere can't inject anything, and it rejects malformed JSON or a backup from another app without touching what's already there. It replaces rather than merges, so it asks first.
+
 Day keys are built from **local** date parts, not `toISOString()` — UTC would break the streak for anyone behind it (an evening session in Mexico would count as tomorrow).
 
-> ⚠️ There's no export yet. Clearing site data wipes your progress.
+Day keys use local date parts rather than `toISOString()` for the same reason. Export regularly if the progress matters to you — it's still one browser's storage underneath.
+
+### Typography
+
+UI chrome uses system fonts — native feel, zero load delay. **Spanish content uses [Fraunces](https://fonts.google.com/specimen/Fraunces)**, so the language you're learning never reads as app furniture: a serif sentence is the target language, sans is the app talking. It also sets tighter than the system bold, so sentences wrap less.
+
+~67KB for the Latin subset, cached after first load and `font-display: swap`, so nothing blocks. With no network it falls back to Iowan/Palatino/Georgia, which keeps the same distinction.
 
 ---
 
@@ -281,6 +293,5 @@ Playback uses whatever Spanish voices your OS has installed. If there are none t
 ## Known gaps
 
 - **No service worker.** A single file can't register one (blob URLs are rejected as SW scripts), so offline relies on the HTTP cache rather than a guaranteed shell.
-- **No progress export/backup.**
 - **Tier imbalance** — 167 Tier 1 against 4 Tier 3, so the frequency curve flattens near the end.
 - **No connected-speech notes.** The reductions that make real speech hard (`para el` → `pal`, `¿qué onda?` → "ké-onda") aren't taught explicitly yet. Probably the highest-value thing left to add.

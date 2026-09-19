@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Calle">
 <title>Calle — Real Mexican Spanish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..700&display=swap">
 <style>
 :root{
   --bg:#12100e; --surface:#1c1917; --surface-2:#292524; --surface-3:#3a3532;
@@ -26,6 +29,13 @@
     --teal:#0d9488; --green:#16a34a; --red:#dc2626; --blue:#2563eb; --violet:#7c3aed;
     --tap:#0000000a;
   }
+}
+/* Spanish gets its own voice so the language you're learning never reads as
+   app chrome. Everything else stays on system fonts: native feel, no wait.
+   Falls back to a local serif, which keeps the distinction either way. */
+.es, .cloze, .li .t b, .iline span, .btn.opt.es-text{
+  font-family:"Fraunces","Iowan Old Style","Palatino",Georgia,serif;
+  letter-spacing:-.005em;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
@@ -136,7 +146,9 @@ input{font:inherit}
   display:inline-block;min-width:88px;border-bottom:3px solid var(--accent);
   vertical-align:baseline;color:transparent;
 }
-.blank.shown{color:var(--accent);border-bottom-color:transparent}
+/* min-width only reserves space while it's blank; keeping it after the reveal
+   leaves a gap in the middle of the sentence. */
+.blank.shown{color:var(--accent);border-bottom-color:transparent;min-width:0}
 .prompt-en{text-align:center;color:var(--muted);font-size:15px;margin-top:10px}
 .grades{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .grade{padding:13px 4px;border-radius:13px;background:var(--surface-2);text-align:center;transition:transform .08s}
@@ -1671,6 +1683,51 @@ function speak(text, rate){
   setTimeout(() => { if(SS.paused) SS.resume(); }, 150);
 }
 
+/* ---------- 3b. BACKUP ----------
+   Everything lives in localStorage, which one cleared cache wipes. These move
+   it in and out as a plain file. */
+const BACKUP_KEYS = ["srs","streak","scores","ears","dialogDone","drills",
+                     "skipped","unlocked","totals","settings","seenIntro"];
+
+function backupBlob(){
+  const payload = {app:"calle", version:1, exported:new Date().toISOString(), data:{}};
+  BACKUP_KEYS.forEach(k => {
+    const v = LS.get(k, null);
+    if(v !== null) payload.data[k] = v;
+  });
+  return payload;
+}
+
+function exportProgress(){
+  const payload = backupBlob();
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"}));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `calle-progress-${todayKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+  toast("Backup downloaded");
+}
+
+/* Only writes keys it recognises, so a stray file can't inject anything. */
+function importProgress(file, done){
+  const r = new FileReader();
+  r.onerror = () => done("Couldn't read that file.");
+  r.onload = () => {
+    let parsed;
+    try{ parsed = JSON.parse(r.result); }
+    catch(e){ return done("That file isn't valid JSON."); }
+    if(!parsed || parsed.app !== "calle" || typeof parsed.data !== "object" || !parsed.data)
+      return done("That doesn't look like a Calle backup.");
+    const keys = Object.keys(parsed.data).filter(k => BACKUP_KEYS.includes(k));
+    if(!keys.length) return done("That backup is empty.");
+    keys.forEach(k => LS.set(k, parsed.data[k]));
+    done(null, keys.length);
+  };
+  r.readAsText(file);
+}
+
 /* ---------- 4a. SOUND & REWARD ----------
    Tones are synthesised rather than loaded, so the app stays one file and
    still chimes with the network off. */
@@ -2645,7 +2702,7 @@ function renderDialogue(){
             else if(o === dlg.picked) cls = " opt-wrong";
             else cls = " opt-dim";
           }
-          return `<button class="btn opt${cls}" ${dlg.picked !== null ? "" : `data-dlg-pick="${esc(o)}"`}>${esc(o)}</button>`;
+          return `<button class="btn opt es-text${cls}" ${dlg.picked !== null ? "" : `data-dlg-pick="${esc(o)}"`}>${esc(o)}</button>`;
         }).join("")}
       </div>
       ${dlg.picked !== null ? `
@@ -2742,7 +2799,7 @@ function renderDrill(){
             ? `<div class="tiny" style="color:var(--accent)">${esc(drillResult.blocked)}</div>`
             : `<div class="score" style="color:${scoreColor(drillResult.score)}">${drillResult.score}<span>%</span></div>
                <div class="muted tiny" style="margin-top:6px">You said: “${esc(drillResult.said)}”</div>`}
-          <div style="font-size:19px;font-weight:650;margin-top:14px">${esc(ex.es)}</div>
+          <div class="es" style="font-size:19px;font-weight:650;margin-top:14px">${esc(ex.es)}</div>
           <div class="muted tiny" style="margin-top:4px">${esc(c.chunk)} — ${esc(c.meaning)}</div>
           <button class="spk sm" style="margin-top:10px" data-speak="${esc(ex.es)}">\u{1F50A}</button>
         </div>` : ""}
@@ -3018,6 +3075,18 @@ function openSettings(){
           ${settings.sound === false ? "Off" : "On"}</button>
       </div>
       <button class="btn sm" id="testVoice" style="margin-top:12px">Test: ¿Qué onda, güey?</button>
+
+      <p class="sec-label" style="margin:20px 0 6px">Backup</p>
+      <p class="muted tiny" style="margin:0 0 10px">
+        Progress lives in this browser only. Clearing site data erases it —
+        export a file to keep it, or to move to another device.</p>
+      <div class="row" style="gap:8px">
+        <button class="btn sm" id="expBtn" style="flex:1">⬇️ Export</button>
+        <button class="btn sm" id="impBtn" style="flex:1">⬆️ Import</button>
+      </div>
+      <input type="file" id="impFile" accept="application/json,.json" style="display:none">
+      <p class="tiny muted center" style="margin:8px 0 0" id="backupNote">
+        ${Object.keys(srs).length} chunks · ${liveStreak()} day streak · ${totals.reviews} reviews</p>
       <button class="btn sm ghost" id="reset" style="margin-top:10px;color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)">Reset all progress</button>
     </div>`;
   document.body.appendChild(wrap);
@@ -3041,6 +3110,23 @@ function openSettings(){
     if(settings.sound) SFX.right();
   };
   wrap.querySelector("#testVoice").onclick = () => speak("¿Qué onda, güey? ¿Cómo has estado?");
+
+  const note = wrap.querySelector("#backupNote");
+  const file = wrap.querySelector("#impFile");
+  wrap.querySelector("#expBtn").onclick = exportProgress;
+  wrap.querySelector("#impBtn").onclick = () => file.click();
+  file.onchange = () => {
+    const f = file.files && file.files[0];
+    if(!f) return;
+    file.value = "";
+    if(!confirm("Replace the progress on this device with the backup? This can't be undone.")) return;
+    importProgress(f, (err, n) => {
+      if(err){ note.textContent = err; note.style.color = "var(--red)"; return; }
+      note.textContent = `Restored ${n} section${n===1?"":"s"} — reloading…`;
+      note.style.color = "var(--green)";
+      setTimeout(() => location.reload(), 700);
+    });
+  };
   wrap.querySelector("#reset").onclick = () => {
     if(!confirm("Erase your deck, streak and all progress? This can't be undone.")) return;
     srs = {}; streak = {count:0,last:null,days:{}}; scores = {}; ears = {};
