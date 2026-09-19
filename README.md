@@ -2,7 +2,7 @@
 
 A single-file, offline-capable PWA that teaches **spoken Mexican Spanish** through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses.
 
-Everything lives in one `index.html`: 242 chunks, 520 example sentences, 8 dialogues, a spaced-repetition engine, a pronunciation scorer and six study modes. No build step, no dependencies, no backend, no network calls.
+Everything lives in one `index.html`: 316 chunks, 668 example sentences, 12 dialogues, a spaced-repetition engine, a pronunciation scorer and six study modes. No build step, no dependencies, no backend, no network calls.
 
 *Calle* is Spanish for "street" — the register this teaches.
 
@@ -19,9 +19,35 @@ Traditional courses front-load conjugation and subjunctive mood, then leave you 
 
 ---
 
+## Goals
+
+The core collection is conversational *glue* — `o sea`, `la neta`, `es que`. It serves every conversation equally. What changes per person is the ground the conversation stands on, so goals add vocabulary on top rather than swapping anything out.
+
+| Goal | Adds |
+|---|---|
+| ✝️ **Share my faith** | asking permission, testimony language, offering to pray, leaving the door open |
+| 🧭 **Travel & get around** | schedules, tickets, being lost, safety, lodging |
+| 🌮 **Eat & order** | dietary needs, what's in it, ordering for a table |
+| 🎭 **Talk about culture** | music, customs, asking for more, comparing to home |
+| 💼 **Work & business** | meetings, deadlines, confirming, who's in charge |
+| 🤝 **Make friends** | openers, introductions, plans, keeping in touch |
+
+Picked during onboarding and changeable any time from Today. Each goal brings its own chunks, at least one dialogue, and a capability milestone (*"Share why you believe"*, *"Get anywhere alone"*).
+
+**How goals affect the queue — and what they deliberately don't.** The obvious approach, giving goal chunks a scoring bonus, turns out to be wrong: any bonus big enough to lift them is big enough to bury every universal chunk behind them. Tested with two goals selected, the first twenty cards came back **100% goal vocabulary and zero glue** — a learner who picks *faith* would spend a fortnight on religious nouns with nothing to connect them.
+
+So the two streams are **woven, two universal to one goal**, each internally tier-ordered:
+
+```
+o sea · este… · [travel] ¡aguas! · pues · la neta · [faith] no te preocupes ·
+digo · ¿no? · [travel] ¿me repites? · ¿sí me explico? · tipo · [travel] no te entendí
+```
+
+The glue still leads, goal vocabulary arrives from card three, and neither crowds the other out. With no goals set it falls back to plain frequency order.
+
 ## First run
 
-A three-card intro sells the method before dropping anyone into `o sea` — chunks instead of grammar, the ear training, and mic scoring — then goes straight to learning. It shows once and is remembered.
+Three cards sell the method — chunks instead of grammar, the ear training, mic scoring — then a fourth asks what you're learning Spanish for. Shown once and remembered.
 
 ## Feedback and reward
 
@@ -49,7 +75,7 @@ Where speech and spelling diverge, it shows **how it actually sounds**:
 > **ahorita** — sounds like `o-RÍ-ta — the h is silent (often just "orita")`
 > **¿verdad?** — sounds like `ver-DÁ — the final d disappears`
 
-CAPS marks the stressed syllable. 104 of the 242 chunks carry one; a chunk without a note sounds the way it looks. This is the gap that makes fast Mexican Spanish unintelligible to people who can read it perfectly — silent `h`, seseo, yeísmo, `para` → `pa`, `está` → `tá`, `nada más` → `namás`, final `-d` dropping.
+CAPS marks the stressed syllable. 104 chunks carry one; a chunk without a note sounds the way it looks. This is the gap that makes fast Mexican Spanish unintelligible to people who can read it perfectly — silent `h`, seseo, yeísmo, `para` → `pa`, `está` → `tá`, `nada más` → `namás`, final `-d` dropping.
 
 One primary action — **Got it** — adds it to your deck. Passing is a secondary link, because a beginner has no basis to judge a chunk they've just met, and making that a 50/50 decision on every card is friction dressed as choice. A skipped chunk is remembered and sinks below ones you haven't seen.
 
@@ -79,7 +105,7 @@ Plays a sentence, you repeat it aloud, and the mic scores you. Three reps per ph
 English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer.
 
 ### Conversations
-Eight exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are *plausible but off*, usually in register rather than meaning:
+Twelve exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are *plausible but off*, usually in register rather than meaning:
 
 > **Them:** ¿Qué le damos, joven?
 > - ¿Me regala tres de pastor, porfa? ✅
@@ -96,14 +122,18 @@ Eight exchanges built from chunks already in the collection. You take one side a
 | Reacting to big news | 6 |
 | At the corner shop | 6 |
 | Making weekend plans | 6 |
+| Sharing your faith | 8 |
+| At the bus station | 7 |
+| Talking about music | 6 |
+| Setting up a meeting | 6 |
 
-50 turns total, 25 of them yours. Finishing replays the whole exchange with per-line audio.
+Goal-matched conversations sort to the top and are badged *for you*. Finishing replays the whole exchange with per-line audio.
 
 ---
 
 ## The collection
 
-**242 chunks · 520 example sentences · 167 Tier 1 / 71 Tier 2 / 4 Tier 3**
+**316 chunks · 668 example sentences** — 184 universal, 132 tagged to one or more goals
 
 | Key | Category | Count |
 |---|---|---|

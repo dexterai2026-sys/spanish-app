@@ -259,6 +259,21 @@ input{font:inherit}
   display:flex;align-items:center;gap:10px;margin-top:22px;padding:12px 16px;
   background:var(--surface);border-radius:14px;font-size:17px;font-weight:650;
 }
+/* goal picker */
+.goals{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:18px;text-align:left}
+.goal{
+  display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:14px;
+  background:var(--surface);border:1.5px solid transparent;transition:background .12s,border-color .12s;
+}
+.goal.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.goal .gem{font-size:22px;flex:none;width:34px;text-align:center}
+.goal .gtxt{flex:1;min-width:0}
+.goal .gtxt b{display:block;font-size:15px}
+.goal .gtxt span{display:block;font-size:12px;color:var(--muted);line-height:1.45}
+.goal .gtick{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-size:13px;font-weight:700;background:var(--surface-2);color:var(--accent-ink)}
+.goal.on .gtick{background:var(--accent)}
+
 .idots{display:flex;gap:7px;margin:auto 0 20px}
 .idot{width:7px;height:7px;border-radius:50%;background:var(--surface-3)}
 .idot.on{background:var(--accent);width:20px;border-radius:99px}
@@ -1415,7 +1430,360 @@ C("sí, ahí va","\"yeah, it's coming along\"","social",2,"casual",[
 ]),
 ];
 
-/* ---------- 1c. HOW IT ACTUALLY SOUNDS ----------
+/* ---------- 1a. GOALS ----------
+   The core collection is conversational glue — it serves every goal equally.
+   What changes per person is the ground the conversation stands on, so each
+   goal adds its own vocabulary on top rather than replacing anything. */
+const GOALS = [
+  {id:"faith",   em:"✝️", name:"Share my faith",   blurb:"Talk about belief, invite, pray with someone"},
+  {id:"travel",  em:"\u{1F9ED}",    name:"Travel & get around", blurb:"Directions, transport, lodging, when it goes wrong"},
+  {id:"food",    em:"\u{1F32E}",    name:"Eat & order",      blurb:"Street stalls, markets, restaurants, what you can't eat"},
+  {id:"culture", em:"\u{1F3AD}",    name:"Talk about culture", blurb:"Music, film, customs, asking about traditions"},
+  {id:"work",    em:"\u{1F4BC}",    name:"Work & business",  blurb:"Colleagues, meetings, arrangements, deadlines"},
+  {id:"friends", em:"\u{1F91D}",    name:"Make friends",     blurb:"Small talk, plans, humour, keeping in touch"},
+];
+
+const GOAL_PACKS = {
+
+faith: [
+C("¿puedo compartir algo contigo?","\"can I share something with you?\" — asks permission first, which lands far better than opening cold","ask",1,"neutral",[
+  ["¿Puedo compartir algo contigo?","Can I share something with you?"],
+  ["¿Te puedo compartir algo rápido?","Can I share something with you quickly?"]
+]),
+C("¿crees en Dios?","\"do you believe in God?\" — direct but normal in Mexico, where faith is openly discussed","ask",1,"neutral",[
+  ["¿Tú crees en Dios?","Do you believe in God?"],
+  ["¿Crees en Dios? Nada más por curiosidad.","Do you believe in God? Just curious."]
+]),
+C("Dios te bendiga","\"God bless you\" — said warmly at partings, extremely common","social",1,"neutral",[
+  ["Que Dios te bendiga.","God bless you."],
+  ["Dios te bendiga, hermano.","God bless you, brother."]
+]),
+C("¿puedo orar por ti?","\"can I pray for you?\" — the natural offer after someone shares a trouble","ask",1,"neutral",[
+  ["¿Puedo orar por ti?","Can I pray for you?"],
+  ["Si quieres, oro por ti ahorita.","If you want, I'll pray for you right now."]
+]),
+C("la Biblia dice","\"the Bible says\" — how you introduce a verse without preaching at someone","opinion",1,"neutral",[
+  ["La Biblia dice que Dios es amor.","The Bible says God is love."],
+  ["Hay algo en la Biblia que dice eso.","There's something in the Bible that says that."]
+]),
+C("cambió mi vida","\"it changed my life\" — testimony language, the most persuasive register","opinion",1,"neutral",[
+  ["Eso cambió mi vida.","That changed my life."],
+  ["La verdad me cambió la vida.","Honestly, it changed my life."]
+]),
+C("¿vas a alguna iglesia?","\"do you go to a church?\" — opens the subject without assuming","ask",1,"neutral",[
+  ["¿Vas a alguna iglesia?","Do you go to a church?"],
+  ["¿Y tú vas a alguna iglesia por aquí?","Do you go to a church around here?"]
+]),
+C("te invito a","\"I'd like to invite you to\" — warmer than \"¿quieres venir?\"","soften",1,"neutral",[
+  ["Te invito a la reunión del domingo.","I'd like to invite you to the Sunday meeting."],
+  ["Te invito un café y platicamos.","Let me buy you a coffee and we'll talk."]
+]),
+C("no quiero incomodarte","\"I don't want to make you uncomfortable\" — gives them an exit, which is what makes it safe to continue","soften",1,"neutral",[
+  ["No quiero incomodarte, eh.","I don't want to make you uncomfortable."],
+  ["Si te incomoda, ahí le paramos.","If it makes you uncomfortable, we'll stop there."]
+]),
+C("hermano","\"brother\" — between believers this is direct address, not slang","social",1,"neutral",[
+  ["Gracias, hermano.","Thank you, brother."],
+  ["¿Cómo estás, hermana?","How are you, sister?"]
+]),
+C("doy gracias a Dios","\"I thank God\" — the everyday way gratitude gets framed","opinion",2,"neutral",[
+  ["Doy gracias a Dios por eso.","I thank God for that."],
+  ["Gracias a Dios estamos bien.","Thank God we're doing alright."]
+]),
+C("si algún día quieres platicar","\"if you ever want to talk\" — leaves the door open instead of pushing","soften",2,"neutral",[
+  ["Si algún día quieres platicar, aquí estoy.","If you ever want to talk, I'm here."],
+  ["Cuando quieras platicar, me dices.","Whenever you want to talk, just tell me."]
+]),
+C("gracias por escucharme","\"thanks for hearing me out\" — closes the conversation gracefully either way","social",2,"neutral",[
+  ["Gracias por escucharme.","Thanks for hearing me out."],
+  ["Te agradezco que me escuches.","I appreciate you listening to me."]
+]),
+],
+
+travel: [
+C("¿a qué hora sale?","\"what time does it leave?\" — buses, tours, anything scheduled","ask",1,"neutral",[
+  ["¿A qué hora sale?","What time does it leave?"],
+  ["¿A qué hora sale el camión?","What time does the bus leave?"]
+]),
+C("¿cuánto cuesta el boleto?","\"how much is the ticket?\"","ask",1,"neutral",[
+  ["¿Cuánto cuesta el boleto?","How much is the ticket?"],
+  ["¿Cuánto es el boleto a Puebla?","How much is the ticket to Puebla?"]
+]),
+C("me perdí","\"I got lost\" — the fastest way to get help","survive",1,"neutral",[
+  ["Creo que me perdí.","I think I got lost."],
+  ["Me perdí, ¿me ayuda?","I'm lost, can you help me?"]
+]),
+C("¿es seguro por aquí?","\"is it safe around here?\" — asked plainly, answered honestly","ask",1,"neutral",[
+  ["¿Es seguro por aquí?","Is it safe around here?"],
+  ["¿Es seguro caminar de noche?","Is it safe to walk at night?"]
+]),
+C("¿me puede llevar a...?","\"can you take me to...?\" — taxis and rides","ask",1,"neutral",[
+  ["¿Me puede llevar al centro?","Can you take me downtown?"],
+  ["¿Me lleva a esta dirección?","Can you take me to this address?"]
+]),
+C("se me perdió","\"I lost\" — the blame-free construction again","survive",1,"neutral",[
+  ["Se me perdió la maleta.","I lost my suitcase."],
+  ["Se me perdió el pasaporte.","I lost my passport."]
+]),
+C("¿puedo pagar con tarjeta?","\"can I pay by card?\" — worth asking before you order","ask",1,"neutral",[
+  ["¿Puedo pagar con tarjeta?","Can I pay by card?"],
+  ["¿Aceptan tarjeta?","Do you take card?"]
+]),
+C("¿hay wifi?","\"is there wifi?\"","ask",1,"casual",[
+  ["¿Hay wifi aquí?","Is there wifi here?"],
+  ["¿Cuál es la contraseña del wifi?","What's the wifi password?"]
+]),
+C("voy para","\"I'm headed to\" — tells a driver or stranger your direction","survive",1,"neutral",[
+  ["Voy para el centro.","I'm headed downtown."],
+  ["Voy para allá también.","I'm headed that way too."]
+]),
+C("¿dónde puedo conseguir...?","\"where can I get...?\"","ask",1,"neutral",[
+  ["¿Dónde puedo conseguir un chip?","Where can I get a SIM card?"],
+  ["¿Dónde consigo agua por aquí?","Where do I get water around here?"]
+]),
+C("una noche","\"one night\" — lodging counting","survive",2,"neutral",[
+  ["Nada más una noche.","Just one night."],
+  ["Son dos noches, por favor.","It's two nights, please."]
+]),
+C("¿está lejos?","\"is it far?\"","ask",1,"neutral",[
+  ["¿Está lejos de aquí?","Is it far from here?"],
+  ["¿Está muy lejos caminando?","Is it very far on foot?"]
+]),
+C("¿me puede ayudar?","\"can you help me?\" — polite, works anywhere","survive",1,"neutral",[
+  ["Disculpe, ¿me puede ayudar?","Excuse me, can you help me?"],
+  ["¿Me ayuda tantito, porfa?","Can you help me for a sec, please?"]
+]),
+],
+
+food: [
+C("soy vegetariano","\"I'm vegetarian\" — say it early, it is not assumed","survive",1,"neutral",[
+  ["Soy vegetariano.","I'm vegetarian."],
+  ["Soy vegetariana, ¿qué me recomienda?","I'm vegetarian, what do you recommend?"]
+]),
+C("sin carne","\"no meat\" — the clearest possible instruction","survive",1,"neutral",[
+  ["¿Lo puede hacer sin carne?","Can you make it without meat?"],
+  ["Sin carne, por favor.","No meat, please."]
+]),
+C("¿qué lleva?","\"what's in it?\" — essential for allergies and surprises","ask",1,"neutral",[
+  ["¿Qué lleva este platillo?","What's in this dish?"],
+  ["¿Qué lleva la salsa?","What's in the salsa?"]
+]),
+C("no como puerco","\"I don't eat pork\" — swap the noun for anything else","survive",1,"neutral",[
+  ["No como puerco.","I don't eat pork."],
+  ["No como mariscos, soy alérgico.","I don't eat seafood, I'm allergic."]
+]),
+C("¿tiene algo sin picante?","\"do you have anything not spicy?\"","ask",1,"neutral",[
+  ["¿Tiene algo sin picante?","Do you have anything not spicy?"],
+  ["Algo que no pique, porfa.","Something that isn't spicy, please."]
+]),
+C("para compartir","\"to share\" — how you order for a table","survive",2,"casual",[
+  ["Es para compartir.","It's to share."],
+  ["Traiga algo para compartir.","Bring something to share."]
+]),
+C("¿me recomienda algo típico?","\"can you recommend something traditional?\" — always gets you the good stuff","ask",1,"neutral",[
+  ["¿Me recomienda algo típico de aquí?","Can you recommend something traditional from here?"],
+  ["¿Qué es lo típico de la región?","What's traditional for this region?"]
+]),
+C("otra ronda","\"another round\"","survive",2,"casual",[
+  ["Otra ronda, porfa.","Another round, please."],
+  ["¿Otra ronda o ya nos vamos?","Another round or shall we go?"]
+]),
+C("¿me trae la salsa?","\"can you bring me the salsa?\" — traer is the verb for bringing to a table","ask",1,"neutral",[
+  ["¿Me trae la salsa verde?","Can you bring me the green salsa?"],
+  ["¿Me trae más servilletas?","Can you bring more napkins?"]
+]),
+C("algo ligero","\"something light\"","survive",2,"neutral",[
+  ["Quiero algo ligero.","I want something light."],
+  ["Algo ligero, no tengo mucha hambre.","Something light, I'm not very hungry."]
+]),
+C("está delicioso","\"it's delicious\" — say it out loud, it matters here","social",1,"neutral",[
+  ["¡Está delicioso!","It's delicious!"],
+  ["Todo estuvo delicioso, gracias.","Everything was delicious, thank you."]
+]),
+C("la especialidad de la casa","\"the house specialty\"","ask",2,"neutral",[
+  ["¿Cuál es la especialidad de la casa?","What's the house specialty?"],
+  ["Deme la especialidad de la casa.","Give me the house specialty."]
+]),
+],
+
+culture: [
+C("¿qué música te gusta?","\"what music do you like?\" — opens more doors than any other question","ask",1,"casual",[
+  ["¿Qué música te gusta?","What music do you like?"],
+  ["¿Qué música escuchas?","What music do you listen to?"]
+]),
+C("¿has escuchado a...?","\"have you heard of...?\" — for artists and bands","ask",1,"casual",[
+  ["¿Has escuchado a Café Tacvba?","Have you heard of Café Tacvba?"],
+  ["¿Has escuchado esa canción?","Have you heard that song?"]
+]),
+C("me encanta","\"I love it\" — stronger than me gusta, used constantly","opinion",1,"casual",[
+  ["Me encanta esa película.","I love that movie."],
+  ["Me encanta cómo cocinan aquí.","I love how they cook here."]
+]),
+C("¿cómo se celebra?","\"how is it celebrated?\" — the question that gets you invited","ask",1,"neutral",[
+  ["¿Cómo se celebra aquí?","How is it celebrated here?"],
+  ["¿Cómo celebran el Día de Muertos?","How do you celebrate Day of the Dead?"]
+]),
+C("aquí se acostumbra","\"around here people usually\" — how customs get explained to you","connect",2,"neutral",[
+  ["Aquí se acostumbra comer tarde.","Around here people usually eat late."],
+  ["¿Aquí se acostumbra dar propina?","Is tipping customary here?"]
+]),
+C("en mi país","\"in my country\" — the comparison that keeps a conversation going","connect",1,"neutral",[
+  ["En mi país es diferente.","In my country it's different."],
+  ["En mi país no se hace así.","In my country it's not done that way."]
+]),
+C("qué interesante","\"how interesting\" — genuine, not filler, if you follow it up","reaction",1,"neutral",[
+  ["Qué interesante, no sabía.","How interesting, I didn't know."],
+  ["¡Qué interesante! ¿Y luego?","How interesting! And then?"]
+]),
+C("¿me cuentas más?","\"tell me more?\" — the single most useful conversational move","ask",1,"casual",[
+  ["¿Me cuentas más?","Tell me more?"],
+  ["Cuéntame más de eso.","Tell me more about that."]
+]),
+C("no sabía eso","\"I didn't know that\" — honest and invites explanation","reaction",1,"neutral",[
+  ["No sabía eso.","I didn't know that."],
+  ["La verdad no sabía nada de eso.","Honestly I knew nothing about that."]
+]),
+C("¿desde cuándo?","\"since when?\" / \"how long has that been?\"","ask",1,"neutral",[
+  ["¿Desde cuándo se hace eso?","Since when has that been done?"],
+  ["¿Desde cuándo vives aquí?","How long have you lived here?"]
+]),
+C("se parece a","\"it's similar to\" — bridges their culture and yours","connect",2,"neutral",[
+  ["Se parece a algo que tenemos allá.","It's similar to something we have back home."],
+  ["Se parece mucho, pero no es igual.","It's very similar, but not the same."]
+]),
+C("¿de dónde viene esa tradición?","\"where does that tradition come from?\"","ask",2,"neutral",[
+  ["¿De dónde viene esa tradición?","Where does that tradition come from?"],
+  ["¿Y de dónde viene esa costumbre?","And where does that custom come from?"]
+]),
+],
+
+work: [
+C("¿en qué trabajas?","\"what do you do for work?\" — asked early and without awkwardness","ask",1,"neutral",[
+  ["¿En qué trabajas?","What do you do for work?"],
+  ["¿Y tú en qué trabajas?","And what do you do?"]
+]),
+C("tengo una junta","\"I have a meeting\" — junta, not reunión, in Mexican offices","verb",1,"neutral",[
+  ["Tengo una junta a las tres.","I have a meeting at three."],
+  ["Ando en junta, al rato te marco.","I'm in a meeting, I'll call you later."]
+]),
+C("¿me mandas el correo?","\"can you send me the email?\"","ask",1,"neutral",[
+  ["¿Me mandas el correo?","Can you send me the email?"],
+  ["Te mando el correo ahorita.","I'll send you the email in a bit."]
+]),
+C("déjame revisarlo","\"let me check it\" — buys time professionally","verb",1,"neutral",[
+  ["Déjame revisarlo y te digo.","Let me check it and I'll tell you."],
+  ["Déjame lo reviso con calma.","Let me look it over properly."]
+]),
+C("te confirmo","\"I'll confirm with you\" — the standard non-commitment","verb",1,"neutral",[
+  ["Te confirmo mañana.","I'll confirm with you tomorrow."],
+  ["Ahorita te confirmo la hora.","I'll confirm the time shortly."]
+]),
+C("me urge","\"I need it urgently\" — direct and completely normal","verb",2,"neutral",[
+  ["Me urge esa información.","I need that information urgently."],
+  ["Me urge, la verdad.","I really need it urgently, honestly."]
+]),
+C("sin falta","\"without fail\" — how you promise a deadline","connect",2,"neutral",[
+  ["Mañana sin falta.","Tomorrow without fail."],
+  ["Te lo mando hoy sin falta.","I'll send it today without fail."]
+]),
+C("¿quién es el encargado?","\"who's in charge?\"","ask",1,"neutral",[
+  ["¿Quién es el encargado?","Who's in charge?"],
+  ["¿Con quién puedo hablar del tema?","Who can I talk to about this?"]
+]),
+C("¿cuándo lo necesitas?","\"when do you need it?\"","ask",1,"neutral",[
+  ["¿Para cuándo lo necesitas?","When do you need it by?"],
+  ["¿Cuándo lo ocupas?","When do you need it?"]
+]),
+C("estoy en una llamada","\"I'm on a call\"","verb",1,"neutral",[
+  ["Estoy en una llamada, ahorita te busco.","I'm on a call, I'll find you in a bit."],
+  ["Ando en llamada.","I'm on a call."]
+]),
+C("¿lo vemos mañana?","\"shall we look at it tomorrow?\"","ask",1,"neutral",[
+  ["¿Lo vemos mañana?","Shall we look at it tomorrow?"],
+  ["¿Lo vemos en la junta?","Shall we cover it in the meeting?"]
+]),
+C("quedo pendiente","\"I'll await your reply\" — closes an email or a conversation","social",2,"neutral",[
+  ["Quedo pendiente.","I'll await your reply."],
+  ["Cualquier cosa, quedo pendiente.","Anything else, I'm here."]
+]),
+],
+
+friends: [
+C("¿de dónde eres?","\"where are you from?\" — the opening move everywhere","ask",1,"casual",[
+  ["¿De dónde eres?","Where are you from?"],
+  ["¿Y tú de dónde eres?","And where are you from?"]
+]),
+C("cuéntame de ti","\"tell me about yourself\" — warm, not an interview","ask",1,"casual",[
+  ["Cuéntame de ti.","Tell me about yourself."],
+  ["Ándale, cuéntame de ti.","Go on, tell me about yourself."]
+]),
+C("¿a qué te dedicas?","\"what do you do?\" — softer than ¿en qué trabajas?","ask",1,"neutral",[
+  ["¿A qué te dedicas?","What do you do?"],
+  ["¿Y a qué te dedicas tú?","And what do you do?"]
+]),
+C("qué chistoso","\"that's funny\" — the natural laugh response","reaction",1,"casual",[
+  ["¡Qué chistoso!","That's funny!"],
+  ["Qué chistoso eres.","You're funny."]
+]),
+C("te presento a","\"let me introduce you to\"","social",1,"neutral",[
+  ["Te presento a mi amigo Carlos.","Let me introduce you to my friend Carlos."],
+  ["Te presento a mi esposa.","This is my wife."]
+]),
+C("¿tienes planes?","\"do you have plans?\" — how an invitation starts","ask",1,"casual",[
+  ["¿Tienes planes el sábado?","Do you have plans Saturday?"],
+  ["¿Tienes planes o le caemos a algún lado?","Got plans, or shall we go somewhere?"]
+]),
+C("cuando quieras","\"whenever you like\" — open, generous, very Mexican","social",1,"casual",[
+  ["Cuando quieras, aquí andamos.","Whenever you like, we're around."],
+  ["Vente cuando quieras.","Come over whenever you like."]
+]),
+C("no te dejes","\"don't let them push you around\" — affectionate encouragement","social",2,"casual",[
+  ["No te dejes, eh.","Don't let them push you around."],
+  ["¡No te dejes!","Stand up for yourself!"]
+]),
+C("me da gusto verte","\"it's good to see you\"","social",1,"neutral",[
+  ["Me da mucho gusto verte.","It's really good to see you."],
+  ["Qué gusto me da verte.","What a pleasure to see you."]
+]),
+C("¿cómo te fue?","\"how did it go?\" — remembering to ask is the whole trick","ask",1,"casual",[
+  ["¿Cómo te fue?","How did it go?"],
+  ["¿Cómo te fue en el examen?","How did the exam go?"]
+]),
+C("ya sabes dónde encontrarme","\"you know where to find me\"","social",2,"casual",[
+  ["Ya sabes dónde encontrarme.","You know where to find me."],
+  ["Cualquier cosa ya sabes dónde ando.","Anything at all, you know where I am."]
+]),
+C("qué padre conocerte","\"great to meet you\" — casual alternative to mucho gusto","social",1,"casual",[
+  ["Qué padre conocerte.","Great to meet you."],
+  ["Qué padre haberte conocido.","It was great meeting you."]
+]),
+],
+
+};
+
+/* Goal chunks join the main collection carrying their tag, so every engine —
+   scheduling, difficulty rating, search, scoring — treats them identically. */
+Object.entries(GOAL_PACKS).forEach(([g, list]) => {
+  list.forEach(c => { c.goals = [g]; CHUNKS.push(c); });
+});
+
+/* Chunks already in the collection that plainly serve a goal. */
+const GOAL_TAGS = {
+  food:    ["para llevar","con todo","¿pica?","está buenísimo","la cuenta, porfa","¿qué me recomienda?","provecho","chela","se me antoja","antojo","¿me regalas...?","¿cuánto es?"],
+  travel:  ["¿por dónde queda?","derechito","está a la vuelta","aquí está bien","¿cuánto hace de aquí a...?","¿me das un aventón?","¡aguas!","¿me repites?","más despacio, porfa","no te entendí","estoy aprendiendo"],
+  work:    ["chamba","quedamos en","ya quedó","me tocó","sacar el trabajo","está pesado","échale ganas","te marco","¿cómo quedamos?","ando en chinga"],
+  friends: ["¿qué onda?","¿cómo has estado?","¿qué me cuentas?","nos vemos","cuídate","échame un grito","qué milagro","cuánto tiempo","ahí te caigo","¿te late?","aquí nomás","buena onda","me cae bien"],
+  culture: ["qué padre","está de pelos","chido","no manches","órale","qué bárbaro","¿a poco?","imagínate"],
+  faith:   ["con todo respeto","una disculpa","que te vaya bien","cuídate","no te preocupes"],
+};
+Object.entries(GOAL_TAGS).forEach(([g, names]) => {
+  names.forEach(n => {
+    const c = CHUNKS.find(x => x.chunk === n);
+    if(c) c.goals = (c.goals || []).concat(g);
+  });
+});
+
+/* ---------- 1b. HOW IT ACTUALLY SOUNDS ----------
    The gap between spelling and speech is what makes fast Mexican Spanish
    unintelligible to readers. Only listed where the two genuinely differ —
    a missing entry means it sounds the way it looks.
@@ -1549,7 +1917,7 @@ const SOUNDS = {
 };
 CHUNKS.forEach(c => { if(SOUNDS[c.chunk]) c.sounds = SOUNDS[c.chunk]; });
 
-/* ---------- 1d. A GENTLE WAY IN ----------
+/* ---------- 1c. A GENTLE WAY IN ----------
    Chunks a beginner meets first whose sentences all carried extra baggage.
    These are the bare, real utterances — what you'd actually hear on its own. */
 const SIMPLE = {
@@ -1587,7 +1955,7 @@ CHUNKS.forEach(c => {
   if(s && !c.examples.some(e => e.es === s[0])) c.examples.unshift({es:s[0], en:s[1]});
 });
 
-/* ---------- 1e. SENTENCE DIFFICULTY ----------
+/* ---------- 1d. SENTENCE DIFFICULTY ----------
    A tier-1 chunk shown inside a sentence full of other slang is not a tier-1
    lesson. Rating each example separately lets the easy one teach the chunk and
    the hard one wait until the chunk is known. */
@@ -1633,7 +2001,7 @@ function pickExample(c, st){
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-/* ---------- 1b. DIALOGUES ---------- */
+/* ---------- 1e. DIALOGUES ---------- */
 /* Chunks in isolation don't teach turn-taking. Each dialogue is a real
    exchange; on your turns you pick the natural reply from three options,
    where the wrong ones are plausible but off in register or meaning. */
@@ -1740,8 +2108,71 @@ const DIALOGUES = [
     YOU("Sale. Mándame ubicación porfa.", "Cool. Send me the location please.",
         ["¿Me das un aventón?", "Con todo respeto, prefiero no."]),
   ]),
+  D("Sharing your faith", "A friend mentions they've been having a hard time.", [
+    THEM("La verdad ando bien agüitado estos días.", "Honestly I've been really down lately."),
+    YOU("Híjole, ¿qué pasó? ¿Me cuentas?", "Geez, what happened? Do you want to tell me?",
+        ["Deberías ir a la iglesia.", "Bueno, ni modo, así es la vida."]),
+    THEM("Pues muchas cosas juntas. No sé ni por dónde empezar.", "A lot of things at once. I don't even know where to start."),
+    YOU("¿Puedo compartir algo contigo? No quiero incomodarte.", "Can I share something with you? I don't want to make you uncomfortable.",
+        ["Tienes que creer en Dios.", "La Biblia dice que estás mal."]),
+    THEM("Sí, claro, dime.", "Yeah, of course, go ahead."),
+    YOU("A mí me ayudó mucho mi fe. Cambió mi vida, la neta.", "My faith helped me a lot. It changed my life, honestly.",
+        ["Pues yo voy a la iglesia los domingos.", "Deberías hacer lo mismo que yo."]),
+    THEM("Órale. No sabía que eras creyente.", "Wow. I didn't know you were a believer."),
+    YOU("¿Puedo orar por ti? Y si algún día quieres platicar, aquí estoy.", "Can I pray for you? And if you ever want to talk, I'm here.",
+        ["Te invito a mi iglesia este domingo sin falta.", "Entonces ya crees, ¿verdad?"]),
+  ]),
+
+  D("At the bus station", "Working out how to get to Oaxaca.", [
+    YOU("Disculpe, ¿a qué hora sale el camión a Oaxaca?", "Excuse me, what time does the bus to Oaxaca leave?",
+        ["Oiga, quiero ir a Oaxaca ahorita.", "¿Dónde está Oaxaca?"]),
+    THEM("Hay uno a las dos y otro a las seis.", "There's one at two and another at six."),
+    YOU("¿Y cuánto cuesta el boleto?", "And how much is the ticket?",
+        ["¿Me da un boleto gratis?", "Está muy caro, ¿no?"]),
+    THEM("Son cuatrocientos veinte el sencillo.", "It's four hundred twenty one-way."),
+    YOU("¿Puedo pagar con tarjeta?", "Can I pay by card?",
+        ["No traigo lana.", "¿Me hace un descuento?"]),
+    THEM("Sí, sin problema. ¿Cuál de los dos le doy?", "Yes, no problem. Which of the two shall I give you?"),
+    YOU("El de las dos, porfa. ¿Está lejos el andén?", "The two o'clock one, please. Is the platform far?",
+        ["Me da igual, usted dígame.", "Ahorita le digo."]),
+  ]),
+
+  D("Talking about music", "Someone puts on a song you don't recognise.", [
+    THEM("¿Te gusta esta rola?", "Do you like this track?"),
+    YOU("No la conocía. ¿Quién canta?", "I didn't know it. Who sings it?",
+        ["No me gusta para nada.", "Sí, claro, la conozco bien."]),
+    THEM("Es Natalia Lafourcade. ¿Has escuchado algo de ella?", "It's Natalia Lafourcade. Have you heard anything of hers?"),
+    YOU("No, pero me encanta. ¿Me cuentas más?", "No, but I love it. Tell me more?",
+        ["Está bien, supongo.", "En mi país tenemos mejor música."]),
+    THEM("Canta mucho son jarocho, música de Veracruz.", "She sings a lot of son jarocho, music from Veracruz."),
+    YOU("Qué interesante, no sabía eso. ¿Desde cuándo existe ese estilo?", "How interesting, I didn't know that. How long has that style been around?",
+        ["Ah, órale, qué padre.", "Se parece al rock, ¿no?"]),
+  ]),
+
+  D("Setting up a meeting", "A colleague needs something from you.", [
+    THEM("Oye, ¿tienes cinco minutos para ver lo del reporte?", "Hey, do you have five minutes to go over the report?"),
+    YOU("Ahorita estoy en una llamada. ¿Lo vemos mañana?", "I'm on a call right now. Shall we look at it tomorrow?",
+        ["No puedo, tengo mucha chamba.", "Sí, ahorita voy."]),
+    THEM("Es que me urge, la verdad. ¿Mañana temprano?", "It's just that I really need it. Tomorrow morning?"),
+    YOU("Sale. Tengo una junta a las nueve, ¿te late a las diez?", "Alright. I have a meeting at nine, does ten work for you?",
+        ["Pues ni modo, mañana vemos.", "Me da igual la hora."]),
+    THEM("Perfecto. ¿Me mandas lo que llevas antes?", "Perfect. Can you send me what you have beforehand?"),
+    YOU("Te lo mando hoy sin falta. Quedo pendiente.", "I'll send it today without fail. I'll await your reply.",
+        ["Déjame revisarlo la próxima semana.", "Ahí te lo mando cuando pueda."]),
+  ]),
 ];
 DIALOGUES.forEach((d,i) => d.id = "d" + (i+1));
+
+/* Which dialogues serve which goal, so a picked goal surfaces its own first. */
+const DIALOGUE_GOALS = {
+  "Running into a friend":"friends", "Ordering tacos":"food", "Running late":"work",
+  "Turning down an invitation":"friends", "Asking for directions":"travel",
+  "Reacting to big news":"friends", "At the corner shop":"food",
+  "Making weekend plans":"friends", "Sharing your faith":"faith",
+  "At the bus station":"travel", "Talking about music":"culture",
+  "Setting up a meeting":"work",
+};
+DIALOGUES.forEach(d => { d.goal = DIALOGUE_GOALS[d.title] || null; });
 
 /* ---------- 2. STORAGE ---------- */
 const LS = {
@@ -1763,6 +2194,9 @@ let drills   = LS.get("drills", {});       // id -> best cold-recall score (Quic
 let skipped  = LS.get("skipped", {});      // id -> when you passed on it in Learn
 let unlocked = LS.get("unlocked", {});     // milestone name -> when it was earned
 let seenIntro = LS.get("seenIntro", false);
+let myGoals = LS.get("goals", []);         // which conversations you're training for
+const saveGoals = () => LS.set("goals", myGoals);
+const hasGoal = c => (c.goals || []).some(g => myGoals.includes(g));
 let dialogDone = LS.get("dialogDone", {}); // dialogue id -> best % of replies right
 /* Merged over defaults so decks saved by an earlier version pick up new keys. */
 let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0, drills:0}, LS.get("totals", {}));
@@ -1827,10 +2261,26 @@ function previewInterval(st, grade){
 
 const inDeck   = id => !!srs[id];
 const dueCards = () => Object.keys(srs).filter(id => srs[id].due <= Date.now());
-/* Skipped chunks sink below everything you haven't judged yet, so passing on
-   one moves it out of the way instead of handing it straight back. */
-const newCards = () => CHUNKS.filter(c => !inDeck(c.id))
-  .sort((a,b) => (!!skipped[a.id] - !!skipped[b.id]) || (a.tier - b.tier));
+/* Ordering new chunks. Anything skipped sinks below what you haven't judged.
+   With goals set, the two streams are woven two-to-one rather than sorted
+   together: a bonus large enough to lift goal words up is also large enough to
+   bury every universal chunk behind them, and the glue — o sea, la neta, es
+   que — is what makes any of the goals speakable. Glue leads, goal vocabulary
+   arrives steadily alongside it. */
+const GOAL_WEAVE = 2;
+function newCards(){
+  const pool = CHUNKS.filter(c => !inDeck(c.id));
+  const byTier = (a,b) => (!!skipped[a.id] - !!skipped[b.id]) || (a.tier - b.tier);
+  if(!myGoals.length) return pool.sort(byTier);
+
+  const mine = pool.filter(hasGoal).sort(byTier);
+  const rest = pool.filter(c => !hasGoal(c)).sort(byTier);
+  const out = [];
+  while(mine.length || rest.length){
+    out.push(...rest.splice(0, GOAL_WEAVE), ...mine.splice(0, 1));
+  }
+  return out;
+}
 const statusOf = id => {
   const s = srs[id];
   if(!s) return "new";
@@ -1928,7 +2378,7 @@ function speak(text, rate){
    Everything lives in localStorage, which one cleared cache wipes. These move
    it in and out as a plain file. */
 const BACKUP_KEYS = ["srs","streak","scores","ears","dialogDone","drills",
-                     "skipped","unlocked","totals","settings","seenIntro"];
+                     "skipped","unlocked","totals","settings","seenIntro","goals"];
 
 function backupBlob(){
   const payload = {app:"calle", version:1, exported:new Date().toISOString(), data:{}};
@@ -2305,7 +2755,33 @@ const INTRO = [
 ];
 let introStep = 0;
 
+function goalGrid(){
+  return `<div class="goals">
+    ${GOALS.map(g => `
+      <button class="goal${myGoals.includes(g.id) ? " on" : ""}" data-goal="${g.id}">
+        <span class="gem">${g.em}</span>
+        <span class="gtxt"><b>${esc(g.name)}</b><span>${esc(g.blurb)}</span></span>
+        <span class="gtick">${myGoals.includes(g.id) ? "✓" : ""}</span>
+      </button>`).join("")}
+  </div>`;
+}
+
 function renderIntro(){
+  /* The last step asks what you're actually learning for. */
+  if(introStep === INTRO.length){
+    view.innerHTML = `
+      <div class="intro" style="padding-top:26px">
+        <div class="iem">\u{1F3AF}</div>
+        <h1>What are you learning for?</h1>
+        <p>Pick any that fit. You'll get their vocabulary and conversations
+           alongside the everyday glue — and you can change this later.</p>
+        ${goalGrid()}
+        <button class="btn primary" data-intro="next" style="margin-top:20px">
+          ${myGoals.length ? `Start with ${myGoals.length} goal${myGoals.length===1?"":"s"}` : "Skip for now"}
+        </button>
+      </div>`;
+    return;
+  }
   const [em, title, body, line] = INTRO[introStep];
   view.innerHTML = `
     <div class="intro">
@@ -2317,13 +2793,10 @@ function renderIntro(){
         ${speakerBtn(line, true)}
       </div>
       <div class="idots">
-        ${INTRO.map((_,i) => `<span class="idot${i===introStep?" on":""}"></span>`).join("")}
+        ${INTRO.concat([0]).map((_,i) => `<span class="idot${i===introStep?" on":""}"></span>`).join("")}
       </div>
-      <button class="btn primary" data-intro="next">
-        ${introStep < INTRO.length-1 ? "Next" : "Empecemos — let's go"}
-      </button>
-      ${introStep < INTRO.length-1
-        ? `<button class="lnk tiny" style="margin-top:14px" data-intro="skip">Skip</button>` : ""}
+      <button class="btn primary" data-intro="next">Next</button>
+      <button class="lnk tiny" style="margin-top:14px" data-intro="skip">Skip</button>
     </div>`;
 }
 
@@ -2339,9 +2812,22 @@ const MILESTONES = [
   ["\u{1F91D}", "Make plans",             ["¿te late?","¿qué tal si...?","sale","¿cómo quedamos?","al rato","ahorita","te marco","mándame ubicación","¿va?","la próxima"]],
 ];
 
+/* One capability per goal, shown only to people training for it. */
+const GOAL_MILESTONES = {
+  faith:   ["✝️", "Share why you believe", ["¿puedo compartir algo contigo?","¿crees en Dios?","¿puedo orar por ti?","la Biblia dice","cambió mi vida","no quiero incomodarte","te invito a","Dios te bendiga","si algún día quieres platicar","gracias por escucharme"]],
+  travel:  ["\u{1F9ED}", "Get anywhere alone",   ["¿a qué hora sale?","¿cuánto cuesta el boleto?","me perdí","¿me puede llevar a...?","¿está lejos?","voy para","¿me puede ayudar?","¿es seguro por aquí?","¿por dónde queda?","derechito"]],
+  food:    ["\u{1F32E}", "Eat exactly what you want", ["soy vegetariano","sin carne","¿qué lleva?","no como puerco","¿tiene algo sin picante?","¿me recomienda algo típico?","¿me trae la salsa?","está delicioso","para llevar","con todo"]],
+  culture: ["\u{1F3AD}", "Keep a real conversation going", ["¿qué música te gusta?","¿me cuentas más?","qué interesante","no sabía eso","me encanta","en mi país","¿cómo se celebra?","¿desde cuándo?","se parece a","¿has escuchado a...?"]],
+  work:    ["\u{1F4BC}", "Handle a work day",   ["¿en qué trabajas?","tengo una junta","¿me mandas el correo?","déjame revisarlo","te confirmo","me urge","sin falta","¿cuándo lo necesitas?","¿lo vemos mañana?","quedo pendiente"]],
+  friends: ["\u{1F91D}", "Turn a stranger into a friend", ["¿de dónde eres?","cuéntame de ti","¿a qué te dedicas?","qué chistoso","te presento a","¿tienes planes?","cuando quieras","me da gusto verte","¿cómo te fue?","qué padre conocerte"]],
+};
+/* Your goals' milestones come first; the universal ones always stay. */
+const activeMilestones = () =>
+  myGoals.map(g => GOAL_MILESTONES[g]).filter(Boolean).concat(MILESTONES);
+
 /* Unlocking used to be a bar quietly filling. Now it interrupts, once. */
 function checkMilestones(){
-  for(const [em, name, names] of MILESTONES){
+  for(const [em, name, names] of activeMilestones()){
     const {got, total} = milestoneProgress(names);
     if(got >= total && !unlocked[name]){
       unlocked[name] = Date.now();
@@ -2393,7 +2879,8 @@ function renderHome(){
   const doneToday = (streak.days[todayKey()] || 0);
   const plan = sessionPlan();
 
-  const ms = MILESTONES.map(([em, name, names]) => ({em, name, ...milestoneProgress(names)}))
+  const all = activeMilestones();
+  const ms = all.map(([em, name, names]) => ({em, name, ...milestoneProgress(names)}))
     .sort((a,b) => (b.got/b.total) - (a.got/a.total));
   const unlocked = ms.filter(m => m.got >= m.total).length;
 
@@ -2426,8 +2913,18 @@ function renderHome(){
           <span class="v">${m.got}/${m.total}</span>
         </div>`).join("")}
       <button class="lnk tiny" style="margin-top:10px" data-sheet="milestones">
-        See all ${MILESTONES.length} · ${unlocked} unlocked</button>
+        See all ${all.length} · ${unlocked} unlocked</button>
     </div>
+
+    <button class="action" style="margin-top:12px" data-sheet="goals">
+      <div class="em">\u{1F3AF}</div>
+      <div class="t"><b>${myGoals.length ? "Your goals" : "Set your goals"}</b><span>${
+        myGoals.length
+          ? esc(myGoals.map(g => (GOALS.find(x => x.id === g) || {}).name).filter(Boolean).join(" · "))
+          : "Tell it what you're learning Spanish for"
+      }</span></div>
+      <div class="n${myGoals.length ? "" : " zero"}">${myGoals.length || "+"}</div>
+    </button>
 
     <div class="stack" style="margin-top:14px">
       <button class="action" data-go="review">
@@ -2884,18 +3381,24 @@ function renderDialogue(){
   if(!dlg){
     view.innerHTML = header("Conversations", "Hold your end of a real exchange") + `
       <div class="card">
-        ${DIALOGUES.map(d => {
+        ${[...DIALOGUES]
+          .sort((a,b) => (myGoals.includes(b.goal) - myGoals.includes(a.goal)))
+          .map(d => {
           const best = dialogDone[d.id];
+          const mine = myGoals.includes(d.goal);
+          const g = GOALS.find(x => x.id === d.goal);
           return `<button class="li" data-dlg="${d.id}">
             <span class="pill${best != null ? (best >= 80 ? " mastered" : " review") : ""}"></span>
-            <span class="t"><b>${esc(d.title)}</b><span>${esc(d.setting)}</span></span>
+            <span class="t"><b>${g ? g.em + " " : ""}${esc(d.title)}</b><span>${esc(d.setting)}</span></span>
             ${best != null ? `<span class="badge" style="color:${scoreColor(best)}">${best}%</span>`
+                           : mine ? `<span class="badge tier1">for you</span>`
                            : `<span class="badge">new</span>`}
           </button>`;
         }).join("")}
       </div>
       <p class="tiny muted center" style="margin-top:14px">
-        Each one strings together chunks you're already learning.</p>`;
+        ${myGoals.length ? "Your goals' conversations come first."
+                         : "Each one strings together chunks you're already learning."}</p>`;
     return;
   }
 
@@ -3234,6 +3737,38 @@ function renderNav(){
      </button>`).join("");
 }
 
+/* ----- goals sheet ----- */
+function openGoals(){
+  const open = document.querySelector(".goalsheet");
+  if(open){ open.querySelector(".gbody").innerHTML = goalGrid() + goalsSummary(); return; }
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `
+    <div class="scrim" data-close="1"></div>
+    <div class="sheet goalsheet">
+      <div class="grip"></div>
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:19px">What you're learning for</h3>
+        <button class="icon-btn" id="closeSheet" aria-label="Close">✕</button>
+      </div>
+      <p class="muted tiny" style="margin:6px 0 14px">
+        Goals add their own vocabulary and conversations, and move them up your
+        queue. The everyday glue is taught either way.</p>
+      <div class="gbody">${goalGrid()}${goalsSummary()}</div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = () => { wrap.remove(); render(); };
+  wrap.querySelector("[data-close]").onclick = close;
+  wrap.querySelector("#closeSheet").onclick = close;
+}
+function goalsSummary(){
+  if(!myGoals.length) return `<p class="tiny muted center" style="margin:14px 0 0">
+    With none picked you'll learn the collection in plain frequency order.</p>`;
+  const n = CHUNKS.filter(hasGoal).length;
+  const d = DIALOGUES.filter(x => myGoals.includes(x.goal)).length;
+  return `<p class="tiny muted center" style="margin:14px 0 0">
+    ${n} chunks and ${d} conversation${d===1?"":"s"} prioritised for you.</p>`;
+}
+
 /* ----- milestones sheet ----- */
 function openMilestones(){
   const wrap = document.createElement("div");
@@ -3247,7 +3782,7 @@ function openMilestones(){
       </div>
       <p class="muted tiny" style="margin:6px 0 14px">
         Each one unlocks when its chunks are out of learning and into review.</p>
-      ${MILESTONES.map(([em, name, names]) => {
+      ${activeMilestones().map(([em, name, names]) => {
         const {got, total} = milestoneProgress(names);
         const done = got >= total;
         return `
@@ -3403,7 +3938,7 @@ function openSettings(){
 
 /* ---------- 7. EVENTS ---------- */
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro]");
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal]");
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
@@ -3412,13 +3947,25 @@ document.addEventListener("click", e => {
     session = null; go(t.dataset.go); return;
   }
   if(t.dataset.sheet){
-    if(t.dataset.sheet === "milestones") openMilestones(); else openSettings();
+    const s = t.dataset.sheet;
+    if(s === "milestones") openMilestones();
+    else if(s === "goals")  openGoals();
+    else openSettings();
     return;
   }
   if(t.dataset.session){ leaveMode(); startSessionFlow(); return; }
 
+  if(t.dataset.goal){
+    const g = t.dataset.goal;
+    myGoals = myGoals.includes(g) ? myGoals.filter(x => x !== g) : myGoals.concat(g);
+    saveGoals();
+    learnCard = null;                       // the queue order just changed
+    if(tab === "intro") render(); else openGoals();
+    return;
+  }
   if(t.dataset.intro){
-    if(t.dataset.intro === "next" && introStep < INTRO.length - 1){ introStep++; return render(); }
+    /* One step past the cards is the goal picker. */
+    if(t.dataset.intro === "next" && introStep < INTRO.length){ introStep++; return render(); }
     seenIntro = true; LS.set("seenIntro", true);
     go("home"); return;
   }
