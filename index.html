@@ -161,7 +161,7 @@ input{font:inherit}
 .dot.on{background:var(--teal)}
 
 /* ---------- stats ---------- */
-.heat{display:grid;grid-template-columns:repeat(13,1fr);gap:3px}
+.heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px}
 .heat i{aspect-ratio:1/1;border-radius:2.5px;background:var(--surface-2)}
 .heat i.l1{background:color-mix(in srgb,var(--accent) 30%,var(--surface-2))}
 .heat i.l2{background:color-mix(in srgb,var(--accent) 55%,var(--surface-2))}
@@ -793,13 +793,507 @@ C("qué gusto verte","\"so good to see you\"","social",2,"neutral",[
   ["¡Qué gusto verte! Hace un chorro.","So good to see you! It's been ages."],
   ["Qué gusto verte por aquí.","Good to see you around here."]
 ]),
-C("cúidate","\"take care\" — warm, universal closer","social",1,"neutral",[
-  ["Bueno, cúidate mucho.","Alright, take good care."],
-  ["Cúidate, cualquier cosa me hablas.","Take care, call me if anything comes up."]
+C("cuídate","\"take care\" — warm, universal closer","social",1,"neutral",[
+  ["Bueno, cuídate mucho.","Alright, take good care."],
+  ["Cuídate, cualquier cosa me hablas.","Take care, call me if anything comes up."]
 ]),
 C("¿cómo has estado?","\"how have you been?\" — for people you haven't seen in a while","social",1,"neutral",[
-  ["¡Cuanto tiempo! ¿Cómo has estado?","Long time! How have you been?"],
+  ["¿Cómo has estado? Hace mucho que no te veía.","How have you been? I haven't seen you in ages."],
   ["¿Cómo has estado? ¿Qué me cuentas?","How've you been? What's new?"]
+]),
+
+/* ===== THE "YA" FAMILY — one word, a dozen jobs ===== */
+C("ya","\"already\" / \"now\" — Mexicans lean on this constantly","time",1,"neutral",[
+  ["Ya me voy.","I'm leaving now."],
+  ["¿Ya comiste?","Have you eaten yet?"],
+  ["Ya quedó.","It's done."]
+]),
+C("ya no","\"not anymore\"","time",1,"neutral",[
+  ["Ya no trabajo ahí.","I don't work there anymore."],
+  ["Ya no quiero, gracias.","I don't want any more, thanks."]
+]),
+C("ya qué","\"what can you do\" — total resignation, very Mexican","slang",2,"casual",[
+  ["Pues ya qué, ni modo.","Well, what can you do, oh well."],
+  ["Ya qué, ya se fue.","Nothing to do now, he already left."]
+]),
+C("ya ves","\"see?\" / \"you know how it is\"","filler",2,"casual",[
+  ["Ya ves cómo es él.","You know how he is."],
+  ["Ya ves, te lo dije.","See? I told you."]
+]),
+C("ya sabes","\"you know\" — closes a thought without finishing it","filler",1,"casual",[
+  ["Estaba cansado y ya sabes, mejor me quedé.","I was tired and you know, I just stayed."],
+  ["Ya sabes cómo se pone.","You know how he gets."]
+]),
+C("ya está","\"that's it\" / \"done\"","filler",1,"neutral",[
+  ["Le pones sal y ya está.","You add salt and that's it."],
+  ["Ya está, quedó listo.","There, it's ready."]
+]),
+C("ya voy","\"I'm coming\" — answer when someone calls you","survive",1,"casual",[
+  ["¡Ya voy, ya voy!","I'm coming, I'm coming!"],
+  ["Ya voy en camino.","I'm already on my way."]
+]),
+C("ya párale","\"cut it out\" — playful or firm","reaction",2,"casual",[
+  ["Ya párale, no es gracioso.","Cut it out, it's not funny."],
+  ["¡Ya párale con eso!","Enough with that!"]
+]),
+C("ya la hicimos","\"we're set\" / \"we nailed it\"","slang",2,"casual",[
+  ["Si nos dan el permiso, ya la hicimos.","If they give us the permit, we're set."],
+  ["¡Ya la hicimos, nos dijeron que sí!","We're in, they said yes!"]
+]),
+
+/* ===== INTENSITY & QUANTITY ===== */
+C("bien + adjective","\"really ___\" — Mexicans use bien where Spain uses muy","verb",1,"casual",[
+  ["Está bien padre.","It's really cool."],
+  ["Ando bien cansado.","I'm really tired."],
+  ["Está bien caro, la neta.","It's really expensive, honestly."]
+]),
+C("un buen","\"a lot\" / \"quite a bit\"","slang",2,"casual",[
+  ["Me costó un buen.","It cost me quite a bit."],
+  ["Hace un buen que no lo veo.","I haven't seen him in a good while."]
+]),
+C("tantito","\"a tiny bit\" / \"a sec\"","slang",1,"casual",[
+  ["Espérame tantito.","Wait for me a sec."],
+  ["Nada más tantito, porfa.","Just a little bit, please."]
+]),
+C("-ísimo","\"super ___\" — stick it on any adjective: buenísimo, carísimo, lejosísimos","verb",1,"neutral",[
+  ["Está buenísimo el mole.","The mole is amazing."],
+  ["Está carísimo ese lugar.","That place is super expensive."]
+]),
+C("medio + adjective","\"kind of ___\" — softens a criticism","verb",2,"casual",[
+  ["Está medio raro, ¿no?","He's kind of weird, right?"],
+  ["Me quedó medio salado.","It came out kind of salty."]
+]),
+C("de plano","\"flat out\" / \"straight up\"","slang",2,"casual",[
+  ["De plano no quiso venir.","He straight up refused to come."],
+  ["¿De plano no hay forma?","Is there flat out no way?"]
+]),
+C("apenas","\"barely\" / \"just now\"","time",1,"neutral",[
+  ["Apenas voy llegando.","I'm just now arriving."],
+  ["Apenas alcancé boleto.","I barely got a ticket."]
+]),
+C("ni tanto","\"not that much\" — walks back an exaggeration","agree",2,"casual",[
+  ["¿Estuvo difícil? — Ni tanto.","Was it hard? — Not really."],
+  ["Me gustó, pero ni tanto.","I liked it, but not that much."]
+]),
+
+/* ===== MAYBE / UNCERTAINTY ===== */
+C("a lo mejor","\"maybe\" — the most common way to say it in Mexico","opinion",1,"neutral",[
+  ["A lo mejor voy más tarde.","Maybe I'll go later."],
+  ["A lo mejor ya se fue.","Maybe he already left."]
+]),
+C("quién sabe","\"who knows\" — shrug in phrase form","filler",1,"casual",[
+  ["¿A qué hora llega? — Quién sabe.","What time does he arrive? — Who knows."],
+  ["Quién sabe qué le pasó.","Who knows what happened to him."]
+]),
+C("sepa","\"dunno\" — clipped, very casual version of quién sabe","filler",2,"casual",[
+  ["¿Por qué no vino? — Sepa.","Why didn't he come? — Beats me."],
+  ["Sepa, a mí no me dijeron nada.","Dunno, nobody told me anything."]
+]),
+C("capaz que","\"it might be that\" / \"knowing my luck\"","opinion",2,"casual",[
+  ["Capaz que llueve.","It might rain."],
+  ["Capaz que ni viene.","Knowing him, he won't even show."]
+]),
+C("de repente","\"every now and then\" — in Mexico this often means occasionally, not suddenly","time",2,"casual",[
+  ["De repente voy los domingos.","I go on Sundays every now and then."],
+  ["De repente se le olvida.","Every so often he forgets."]
+]),
+C("algo así","\"something like that\" — lets you approximate and move on","filler",1,"casual",[
+  ["Cuesta mil pesos o algo así.","It costs a thousand pesos or something like that."],
+  ["Dijo que llegaba tarde, algo así.","He said he'd be late, something like that."]
+]),
+
+/* ===== STORYTELLING ===== */
+C("fíjate que","\"you know what\" / \"get this\" — opens news or an excuse","connect",1,"casual",[
+  ["Fíjate que no voy a poder ir.","So here's the thing, I won't be able to go."],
+  ["Fíjate que sí me sirvió.","You know what, it actually worked."]
+]),
+C("imagínate","\"imagine that\" — invites the listener to react","connect",1,"casual",[
+  ["Imagínate, tres horas esperando.","Imagine, three hours waiting."],
+  ["¡Imagínate! Y ni se disculpó.","Imagine! And he didn't even apologize."]
+]),
+C("¿a que no sabes qué?","\"guess what?\" — the classic story opener","ask",2,"casual",[
+  ["¿A que no sabes qué? Me dieron el trabajo.","Guess what? I got the job."],
+  ["¿A que no sabes a quién vi?","Guess who I saw?"]
+]),
+C("y entonces","\"and then\" — keeps a story moving","connect",1,"casual",[
+  ["Y entonces me dijo que no.","And then he told me no."],
+  ["Y entonces, ¿qué crees que pasó?","And then, what do you think happened?"]
+]),
+C("el caso es que","\"the point is\" — cuts to the chase mid-story","connect",2,"neutral",[
+  ["El caso es que ya no hay lugares.","The point is there's no space left."],
+  ["El caso es que sí llegó, pero tardísimo.","Bottom line, he did show up, but super late."]
+]),
+C("¿te acuerdas cuando...?","\"remember when...?\"","ask",1,"casual",[
+  ["¿Te acuerdas cuando fuimos a Oaxaca?","Remember when we went to Oaxaca?"],
+  ["¿Te acuerdas de él?","Do you remember him?"]
+]),
+C("nada más","\"just\" / \"only\" — extremely frequent","filler",1,"neutral",[
+  ["Nada más vine a saludar.","I just came to say hi."],
+  ["Es nada más un ratito.","It's just for a little bit."]
+]),
+
+/* ===== REACTIONS (more) ===== */
+C("¡no inventes!","\"come on!\" / \"you're kidding!\" — milder cousin of no manches","reaction",1,"casual",[
+  ["¡No inventes! ¿Te robaron el celular?","You're kidding! They stole your phone?"],
+  ["No inventes, otra vez llegas tarde.","Come on, you're late again."]
+]),
+C("¿cómo crees?","\"no way\" / \"don't be silly\" — also refuses a favor politely","reaction",1,"neutral",[
+  ["¿Te debo algo? — ¿Cómo crees? Yo invito.","Do I owe you? — Don't be silly, it's on me."],
+  ["¿Cómo crees que le voy a decir eso?","No way am I telling him that."]
+]),
+C("chale","disappointment or mild protest — \"aw man\"","reaction",2,"casual",[
+  ["Chale, ya se acabó.","Aw man, it's over already."],
+  ["¡Chale, wey! No manches.","Aw come on, dude!"]
+]),
+C("qué bárbaro","\"wow\" — admiration or disbelief, both work","reaction",1,"neutral",[
+  ["¡Qué bárbaro, cocinas buenísimo!","Wow, you cook so well!"],
+  ["Qué bárbaro, no puede ser.","Unbelievable, no way."]
+]),
+C("guácala","\"gross\" — for food and anything disgusting","reaction",2,"casual",[
+  ["¡Guácala, ya se echó a perder!","Gross, it went bad!"],
+  ["Guácala, no me gusta el cilantro.","Yuck, I don't like cilantro."]
+]),
+C("no te creo","\"I don't believe you\" — playful skepticism","reaction",1,"casual",[
+  ["¿De veras? No te creo.","Really? I don't believe you."],
+  ["No te creo nada.","I don't believe a word."]
+]),
+C("qué flojera","\"so lazy-making\" — same family as qué hueva","reaction",1,"casual",[
+  ["Qué flojera levantarse temprano.","Getting up early is such a drag."],
+  ["Me da flojera contestar.","I can't be bothered to reply."]
+]),
+C("¡órale va!","\"alright, let's do it\" — enthusiastic buy-in","agree",2,"casual",[
+  ["¿Vamos mañana? — ¡Órale va!","Shall we go tomorrow? — Alright, let's do it!"],
+  ["Órale va, yo manejo.","Alright, I'll drive."]
+]),
+C("ahí la llevas","\"you're getting there\" — encouragement","social",2,"casual",[
+  ["Ahí la llevas, ya te sale mejor.","You're getting there, it's coming out better."],
+  ["Ahí la llevamos.","We're getting by."]
+]),
+
+/* ===== FOOD & ORDERING ===== */
+C("para llevar","\"to go\" — vs. \"para aquí\"","survive",1,"neutral",[
+  ["Dos tacos para llevar, porfa.","Two tacos to go, please."],
+  ["¿Para aquí o para llevar?","For here or to go?"]
+]),
+C("con todo","\"with everything\" — the correct taco order","survive",1,"casual",[
+  ["Tres de pastor con todo.","Three al pastor with everything."],
+  ["¿Con todo? — Sí, pero sin cebolla.","With everything? — Yes, but no onion."]
+]),
+C("¿pica?","\"is it spicy?\" — the question that saves your evening","survive",1,"neutral",[
+  ["¿Pica mucho la verde?","Is the green salsa very spicy?"],
+  ["¿Pica? — Poquito.","Is it spicy? — A little."]
+]),
+C("está buenísimo","\"it's delicious\" — the compliment that opens doors","social",1,"neutral",[
+  ["¡Está buenísimo! ¿Quién cocinó?","It's delicious! Who cooked?"],
+  ["Está buenísima la salsa.","The salsa is amazing."]
+]),
+C("provecho","\"enjoy your meal\" — say it to strangers as you pass their table","social",1,"neutral",[
+  ["¡Provecho! — Gracias, igualmente.","Enjoy your meal! — Thanks, you too."],
+  ["Buen provecho a todos.","Enjoy, everyone."]
+]),
+C("la cuenta, porfa","\"the check, please\"","survive",1,"neutral",[
+  ["¿Me trae la cuenta, porfa?","Could you bring the check, please?"],
+  ["La cuenta cuando pueda.","The check whenever you can."]
+]),
+C("¿qué me recomienda?","\"what do you recommend?\" — instant goodwill from any waiter","survive",1,"neutral",[
+  ["Soy nuevo aquí, ¿qué me recomienda?","I'm new here, what do you recommend?"],
+  ["¿Qué me recomienda de tomar?","What do you recommend to drink?"]
+]),
+C("salud","\"cheers\" — also what you say when someone sneezes","social",1,"neutral",[
+  ["¡Salud! Por el reencuentro.","Cheers! To the reunion."],
+  ["¿Nos echamos una chela? — ¡Salud!","Shall we grab a beer? — Cheers!"]
+]),
+C("chela","\"beer\" — also cheve","slang",1,"casual",[
+  ["¿Nos echamos unas chelas?","Shall we grab some beers?"],
+  ["Una chela bien fría, porfa.","One ice-cold beer, please."]
+]),
+C("antojo","\"craving\" — antojitos are the classic street snacks","slang",2,"casual",[
+  ["Traigo antojo de algo dulce.","I've got a craving for something sweet."],
+  ["Vamos por unos antojitos.","Let's go get some street snacks."]
+]),
+
+/* ===== GETTING AROUND ===== */
+C("¿me das un aventón?","\"can you give me a ride?\"","ask",1,"casual",[
+  ["¿Me das un aventón al metro?","Can you give me a ride to the metro?"],
+  ["Te doy aventón si quieres.","I can give you a ride if you want."]
+]),
+C("¿por dónde queda?","\"whereabouts is it?\"","ask",1,"neutral",[
+  ["¿Por dónde queda el museo?","Whereabouts is the museum?"],
+  ["¿Por dónde queda el baño?","Where's the bathroom?"]
+]),
+C("está a la vuelta","\"it's right around the corner\"","survive",1,"neutral",[
+  ["Está a la vuelta, a dos cuadras.","It's around the corner, two blocks."],
+  ["¿Está lejos? — No, a la vuelta.","Is it far? — No, right around the corner."]
+]),
+C("derechito","\"straight ahead\" — you'll hear this from everyone you ask","survive",1,"casual",[
+  ["Sigue derechito y das vuelta a la derecha.","Keep going straight and turn right."],
+  ["Derechito hasta el semáforo.","Straight ahead until the traffic light."]
+]),
+C("aquí está bien","\"here is fine\" — how you stop a taxi or a ride","survive",1,"neutral",[
+  ["Aquí está bien, gracias.","Here is fine, thanks."],
+  ["Déjeme aquí, aquí está bien.","Drop me here, this is good."]
+]),
+C("¿cuánto hace de aquí a...?","\"how long does it take from here to...?\"","ask",2,"neutral",[
+  ["¿Cuánto hace de aquí al centro?","How long does it take from here downtown?"],
+  ["¿Cuánto hace en coche?","How long does it take by car?"]
+]),
+
+/* ===== PHONE, TEXT, PLANS ===== */
+C("te marco","\"I'll call you\" — marcar, not llamar, in Mexico","social",1,"casual",[
+  ["Saliendo del trabajo te marco.","I'll call you when I get off work."],
+  ["Márcame cuando llegues.","Call me when you get there."]
+]),
+C("ahí te caigo","\"I'll drop by\" — caer = to show up","social",2,"casual",[
+  ["Ahí te caigo como a las ocho.","I'll swing by around eight."],
+  ["¿Te caigo al rato?","Can I drop by later?"]
+]),
+C("mándame ubicación","\"send me your location\" — modern essential","social",1,"casual",[
+  ["Mándame ubicación y ahí te veo.","Send me the location and I'll meet you there."],
+  ["¿Me mandas ubicación?","Can you send me the location?"]
+]),
+C("voy en camino","\"I'm on my way\"","social",1,"neutral",[
+  ["Ya voy en camino, no tardo.","I'm on my way, I won't be long."],
+  ["¿Ya vienes? — Sí, voy en camino.","Are you coming? — Yes, on my way."]
+]),
+C("quedamos en","\"we agreed on\" — for setting plans","social",2,"neutral",[
+  ["Quedamos en vernos a las seis.","We agreed to meet at six."],
+  ["¿En qué quedamos?","So what did we decide?"]
+]),
+C("¿cómo quedamos?","\"so what's the plan?\" — confirms an arrangement","ask",2,"casual",[
+  ["Bueno, ¿cómo quedamos entonces?","Alright, so what's the plan then?"],
+  ["¿Cómo quedamos, paso por ti?","So what's the deal, should I pick you up?"]
+]),
+
+/* ===== WORK & EFFORT ===== */
+C("échale ganas","\"give it your all\" — the national motivational phrase","social",1,"casual",[
+  ["Échale ganas al examen.","Give it your all on the exam."],
+  ["Échale ganas, tú puedes.","Keep at it, you've got this."]
+]),
+C("ando en chinga","\"I'm slammed\" — mildly crude but everywhere","slang",2,"vulgar",[
+  ["No puedo hoy, ando en chinga.","I can't today, I'm slammed."],
+  ["Toda la semana anduve en chinga.","I was swamped all week."]
+]),
+C("me tocó","\"I got stuck with\" / \"it was my turn\"","verb",1,"casual",[
+  ["Me tocó trabajar el domingo.","I got stuck working Sunday."],
+  ["¿A quién le toca pagar?","Whose turn is it to pay?"]
+]),
+C("sacar el trabajo","\"to get the work done\"","verb",2,"neutral",[
+  ["Hay que sacar el trabajo hoy.","We need to get the work done today."],
+  ["Ya sacamos todo.","We got it all done."]
+]),
+C("está pesado","\"it's heavy going\" — for workloads and situations","slang",2,"casual",[
+  ["Está pesado el trabajo estos días.","Work is heavy going these days."],
+  ["Estuvo pesada la junta.","The meeting was rough."]
+]),
+
+/* ===== FEELINGS & PEOPLE ===== */
+C("me cae bien","\"I like him/her\" — for people, never romantic","verb",1,"casual",[
+  ["Tu hermana me cae muy bien.","I really like your sister."],
+  ["Me cae bien, es buena onda.","I like him, he's cool."]
+]),
+C("me cae gordo","\"I can't stand him\" — the opposite of me cae bien","verb",2,"casual",[
+  ["Ese güey me cae gordo.","I can't stand that guy."],
+  ["Me cae gordo cómo habla.","The way he talks bugs me."]
+]),
+C("buena onda","\"good vibes\" / \"a good guy\" — highest Mexican compliment","slang",1,"casual",[
+  ["Tu jefe es bien buena onda.","Your boss is really cool."],
+  ["Qué buena onda que viniste.","So cool that you came."]
+]),
+C("ando crudo","\"I'm hungover\"","slang",2,"casual",[
+  ["Ando bien crudo hoy.","I'm really hungover today."],
+  ["Amanecí crudísimo.","I woke up super hungover."]
+]),
+C("me dio cosa","\"it gave me a weird feeling\" — unease you can't name","slang",2,"casual",[
+  ["Me dio cosa dejarlo solo.","It felt wrong leaving him alone."],
+  ["Me da cosa pedirle dinero.","I feel weird asking him for money."]
+]),
+C("ando de malas","\"I'm in a bad mood\"","slang",2,"casual",[
+  ["Perdón, ando de malas hoy.","Sorry, I'm in a bad mood today."],
+  ["Está de malas, mejor ni le hables.","He's in a mood, better not talk to him."]
+]),
+C("estoy hasta el gorro","\"I'm fed up\"","slang",2,"casual",[
+  ["Estoy hasta el gorro del tráfico.","I'm fed up with the traffic."],
+  ["Ya estoy hasta el gorro de lo mismo.","I'm sick of the same thing."]
+]),
+C("me vale","\"I don't care\" — blunt, can be rude","slang",2,"casual",[
+  ["La verdad me vale lo que digan.","Honestly I don't care what they say."],
+  ["Me vale, yo sí voy.","Whatever, I'm going anyway."]
+]),
+
+/* ===== SOFTENERS (more) ===== */
+C("no es por nada pero","\"no offense but\" — warns a critique is coming","soften",2,"casual",[
+  ["No es por nada pero se ve carillo.","No offense but it looks pricey."],
+  ["No es por nada pero ya llevamos una hora.","Not for nothing, but it's been an hour."]
+]),
+C("sin ofender","\"no offense\"","soften",2,"neutral",[
+  ["Sin ofender, pero no me convence.","No offense, but I'm not sold."],
+  ["Sin ofender a nadie.","No offense to anyone."]
+]),
+C("si gustas","\"if you'd like\" — polite offer","soften",2,"neutral",[
+  ["Si gustas te acompaño.","If you'd like, I'll go with you."],
+  ["Si gustas lo vemos mañana.","If you prefer, we can look at it tomorrow."]
+]),
+C("¿te molesta si...?","\"do you mind if...?\"","soften",1,"neutral",[
+  ["¿Te molesta si abro la ventana?","Do you mind if I open the window?"],
+  ["¿Te molesta si llego un poco tarde?","Do you mind if I'm a bit late?"]
+]),
+C("es que fíjate","\"the thing is, look\" — stacked softener before bad news","soften",2,"casual",[
+  ["Es que fíjate que ya tenía planes.","The thing is, see, I already had plans."],
+  ["Es que fíjate, no me alcanza el tiempo.","The thing is, I don't have enough time."]
+]),
+C("con todo respeto","\"with all due respect\"","soften",2,"neutral",[
+  ["Con todo respeto, creo que se equivoca.","With all due respect, I think you're wrong."],
+  ["Con todo respeto, no comparto la idea.","Respectfully, I don't share that view."]
+]),
+
+/* ===== SLANG (deeper cut) ===== */
+C("al chile","\"for real\" / \"straight up\" — blunter than la neta","slang",2,"vulgar",[
+  ["Al chile, no me gustó.","Straight up, I didn't like it."],
+  ["¿Al chile? No sabía.","For real? I had no idea."]
+]),
+C("está de pelos","\"it's awesome\"","slang",2,"casual",[
+  ["Está de pelos tu depa.","Your apartment is awesome."],
+  ["Estuvo de pelos el concierto.","The concert was killer."]
+]),
+C("qué rollo","\"what's up\" or \"what a hassle\" — context decides","slang",2,"casual",[
+  ["¿Qué rollo con el permiso?","What's the deal with the permit?"],
+  ["¡Qué rollo, carnal!","What's up, bro!"]
+]),
+C("carnal","\"bro\" — warmer than güey","slang",2,"casual",[
+  ["¿Qué onda, carnal?","What's up, bro?"],
+  ["Es mi carnal, lo conozco de años.","He's my bro, I've known him for years."]
+],"\"of the same flesh\""),
+C("caerle el veinte","\"for it to finally click\"","slang",3,"casual",[
+  ["Hasta ahorita me cayó el veinte.","It only just clicked for me now."],
+  ["Ya le cayó el veinte de lo que pasó.","It finally dawned on him what happened."],
+],"\"the twenty-cent coin dropping\""),
+C("hacerse bolas","\"to get all mixed up\"","slang",2,"casual",[
+  ["Me hice bolas con los horarios.","I got all mixed up with the schedules."],
+  ["No te hagas bolas, es sencillo.","Don't overcomplicate it, it's simple."]
+]),
+C("sacar de onda","\"to throw someone off\"","slang",2,"casual",[
+  ["Me sacó de onda su respuesta.","His answer threw me off."],
+  ["No te saques de onda, es broma.","Don't be weirded out, it's a joke."]
+]),
+C("dar el avión","\"to humor someone\" — nodding along without meaning it","slang",3,"casual",[
+  ["Creo que me está dando el avión.","I think he's just humoring me."],
+  ["No me des el avión, dime la neta.","Don't just nod along, tell me the truth."]
+]),
+C("ponerse trucha","\"to get sharp\" / \"stay alert\"","slang",3,"casual",[
+  ["Pónte trucha con tus cosas.","Keep an eye on your stuff."],
+  ["Hay que ponerse truchas ahí.","You've got to stay sharp there."]
+]),
+C("echar aguas","\"to keep watch\" — the verb form of ¡aguas!","slang",3,"casual",[
+  ["Tú echa aguas mientras.","You keep watch in the meantime."],
+  ["Échame aguas, no tardo.","Keep an eye out for me, I won't be long."]
+]),
+C("fresa","\"preppy\" / \"posh\" — mildly mocking","slang",2,"casual",[
+  ["Habla bien fresa.","He talks really posh."],
+  ["Es un lugar medio fresa.","It's a kind of preppy place."]
+],"\"strawberry\""),
+C("varos","\"bucks\" — informal pesos","slang",2,"casual",[
+  ["Me costó doscientos varos.","It cost me two hundred bucks."],
+  ["¿Traes varo?","You got any cash?"]
+]),
+C("depa","\"apartment\" — short for departamento","slang",1,"casual",[
+  ["Me cambié de depa.","I moved apartments."],
+  ["Su depa está bien chido.","Her apartment is really cool."]
+]),
+C("el chiste","\"the fun part\" / \"the trick\"","slang",2,"casual",[
+  ["Ese es el chiste, que sea rápido.","That's the whole point, that it's fast."],
+  ["Le agarras el chiste rápido.","You get the hang of it fast."]
+]),
+
+/* ===== VERB COMBOS (more) ===== */
+C("ya quedó","\"it's done\" / \"we're set\" — quedar is everywhere in Mexico","verb",1,"casual",[
+  ["Ya quedó el reporte.","The report is done."],
+  ["¿Ya quedó? — Ya quedó.","Is it done? — It's done."]
+]),
+C("me queda","\"it fits me\" / \"it works for me\"","verb",1,"neutral",[
+  ["No me queda la camisa.","The shirt doesn't fit me."],
+  ["Me queda cerca del trabajo.","It's close to my work."]
+]),
+C("dejar de + verb","\"to stop ___ing\"","verb",1,"neutral",[
+  ["Ya deja de preocuparte.","Stop worrying already."],
+  ["Dejé de fumar hace un año.","I quit smoking a year ago."]
+]),
+C("volver a + verb","\"to ___ again\" — replaces saying \"again\"","verb",2,"neutral",[
+  ["Vuelve a explicarme, porfa.","Explain it to me again, please."],
+  ["No lo vuelvo a hacer.","I won't do it again."]
+]),
+C("estar por + verb","\"to be about to ___\"","verb",2,"neutral",[
+  ["Estoy por salir de la oficina.","I'm about to leave the office."],
+  ["Estábamos por irnos.","We were just about to leave."]
+]),
+C("andar + verb-ando","\"to be going around ___ing\" — ongoing, scattered action","verb",2,"casual",[
+  ["Ando buscando departamento.","I'm out looking for an apartment."],
+  ["Anda diciendo que renuncia.","He's going around saying he's quitting."]
+]),
+C("me da igual","\"I don't mind either way\" — softer than me vale","verb",1,"neutral",[
+  ["¿Cine o cena? — Me da igual.","Movie or dinner? — Either is fine."],
+  ["Me da igual la hora.","The time doesn't matter to me."]
+]),
+C("se me olvidó","\"I forgot\" — note the blame-free Mexican construction","verb",1,"neutral",[
+  ["Se me olvidó por completo, perdón.","I completely forgot, sorry."],
+  ["Se me olvidaron las llaves.","I forgot the keys."]
+],"\"it forgot itself to me\""),
+C("se me hizo tarde","\"I ran late\" — again, blame-free","verb",1,"casual",[
+  ["Perdón, se me hizo tarde.","Sorry, I ran late."],
+  ["Se nos hizo tarde por el tráfico.","We ran late because of traffic."]
+]),
+C("no me di cuenta","\"I didn't notice / realize\"","verb",1,"neutral",[
+  ["No me di cuenta que ya era tan tarde.","I didn't realize it was so late."],
+  ["Perdón, no me di cuenta.","Sorry, I didn't notice."]
+]),
+C("vale la pena","\"it's worth it\"","verb",1,"neutral",[
+  ["Sí vale la pena ir.","It really is worth going."],
+  ["No vale la pena discutir.","It's not worth arguing about."]
+]),
+C("dar chance","\"to give a chance / a moment\"","verb",2,"casual",[
+  ["Dame chance de pensarlo.","Give me a chance to think about it."],
+  ["¿Me das chance de pasar?","Can you let me through?"]
+]),
+C("hacer falta","\"to be missing / needed\"","verb",2,"neutral",[
+  ["Hace falta sal.","It needs salt."],
+  ["Me haces falta.","I miss you."]
+]),
+C("tener ganas de","\"to feel like ___ing\"","verb",1,"neutral",[
+  ["No tengo ganas de salir.","I don't feel like going out."],
+  ["¿Tienes ganas de un café?","Do you feel like a coffee?"]
+]),
+
+/* ===== SMALL TALK ===== */
+C("¿qué me cuentas?","\"what's new with you?\" — invites a real answer","ask",1,"casual",[
+  ["¿Qué me cuentas? ¿Cómo va el trabajo?","What's new? How's work going?"],
+  ["Cuéntame, ¿qué ha pasado?","Tell me, what's been happening?"]
+]),
+C("¿cómo va todo?","\"how's everything going?\"","ask",1,"neutral",[
+  ["¿Cómo va todo por tu casa?","How's everything at home?"],
+  ["¿Cómo va todo con la mudanza?","How's the move going?"]
+]),
+C("hace un calorón","\"it's blazing hot\" — -ón makes anything bigger","social",2,"casual",[
+  ["Hace un calorón, ¿no?","It's boiling, isn't it?"],
+  ["Hacía un friíto en la mañana.","It was a bit chilly in the morning."]
+]),
+C("cuánto tiempo","\"long time no see\"","social",1,"neutral",[
+  ["¡Cuánto tiempo! ¿Cómo has estado?","Long time! How have you been?"],
+  ["Cuánto tiempo sin verte.","It's been ages."]
+]),
+C("aquí nomás","\"just hanging in there\" — the standard reply to ¿cómo estás?","social",1,"casual",[
+  ["¿Qué onda? — Aquí nomás, chambeando.","What's up? — Just here, working."],
+  ["Aquí nomás, pasándola.","Just getting by."]
+]),
+C("ahí la llevo","\"I'm getting by\" — modest, honest answer","social",1,"casual",[
+  ["¿Cómo vas? — Ahí la llevo.","How's it going? — I'm getting by."],
+  ["Ahí la llevo, poco a poco.","Getting there, little by little."]
+]),
+C("qué milagro","\"what a surprise to see you\" — warm, slightly teasing","social",2,"casual",[
+  ["¡Qué milagro! Ya ni te apareces.","What a surprise! You never show up anymore."],
+  ["Qué milagro que contestaste.","Miracle, you actually answered."]
+]),
+C("sí, ahí va","\"yeah, it's coming along\"","social",2,"casual",[
+  ["¿Cómo va el proyecto? — Ahí va.","How's the project? — It's coming along."],
+  ["Ahí va, poco a poco.","It's getting there, bit by bit."]
 ]),
 ];
 
@@ -810,7 +1304,10 @@ const LS = {
 };
 
 const DAY = 864e5;
-const todayKey = () => new Date().toISOString().slice(0,10);
+/* Local-date keys, not UTC: a 7pm session in Mexico is still today. */
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const todayKey = () => dayKey(new Date());
+const yesterdayKey = () => { const d = new Date(); d.setDate(d.getDate()-1); return dayKey(d); };
 
 let srs      = LS.get("srs", {});          // id -> {ease,interval,due,reps,lapses,status}
 let streak   = LS.get("streak", {count:0, last:null, days:{}});
@@ -883,8 +1380,7 @@ function markStudied(){
   const t = todayKey();
   streak.days[t] = (streak.days[t] || 0) + 1;
   if(streak.last !== t){
-    const y = new Date(Date.now() - DAY).toISOString().slice(0,10);
-    streak.count = streak.last === y ? streak.count + 1 : 1;
+    streak.count = streak.last === yesterdayKey() ? streak.count + 1 : 1;
     streak.last = t;
   }
   saveStreak();
@@ -893,8 +1389,7 @@ function markStudied(){
 /* current streak, recomputed so it decays when you skip a day */
 function liveStreak(){
   if(!streak.last) return 0;
-  const t = todayKey(), y = new Date(Date.now()-DAY).toISOString().slice(0,10);
-  return (streak.last === t || streak.last === y) ? streak.count : 0;
+  return (streak.last === todayKey() || streak.last === yesterdayKey()) ? streak.count : 0;
 }
 
 /* ---------- 4. SPEECH ---------- */
@@ -1205,13 +1700,15 @@ function renderStats(){
   });
 
   const cells = [];
-  const start = new Date(); start.setHours(0,0,0,0);
+  const end = new Date(); end.setHours(0,0,0,0);
+  const start = new Date(end);
   start.setDate(start.getDate() - 90);
-  for(let i=0; i<91; i++){
-    const d = new Date(start.getTime() + i*DAY).toISOString().slice(0,10);
-    const n = streak.days[d] || 0;
+  start.setDate(start.getDate() - start.getDay());   // back up to Sunday so columns are weeks
+  for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+    const key = dayKey(d);
+    const n = streak.days[key] || 0;
     const lvl = n === 0 ? "" : n < 5 ? "l1" : n < 15 ? "l2" : n < 30 ? "l3" : "l4";
-    cells.push(`<i class="${lvl}" title="${d}: ${n} reviews"></i>`);
+    cells.push(`<i class="${lvl}" title="${key}: ${n} reviews"></i>`);
   }
 
   view.innerHTML = header("Progress", "Where you're at") + `
