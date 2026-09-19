@@ -272,9 +272,16 @@ Day keys use local date parts rather than `toISOString()` for the same reason. E
 
 ### Typography
 
-UI chrome uses system fonts — native feel, zero load delay. **Spanish content uses [Fraunces](https://fonts.google.com/specimen/Fraunces)**, so the language you're learning never reads as app furniture: a serif sentence is the target language, sans is the app talking. It also sets tighter than the system bold, so sentences wrap less.
+Two loaded faces, so the app looks the same on every device rather than inheriting whatever each OS supplies:
 
-~67KB for the Latin subset, cached after first load and `font-display: swap`, so nothing blocks. With no network it falls back to Iowan/Palatino/Georgia, which keeps the same distinction.
+| | Face | Used for |
+|---|---|---|
+| **UI** | [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) | everything the app says |
+| **Spanish** | [Fraunces](https://fonts.google.com/specimen/Fraunces) | every chunk, sentence and dialogue line |
+
+The split is the point: **a serif sentence is the language you're learning, sans is the app talking.** Fraunces also sets tighter than a system bold, so Spanish sentences wrap less.
+
+~92KB for both Latin subsets, cached after first load, requested in a single stylesheet with `preconnect` and `font-display: swap` so nothing blocks rendering. System stacks remain the fallback (`--ui` and `--es` custom properties), and they keep the same sans/serif distinction if the fonts never arrive.
 
 ---
 
