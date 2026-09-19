@@ -160,6 +160,21 @@ input{font:inherit}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--surface-3)}
 .dot.on{background:var(--teal)}
 
+/* word-by-word scoring marks */
+.mk{transition:color .2s}
+.mk.hit{color:var(--green)}
+.mk.close{color:var(--accent)}
+.mk.miss{color:var(--red);text-decoration:underline;text-decoration-style:wavy;text-underline-offset:5px}
+.score{font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.score span{font-size:22px;font-weight:600;margin-left:2px}
+.mic-live{position:relative;width:58px;height:58px;margin:0 auto;display:grid;place-items:center;font-size:25px}
+.mic-live .ring{
+  position:absolute;inset:0;border-radius:50%;
+  background:color-mix(in srgb,var(--red) 30%,transparent);
+  animation:ping 1.3s cubic-bezier(0,0,.2,1) infinite;
+}
+@keyframes ping{0%{transform:scale(.8);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+
 /* ---------- stats ---------- */
 .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px}
 .heat i{aspect-ratio:1/1;border-radius:2.5px;background:var(--surface-2)}
@@ -1311,11 +1326,14 @@ const yesterdayKey = () => { const d = new Date(); d.setDate(d.getDate()-1); ret
 
 let srs      = LS.get("srs", {});          // id -> {ease,interval,due,reps,lapses,status}
 let streak   = LS.get("streak", {count:0, last:null, days:{}});
-let totals   = LS.get("totals", {reviews:0, shadowReps:0});
-let settings = LS.get("settings", {rate:0.92, voice:null});
+let scores   = LS.get("scores", {});       // id -> best pronunciation score 0-100
+/* Merged over defaults so decks saved by an earlier version pick up new keys. */
+let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0}, LS.get("totals", {}));
+let settings = Object.assign({rate:0.92, voice:null}, LS.get("settings", {}));
 
 const saveSrs      = () => LS.set("srs", srs);
 const saveStreak   = () => LS.set("streak", streak);
+const saveScores   = () => LS.set("scores", scores);
 const saveTotals   = () => LS.set("totals", totals);
 const saveSettings = () => LS.set("settings", settings);
 
@@ -1392,35 +1410,214 @@ function liveStreak(){
   return (streak.last === todayKey() || streak.last === yesterdayKey()) ? streak.count : 0;
 }
 
-/* ---------- 4. SPEECH ---------- */
+/* ---------- 4. SPEECH OUT ---------- */
+const SS = window.speechSynthesis || null;
 let voices = [];
-function loadVoices(){ voices = (window.speechSynthesis && speechSynthesis.getVoices()) || []; }
-if(window.speechSynthesis){
-  loadVoices();
-  speechSynthesis.onvoiceschanged = loadVoices;
+let audioNote = SS ? null : "This browser has no speech synthesis.";
+
+function refreshVoices(){
+  if(!SS) return;
+  const v = SS.getVoices();
+  if(v && v.length) voices = v;
 }
+if(SS){
+  refreshVoices();
+  SS.onvoiceschanged = refreshVoices;
+  /* Chrome populates getVoices() asynchronously and Safari may never fire
+     voiceschanged, so poll briefly until the list shows up. */
+  let tries = 0;
+  const poll = setInterval(() => {
+    refreshVoices();
+    if(voices.length || ++tries > 25) clearInterval(poll);
+  }, 200);
+}
+
 function esVoices(){ return voices.filter(v => /^es/i.test(v.lang)); }
 function pickVoice(){
   const list = esVoices();
-  if(!list.length) return null;
   if(settings.voice){
     const saved = list.find(v => v.voiceURI === settings.voice);
     if(saved) return saved;
   }
   return list.find(v => /es[-_]MX/i.test(v.lang))
       || list.find(v => /es[-_]US/i.test(v.lang))
-      || list.find(v => /es[-_](419|CO|AR)/i.test(v.lang))
-      || list[0];
+      || list.find(v => /es[-_](419|CO|AR|CL|PE)/i.test(v.lang))
+      || list[0]
+      || null;
 }
+
+function audioProblem(){
+  if(!SS) return "This browser has no speech synthesis.";
+  if(!voices.length) return "No speech voices are available on this device.";
+  if(!esVoices().length) return "No Spanish voice installed — add one in your system settings.";
+  return null;
+}
+
 function speak(text, rate){
-  if(!window.speechSynthesis) return toast("Speech not supported here");
-  speechSynthesis.cancel();
+  if(!SS){ toast(audioNote); return; }
+  refreshVoices();
+  const problem = audioProblem();
+  if(problem){ audioNote = problem; toast(problem); return; }
+
+  /* Only cancel when something is actually queued: an unconditional
+     cancel() immediately before speak() drops the utterance in Chrome. */
+  if(SS.speaking || SS.pending) SS.cancel();
+  if(SS.paused) SS.resume();
+
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = "es-MX";
-  u.rate = rate || settings.rate;
   const v = pickVoice();
-  if(v) u.voice = v;
-  speechSynthesis.speak(u);
+  u.voice = v;
+  u.lang  = v.lang || "es-MX";
+  u.rate  = rate || settings.rate;
+  u.onerror = e => {
+    if(e.error === "interrupted" || e.error === "canceled") return;
+    audioNote = "Audio failed (" + e.error + ")";
+    toast(audioNote);
+  };
+  u.onstart = () => { audioNote = null; };
+  SS.speak(u);
+  /* Chrome occasionally parks the queue in a paused state. */
+  setTimeout(() => { if(SS.paused) SS.resume(); }, 150);
+}
+
+/* ---------- 4b. SPEECH IN (pronunciation scoring) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+function recProblem(){
+  if(!SR) return "This browser can't listen — try Chrome, Edge or Safari.";
+  if(!window.isSecureContext) return "Scoring needs https:// or localhost.";
+  return null;
+}
+
+const REC_ERRORS = {
+  "not-allowed":        "Microphone blocked — allow mic access and try again.",
+  "service-not-allowed":"The browser blocked the microphone.",
+  "no-speech":          "Didn't catch anything — try again.",
+  "audio-capture":      "No microphone found.",
+  "network":            "Scoring needs an internet connection.",
+  "aborted":            null,
+};
+
+let rec = null;
+function startListening(handlers){
+  const problem = recProblem();
+  if(problem) return handlers.fail(problem);
+  stopListening();
+  try{ rec = new SR(); }
+  catch(e){ return handlers.fail("Couldn't start the microphone."); }
+
+  rec.lang = "es-MX";
+  rec.interimResults = true;
+  rec.continuous = false;
+  rec.maxAlternatives = 1;
+
+  let finalText = "", failed = false;
+  rec.onresult = e => {
+    let interim = "";
+    for(let i = e.resultIndex; i < e.results.length; i++){
+      const r = e.results[i];
+      if(r.isFinal) finalText += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    handlers.partial((finalText + " " + interim).trim());
+  };
+  rec.onerror = e => {
+    const msg = e.error in REC_ERRORS ? REC_ERRORS[e.error] : "Listening failed (" + e.error + ")";
+    failed = true;
+    if(msg) handlers.fail(msg);
+    else handlers.done(null);
+  };
+  rec.onend = () => { rec = null; if(!failed) handlers.done(finalText.trim() || null); };
+  rec.start();
+}
+function stopListening(){
+  if(!rec) return;
+  const r = rec; rec = null;
+  r.onresult = r.onerror = r.onend = null;
+  try{ r.abort(); }catch(e){}
+}
+
+/* ---------- 4c. SCORING ---------- */
+const normWord = w => w.toLowerCase()
+  .replace(/ñ/g, "\u0001")                      // shield ñ from accent stripping
+  .normalize("NFD").replace(/[̀-ͯ]/g, "")
+  .replace(/\u0001/g, "ñ")
+  .replace(/[^a-z0-9ñ]/g, "");
+
+/* Collapse a word to how it actually SOUNDS in Mexican Spanish, so the score
+   reflects pronunciation rather than whichever spelling the recognizer picked.
+   Seseo (casa/caza), yeísmo (llama/yama), silent h and b/v are all one sound. */
+function phonetic(w){
+  return normWord(w)
+    .replace(/ll/g, "y")
+    .replace(/rr/g, "R")          // kept distinct from r: pero vs perro
+    .replace(/qu/g, "k")
+    .replace(/gu([ei])/g, "g$1")
+    .replace(/([cgz])([ei])/g, (m,c,v) => (c === "g" ? "j" : "s") + v)
+    .replace(/c/g, "k")
+    .replace(/z/g, "s")
+    .replace(/v/g, "b")
+    .replace(/h/g, "")
+    .replace(/(.)\1+/g, "$1");
+}
+
+function wordsOf(s){
+  return String(s || "").split(/\s+/)
+    .map(raw => ({raw, norm: normWord(raw), ph: phonetic(raw)}))
+    .filter(w => w.norm);
+}
+
+function editDistance(a, b){
+  const m = a.length, n = b.length;
+  let prev = Array.from({length:n+1}, (_,j) => j), cur = new Array(n+1);
+  for(let i=1; i<=m; i++){
+    cur[0] = i;
+    for(let j=1; j<=n; j++){
+      cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1] ? 0 : 1));
+    }
+    [prev, cur] = [cur, prev];
+  }
+  return prev[n];
+}
+function wordSim(a, b){
+  if(a === b) return 1;
+  const L = Math.max(a.length, b.length);
+  return L ? 1 - editDistance(a,b)/L : 0;
+}
+
+/* Needleman-Wunsch alignment of what they said against the target, so a
+   dropped or added word shifts the rest instead of failing everything after it. */
+function scoreAttempt(target, said){
+  const T = wordsOf(target), S = wordsOf(said);
+  if(!T.length) return {score:0, marks:[]};
+  const m = T.length, n = S.length;
+  const dp = Array.from({length:m+1}, () => new Array(n+1).fill(0));
+  for(let i=1;i<=m;i++) dp[i][0] = -i;
+  for(let j=1;j<=n;j++) dp[0][j] = -j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const sim = wordSim(T[i-1].ph, S[j-1].ph);
+      const diag = dp[i-1][j-1] + (sim === 1 ? 2 : sim >= 0.7 ? 1 : -1);
+      dp[i][j] = Math.max(diag, dp[i-1][j] - 1, dp[i][j-1] - 1);
+    }
+  }
+  const marks = [];
+  let i = m, j = n;
+  while(i > 0){
+    if(j > 0){
+      const sim = wordSim(T[i-1].ph, S[j-1].ph);
+      const diag = dp[i-1][j-1] + (sim === 1 ? 2 : sim >= 0.7 ? 1 : -1);
+      if(dp[i][j] === diag){
+        marks.push({w:T[i-1].raw, hit: sim === 1 ? "hit" : sim >= 0.7 ? "close" : "miss"});
+        i--; j--; continue;
+      }
+      if(dp[i][j] === dp[i][j-1] - 1){ j--; continue; }
+    }
+    marks.push({w:T[i-1].raw, hit:"miss"});
+    i--;
+  }
+  marks.reverse();
+  const pts = marks.reduce((a,x) => a + (x.hit === "hit" ? 1 : x.hit === "close" ? 0.5 : 0), 0);
+  return {score: Math.round(pts / T.length * 100), marks};
 }
 
 /* ---------- 5. HELPERS ---------- */
@@ -1577,6 +1774,7 @@ function startSession(){
 }
 function nextCard(){
   session.shown = false;
+  session.spoke = false;
   const id = session.queue.shift();
   if(!id){ session.card = null; return; }
   const c = byId(id);
@@ -1629,7 +1827,7 @@ function renderReview(){
       ${shown ? gradesHtml(srs[c.id]) : `<button class="btn primary" data-reveal="1">Show answer</button>`}
     </div>`;
 
-  if(shown) speak(ex.es);
+  if(shown && !session.spoke){ session.spoke = true; speak(ex.es); }
 }
 
 function gradesHtml(st){
@@ -1649,6 +1847,10 @@ function relTime(ts){
 }
 
 /* ----- Shadow ----- */
+let listening = false, heard = "", result = null, recNote = null, shadowSpoken = null;
+
+function resetAttempt(){ listening = false; heard = ""; result = null; recNote = null; }
+
 function renderShadow(){
   const deck = Object.keys(srs);
   if(!deck.length){
@@ -1663,10 +1865,16 @@ function renderShadow(){
     });
   }
   const item = shadowQ[0];
+  const best = scores[item.c.id];
+  const blocked = recProblem();
 
-  view.innerHTML = header("Shadow", `${shadowQ.length} left · ${totals.shadowReps} total reps`) + `
+  const sentence = result
+    ? result.marks.map(m => `<span class="mk ${m.hit}">${esc(m.w)}</span>`).join(" ")
+    : esc(item.ex.es);
+
+  view.innerHTML = header("Shadow", `${shadowQ.length} left · ${totals.shadowReps} said out loud`) + `
     <div class="shadow-big">
-      <div class="es">${esc(item.ex.es)}</div>
+      <div class="es">${sentence}</div>
       <div class="en">${esc(item.ex.en)}</div>
       <button class="spk" style="width:58px;height:58px;font-size:23px" data-speak="${esc(item.ex.es)}">\u{1F50A}</button>
       <div class="reps">
@@ -1674,16 +1882,73 @@ function renderShadow(){
         <span>listen · repeat · repeat</span>
       </div>
     </div>
+
+    ${result ? scoreCard(result) : ""}
+    ${listening ? `
+      <div class="card center" style="margin-top:12px">
+        <div class="mic-live"><span class="ring"></span>\u{1F3A4}</div>
+        <div class="muted tiny" style="margin-top:8px">${heard ? esc(heard) : "Listening… say it now"}</div>
+      </div>` : ""}
+    ${recNote ? `<div class="card center tiny" style="margin-top:12px;color:var(--accent)">${esc(recNote)}</div>` : ""}
+
     <div class="card" style="margin-top:12px">
       <div class="center"><b style="font-size:19px">${esc(item.c.chunk)}</b>
-      <div class="muted tiny" style="margin-top:4px">${esc(item.c.meaning)}</div></div>
+      <div class="muted tiny" style="margin-top:4px">${esc(item.c.meaning)}</div>
+      ${best != null ? `<div class="tiny" style="margin-top:6px;color:${scoreColor(best)}">Best score ${best}%</div>` : ""}
+      </div>
     </div>
+
     <div class="stack" style="margin-top:16px">
-      <button class="btn primary" data-shadow="rep">I said it out loud</button>
+      ${blocked ? `<div class="tiny muted center">${esc(blocked)}</div>`
+        : listening
+          ? `<button class="btn" data-shadow="stop">Stop listening</button>`
+          : `<button class="btn primary" data-shadow="listen">\u{1F3A4} ${result ? "Try again" : "Score my pronunciation"}</button>`}
+      <button class="btn${blocked ? " primary" : ""}" data-shadow="rep">I said it out loud</button>
       <button class="btn ghost" data-shadow="next">Next phrase</button>
     </div>`;
 
-  if(item.reps === 0) speak(item.ex.es);
+  /* Only auto-play when the phrase first appears, never on interim re-renders. */
+  if(item.reps === 0 && !listening && !result && shadowSpoken !== item.c.id){
+    shadowSpoken = item.c.id;
+    speak(item.ex.es);
+  }
+}
+
+const scoreColor = s => s >= 85 ? "var(--green)" : s >= 60 ? "var(--accent)" : "var(--red)";
+function scoreCard(r){
+  const verdict = r.score >= 85 ? "Nailed it" : r.score >= 60 ? "Close — keep going" : "Try that one again";
+  return `
+    <div class="card center" style="margin-top:12px">
+      <div class="score" style="color:${scoreColor(r.score)}">${r.score}<span>%</span></div>
+      <div style="font-weight:650;margin-top:2px">${verdict}</div>
+      <div class="muted tiny" style="margin-top:8px">You said: “${esc(r.said)}”</div>
+    </div>`;
+}
+
+function beginListening(){
+  const item = shadowQ[0];
+  resetAttempt();
+  listening = true;
+  render();
+  startListening({
+    partial(text){ heard = text; if(listening) render(); },
+    fail(msg){ listening = false; recNote = msg; render(); },
+    done(text){
+      listening = false;
+      if(!text){ recNote = "Didn't catch anything — try again."; return render(); }
+      const r = scoreAttempt(item.ex.es, text);
+      r.said = text;
+      result = r;
+      totals.attempts++;
+      if(scores[item.c.id] == null || r.score > scores[item.c.id]){
+        scores[item.c.id] = r.score;
+        saveScores();
+      }
+      saveTotals();
+      markStudied();
+      render();
+    }
+  });
 }
 
 /* ----- Stats ----- */
@@ -1691,6 +1956,9 @@ function renderStats(){
   const deck = Object.keys(srs);
   const mastered = deck.filter(id => statusOf(id) === "mastered").length;
   const learning = deck.filter(id => statusOf(id) === "learning").length;
+  const scored = Object.values(scores);
+  const avgScore = scored.length ? Math.round(scored.reduce((a,b) => a+b, 0) / scored.length) : 0;
+  const nailed = scored.filter(s => s >= 85).length;
 
   const byCat = {};
   CHUNKS.forEach(c => {
@@ -1722,6 +1990,18 @@ function renderStats(){
       <div class="stat"><b>${totals.reviews}</b><span>Reviews</span></div>
       <div class="stat"><b>${totals.shadowReps}</b><span>Out loud</span></div>
     </div>
+
+    ${scored.length ? `
+    <div class="card" style="margin-top:12px">
+      <p class="sec-label">Pronunciation</p>
+      <div class="row" style="align-items:center;gap:18px">
+        <div class="score" style="font-size:40px;color:${scoreColor(avgScore)}">${avgScore}<span>%</span></div>
+        <div class="tiny muted">
+          average of your best score on ${scored.length} phrase${scored.length===1?"":"s"}<br>
+          ${totals.attempts} attempt${totals.attempts===1?"":"s"} scored · ${nailed} above 85%
+        </div>
+      </div>
+    </div>` : ""}
 
     <div class="card" style="margin-top:12px">
       <p class="sec-label">Last 13 weeks</p>
@@ -1808,7 +2088,9 @@ function renderNav(){
 
 /* ----- settings sheet ----- */
 function openSettings(){
+  refreshVoices();
   const list = esVoices();
+  const problem = audioProblem();
   const wrap = document.createElement("div");
   wrap.innerHTML = `
     <div class="scrim" data-close="1"></div>
@@ -1816,6 +2098,18 @@ function openSettings(){
       <div class="grip"></div>
       <h3 style="margin:0 0 4px;font-size:19px">Settings</h3>
       <p class="muted tiny" style="margin:0 0 12px">Audio uses your device's built-in Spanish voices.</p>
+      ${problem ? `
+        <div class="card tiny" style="background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red);margin-bottom:12px">
+          <b>${esc(problem)}</b>
+          <div style="margin-top:6px;color:var(--muted)">
+            ${voices.length ? "Install a Spanish voice, then reopen this page."
+              : "Your device reports no speech voices at all."}
+            iOS: Settings › Accessibility › Spoken Content › Voices.
+            macOS: System Settings › Accessibility › Spoken Content › Manage Voices.
+            Android: Settings › Text-to-speech.
+            Windows: Settings › Time &amp; language › Speech.
+          </div>
+        </div>` : ""}
       <div class="field">
         <span>Voice</span>
         <select id="voiceSel">
@@ -1823,6 +2117,12 @@ function openSettings(){
             `<option value="${esc(v.voiceURI)}"${settings.voice===v.voiceURI?" selected":""}>${esc(v.name)} (${esc(v.lang)})</option>`
           ).join("") : `<option value="">No Spanish voice installed</option>`}
         </select>
+      </div>
+      <div class="field">
+        <span>Pronunciation scoring</span>
+        <span class="tiny ${recProblem() ? "muted" : ""}" style="${recProblem() ? "" : "color:var(--green)"}">
+          ${recProblem() ? esc(recProblem()) : "Available"}
+        </span>
       </div>
       <div class="field">
         <span>Speed <b id="rateVal" class="muted tiny">${settings.rate.toFixed(2)}×</b></span>
@@ -1846,9 +2146,11 @@ function openSettings(){
   wrap.querySelector("#testVoice").onclick = () => speak("¿Qué onda, güey? ¿Cómo has estado?");
   wrap.querySelector("#reset").onclick = () => {
     if(!confirm("Erase your deck, streak and all progress? This can't be undone.")) return;
-    srs = {}; streak = {count:0,last:null,days:{}}; totals = {reviews:0,shadowReps:0};
-    saveSrs(); saveStreak(); saveTotals();
-    session = null; shadowQ = null; learnCard = null;
+    srs = {}; streak = {count:0,last:null,days:{}}; scores = {};
+    totals = {reviews:0, shadowReps:0, attempts:0};
+    saveSrs(); saveStreak(); saveScores(); saveTotals();
+    stopListening(); resetAttempt();
+    session = null; shadowQ = null; learnCard = null; shadowSpoken = null;
     close(); go("home"); toast("Progress reset");
   };
 }
@@ -1859,7 +2161,10 @@ document.addEventListener("click", e => {
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
-  if(t.dataset.go){ session = null; go(t.dataset.go); return; }
+  if(t.dataset.go){
+    stopListening(); resetAttempt(); shadowSpoken = null;
+    session = null; go(t.dataset.go); return;
+  }
   if(t.dataset.sheet){ openSettings(); return; }
 
   if(t.dataset.learn){
@@ -1891,12 +2196,16 @@ document.addEventListener("click", e => {
 
   if(t.dataset.shadow){
     const item = shadowQ[0];
-    if(t.dataset.shadow === "rep"){
+    const act = t.dataset.shadow;
+    if(act === "listen"){ beginListening(); return; }
+    if(act === "stop"){ stopListening(); listening = false; render(); return; }
+    if(act === "rep"){
       item.reps++; totals.shadowReps++; saveTotals(); markStudied();
-      if(item.reps >= 3) shadowQ.shift();
-      else speak(item.ex.es);
+      resetAttempt();
+      if(item.reps >= 3){ shadowQ.shift(); shadowSpoken = null; }
+      else { shadowSpoken = item.c.id; speak(item.ex.es); }
     }else{
-      shadowQ.shift();
+      stopListening(); resetAttempt(); shadowQ.shift(); shadowSpoken = null;
     }
     render(); return;
   }
