@@ -2261,6 +2261,33 @@ function previewInterval(st, grade){
 
 const inDeck   = id => !!srs[id];
 const dueCards = () => Object.keys(srs).filter(id => srs[id].due <= Date.now());
+/* Within a tier, deal the categories round-robin instead of in the order the
+   collection happens to be written. Sorting by tier alone is stable, so the
+   authoring order leaked through and the first fifteen chunks were all
+   fillers — and a filler glues other things together, so a deck of nothing but
+   glue says nothing at all. One from each category in turn means you can
+   react, ask, agree and get yourself out of trouble from the first day. */
+const CAT_ORDER = Object.keys(CAT);
+function spreadByCategory(list){
+  const tiers = new Map();
+  for(const c of list){
+    if(!tiers.has(c.tier)) tiers.set(c.tier, new Map());
+    const byCat = tiers.get(c.tier);
+    if(!byCat.has(c.category)) byCat.set(c.category, []);
+    byCat.get(c.category).push(c);
+  }
+  const out = [];
+  for(const tier of [...tiers.keys()].sort((a,b) => a - b)){
+    const byCat = tiers.get(tier);
+    const queues = CAT_ORDER.map(k => byCat.get(k)).filter(Boolean);
+    for(let any = true; any; ){
+      any = false;
+      for(const q of queues) if(q.length){ out.push(q.shift()); any = true; }
+    }
+  }
+  return out;
+}
+
 /* Ordering new chunks. Anything skipped sinks below what you haven't judged.
    With goals set, the two streams are woven two-to-one rather than sorted
    together: a bonus large enough to lift goal words up is also large enough to
@@ -2270,11 +2297,12 @@ const dueCards = () => Object.keys(srs).filter(id => srs[id].due <= Date.now());
 const GOAL_WEAVE = 2;
 function newCards(){
   const pool = CHUNKS.filter(c => !inDeck(c.id));
-  const byTier = (a,b) => (!!skipped[a.id] - !!skipped[b.id]) || (a.tier - b.tier);
-  if(!myGoals.length) return pool.sort(byTier);
+  const order = list => spreadByCategory(list.filter(c => !skipped[c.id]))
+                 .concat(spreadByCategory(list.filter(c => skipped[c.id])));
+  if(!myGoals.length) return order(pool);
 
-  const mine = pool.filter(hasGoal).sort(byTier);
-  const rest = pool.filter(c => !hasGoal(c)).sort(byTier);
+  const mine = order(pool.filter(hasGoal));
+  const rest = order(pool.filter(c => !hasGoal(c)));
   const out = [];
   while(mine.length || rest.length){
     out.push(...rest.splice(0, GOAL_WEAVE), ...mine.splice(0, 1));
