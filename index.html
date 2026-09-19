@@ -149,6 +149,18 @@ input{font:inherit}
 .ex .en{font-size:14px;color:var(--muted);margin-top:3px}
 .sec-label{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin:0 0 4px}
 
+/* how it actually sounds — set in the UI sans, because it's a respelling
+   guide rather than Spanish to be read */
+.sounds{margin-top:15px;padding:11px 14px;border-radius:12px;background:var(--surface-2);text-align:center}
+.sounds .slabel{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.sounds .sval{display:block;margin-top:4px;font-size:16px;font-weight:600;color:var(--teal);font-family:var(--ui)}
+
+/* per-sentence difficulty */
+.lvl{display:inline-flex;align-items:center;gap:3px;margin-top:7px}
+.lvl i{width:13px;height:3px;border-radius:99px;background:var(--surface-3)}
+.lvl i.on{background:var(--muted)}
+.lvl b{font-size:10px;font-weight:600;color:var(--faint);margin-left:5px;text-transform:uppercase;letter-spacing:.06em}
+
 /* ---------- review ---------- */
 .progbar{height:4px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-bottom:18px}
 .progbar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
@@ -549,9 +561,9 @@ C("para nada","\"not at all\" — firm but friendly denial","agree",1,"neutral",
   ["¿Te molestó? — Para nada.","Did it bother you? — Not at all."],
   ["Para nada, no te preocupes.","Not at all, don't worry."]
 ]),
-C("símon","\"yep\" — street-level yes","agree",2,"casual",[
-  ["¿Vas a ir? — Símon.","Are you going? — Yep."],
-  ["Símon, ahí nos vemos.","Yep, see you there."]
+C("simón","\"yep\" — street-level yes","agree",2,"casual",[
+  ["¿Vas a ir? — Simón.","Are you going? — Yep."],
+  ["Simón, ahí nos vemos.","Yep, see you there."]
 ]),
 C("nel","\"nope\" — street-level no","agree",2,"casual",[
   ["¿Quieres? — Nel, gracias.","Want some? — Nope, thanks."],
@@ -1403,6 +1415,224 @@ C("sí, ahí va","\"yeah, it's coming along\"","social",2,"casual",[
 ]),
 ];
 
+/* ---------- 1c. HOW IT ACTUALLY SOUNDS ----------
+   The gap between spelling and speech is what makes fast Mexican Spanish
+   unintelligible to readers. Only listed where the two genuinely differ —
+   a missing entry means it sounds the way it looks.
+   CAPS marks the stressed syllable; a parenthetical is the fully reduced form. */
+const SOUNDS = {
+  /* running words together */
+  "¿qué onda?":        "ké-ÓN-da — one word, no gap",
+  "¿qué onda con...?": "ké-ÓN-da-kon",
+  "o sea":             "o-SÉ-a (fast: “ó-sea”)",
+  "es que":            "ÉS-ke",
+  "lo que pasa es que":"lo-ke-PA-sa-ES-ke",
+  "la verdad es que":  "la-ver-DÁ-es-ke",
+  "¿sí me explico?":   "sí-me-eks-PLÍ-ko",
+  "no hay bronca":     "no-ai-BRÓN-ka",
+  "¿a poco?":          "a-PÓ-ko",
+  "a todo esto":       "a-to-DÉS-to — “do esto” merges",
+  "¿cómo has estado?": "kó-mo-as-TÁ-do",
+  "¿qué me cuentas?":  "ké-me-KUÉN-tas",
+
+  /* para → pa */
+  "para llevar":       "pa-ye-VÁR — “para” becomes “pa”",
+  "para nada":         "pa-NÁ-da",
+  "para mí":           "pa-MÍ",
+  "¿por dónde queda?": "por-DÓN-de-KÉ-da",
+
+  /* está → tá */
+  "está cañón":        "tá-ka-ÑÓN — “está” loses its first syllable",
+  "está pesado":       "tá-pe-SÁ-o",
+  "está buenísimo":    "tá-bue-NÍ-si-mo",
+  "está de pelos":     "tá-de-PÉ-los",
+  "está a la vuelta":  "tá-la-VUÉL-ta",
+
+  /* silent h */
+  "ahorita":           "o-RÍ-ta — the h is silent (often just “orita”)",
+  "hace rato":         "á-se-RÁ-to",
+  "se me hace que":    "se-me-Á-se-ke",
+  "hacerse bolas":     "a-SÉR-se-BÓ-las",
+  "hay que + verb":    "ái-ke",
+  "híjole":            "Í-jo-le",
+  "hasta crees":       "as-ta-KRÉ-es",
+
+  /* seseo: c/z before e,i and z anywhere = s */
+  "¿cómo se dice...?": "kó-mo-se-DÍ-se",
+  "chela":             "CHÉ-la",
+  "¿cuánto es?":       "KUÁN-to-es",
+  "hacer falta":       "a-sér-FÁL-ta",
+  "dar chance":        "dar-CHÁN-se",
+
+  /* yeísmo: ll = y */
+  "ya la hicimos":     "ya-la-i-SÍ-mos",
+  "¿cómo se llama esto?":"kó-mo-se-YÁ-ma-ÉS-to",
+  "luego luego":       "lué-go-LUÉ-go (often “luelué-go”)",
+
+  /* final -d drops */
+  "¿verdad?":          "ver-DÁ — the final d disappears",
+  "salud":             "sa-LÚ",
+  "la neta":           "la-NÉ-ta",
+
+  /* -ado → -ao */
+  "ando crudo":        "an-do-KRÚ-do",
+  "ando de malas":     "an-do-de-MÁ-las",
+  "estoy hasta el gorro":"toy-as-tel-GÓ-rro",
+  "ando en chinga":    "an-do-en-CHÍN-ga",
+
+  /* vowel reduction, very central-Mexican */
+  "pues":              "pos — almost never “pwes”",
+  "nada más":          "na-MÁS — “nada” collapses",
+  "¿mande?":           "MÁN-de",
+  "órale":             "Ó-ra-le",
+  "ándale":            "ÁN-da-le",
+  "échale ganas":      "é-cha-le-GÁ-nas",
+
+  /* voy a → voa */
+  "voy a + verb":      "vóa — “voy a” becomes one syllable",
+  "ya voy":            "ya-VÓI",
+  "voy en camino":     "vói-en-ka-MÍ-no",
+
+  /* the rest, where stress is the thing worth knowing */
+  "no manches":        "no-MÁN-ches",
+  "güey":              "wéi — the g is barely there",
+  "carnal":            "kar-NÁL",
+  "chido":             "CHÍ-do",
+  "qué padre":         "ké-PÁ-dre",
+  "neta":              "NÉ-ta",
+  "ni modo":           "ni-MÓ-do",
+  "¡aguas!":           "Á-guas",
+  "me late":           "me-LÁ-te",
+  "qué hueva":         "ké-WÉ-va",
+  "un chorro":         "un-CHÓ-rro — rolled rr",
+  "qué oso":           "ké-Ó-so",
+  "chamba":            "CHÁM-ba",
+  "lana":              "LÁ-na",
+  "al rato":           "al-RÁ-to (often “al ratito”)",
+  "ya mero":           "ya-MÉ-ro",
+  "de volada":         "de-vo-LÁ-da",
+  "tantito":           "tan-TÍ-to",
+  "un buen":           "un-BUÉN",
+  "de plano":          "de-PLÁ-no",
+  "a lo mejor":        "a-lo-me-JÓR",
+  "quién sabe":        "kién-SÁ-be (often just “sepa”)",
+  "fíjate que":        "FÍ-ja-te-ke",
+  "imagínate":         "i-ma-JÍ-na-te",
+  "al chile":          "al-CHÍ-le",
+  "me vale":           "me-VÁ-le",
+  "me cae bien":       "me-kae-BIÉN",
+  "buena onda":        "bue-NÓN-da — the a and o merge",
+  "porfa":             "PÓR-fa",
+  "con permiso":       "kon-per-MÍ-so",
+  "provecho":          "pro-VÉ-cho",
+  "mucho gusto":       "mu-cho-GÚS-to",
+  "cuídate":           "KUÍ-da-te",
+  "nos vemos":         "nos-VÉ-mos",
+  "aquí nomás":        "a-kí-no-MÁS",
+  "ahí la llevo":      "aí-la-YÉ-vo",
+  "qué milagro":       "ké-mi-LÁ-gro",
+  "cuánto tiempo":     "KUÁN-to-TIÉM-po",
+  "sale":              "SÁ-le",
+  "simón":             "si-MÓN",
+  "nel":               "NÉL",
+  "chale":             "CHÁ-le",
+  "guácala":           "GUÁ-ka-la",
+  "depa":              "DÉ-pa",
+  "varos":             "VÁ-ros",
+  "fresa":             "FRÉ-sa",
+  "antojo":            "an-TÓ-jo",
+  "te marco":          "te-MÁR-ko",
+  "ahí te caigo":      "aí-te-KÁI-go",
+  "derechito":         "de-re-CHÍ-to",
+  "con todo":          "kon-TÓ-do",
+  "¿pica?":            "PÍ-ka",
+};
+CHUNKS.forEach(c => { if(SOUNDS[c.chunk]) c.sounds = SOUNDS[c.chunk]; });
+
+/* ---------- 1d. A GENTLE WAY IN ----------
+   Chunks a beginner meets first whose sentences all carried extra baggage.
+   These are the bare, real utterances — what you'd actually hear on its own. */
+const SIMPLE = {
+  "o sea":              ["O sea, ¿cómo?",        "I mean, what?"],
+  "la neta":            ["¿La neta?",            "For real?"],
+  "¿sí me explico?":    ["Es fácil, ¿sí me explico?", "It's easy, you know what I mean?"],
+  "¿va?":               ["Mañana, ¿va?",         "Tomorrow, deal?"],
+  "¿qué onda?":         ["¿Qué onda?",           "What's up?"],
+  "qué padre":          ["¡Qué padre!",          "How cool!"],
+  "sale":               ["Sale, pues.",          "Alright then."],
+  "ni modo":            ["Pues ni modo.",        "Well, oh well."],
+  "exacto":             ["Sí, exacto.",          "Yes, exactly."],
+  "¿qué tal si...?":    ["¿Qué tal si vamos?",   "What if we go?"],
+  "¿qué onda con...?":  ["¿Qué onda con eso?",   "What's the deal with that?"],
+  "¿tú crees?":         ["¿Tú crees?",           "You think?"],
+  "la verdad es que":   ["La verdad es que no.", "The truth is, no."],
+  "lo que pasa es que": ["Lo que pasa es que no.","The thing is, no."],
+  "o sea que":          ["O sea que no.",        "So, no then."],
+  "pero bueno":         ["Pero bueno, ya.",      "But anyway, enough."],
+  "así que":            ["Así que vámonos.",     "So let's go."],
+  "¿me haces un paro?": ["¿Me haces un paro?",   "Can you do me a solid?"],
+  "más despacio, porfa":["Más despacio, porfa.", "Slower, please."],
+  "que te vaya bien":   ["¡Que te vaya bien!",   "Take care!"],
+  "¿cómo has estado?":  ["¿Cómo has estado?",    "How have you been?"],
+  "y entonces":         ["¿Y entonces?",         "And then?"],
+  "¿cómo crees?":       ["¿Cómo crees?",         "No way / don't be silly."],
+  "está a la vuelta":   ["Está a la vuelta.",    "It's around the corner."],
+  "voy en camino":      ["Voy en camino.",       "I'm on my way."],
+  "échale ganas":       ["¡Échale ganas!",       "Give it your all!"],
+  "me cae bien":        ["Me cae bien.",         "I like him."],
+  "me da igual":        ["Me da igual.",         "I don't mind."],
+};
+CHUNKS.forEach(c => {
+  const s = SIMPLE[c.chunk];
+  if(s && !c.examples.some(e => e.es === s[0])) c.examples.unshift({es:s[0], en:s[1]});
+});
+
+/* ---------- 1e. SENTENCE DIFFICULTY ----------
+   A tier-1 chunk shown inside a sentence full of other slang is not a tier-1
+   lesson. Rating each example separately lets the easy one teach the chunk and
+   the hard one wait until the chunk is known. */
+const LEVEL_LABEL = ["", "simple", "natural", "fast"];
+
+const bareChunk = s => s.replace(/\s*\+.*$/, "").replace(/[¿?¡!.…]/g, "").trim().toLowerCase();
+
+function rateSentence(es, ownerChunk){
+  const words = es.split(/\s+/).filter(Boolean).length;
+  let load = words <= 4 ? 0 : words <= 6 ? 0.5 : words <= 9 ? 1.1 : 1.9;
+  const owner = bareChunk(ownerChunk.chunk);
+  for(const other of CHUNKS){
+    if(other.id === ownerChunk.id) continue;
+    const core = bareChunk(other.chunk);
+    if(core.length < 4) continue;                      // too short to match meaningfully
+    /* "la verdad es que" contains "es que" and "verdad"; charging for those
+       would penalise the chunk for its own words. */
+    if(owner.includes(core)) continue;
+    if(es.toLowerCase().includes(core))
+      load += other.tier === 1 ? 0.3 : other.tier === 2 ? 0.75 : 1.1;
+  }
+  /* Thresholds sit on the real spread of the collection (p55 / p90), not on
+     round numbers — picked so each band actually holds sentences. */
+  return load <= 0.55 ? 1 : load <= 1.15 ? 2 : 3;
+}
+
+CHUNKS.forEach(c => {
+  c.examples.forEach(e => { e.level = rateSentence(e.es, c); });
+  c.examples.sort((a,b) => a.level - b.level);          // gentlest first
+});
+
+/* Harder sentences unlock as the chunk itself gets more familiar. */
+function pickExample(c, st){
+  const iv = st ? st.interval : 0;
+  const max = iv >= 21 ? 3 : iv >= 5 ? 2 : 1;
+  let pool = c.examples.filter(e => e.level <= max);
+  if(!pool.length){
+    /* Nothing gentle enough exists for this chunk, so take the gentlest that
+       does — never the whole set, which could hand a beginner the hardest. */
+    const floor = Math.min(...c.examples.map(e => e.level));
+    pool = c.examples.filter(e => e.level === floor);
+  }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 /* ---------- 1b. DIALOGUES ---------- */
 /* Chunks in isolation don't teach turn-taking. Each dialogue is a real
    exchange; on your turns you pick the natural reply from three options,
@@ -2000,12 +2230,28 @@ function toast(msg){
 function speakerBtn(text, small){
   return `<button class="spk${small?" sm":""}" data-speak="${esc(text)}" aria-label="Play audio">\u{1F50A}</button>`;
 }
+function levelPips(n){
+  return `<span class="lvl" title="${LEVEL_LABEL[n]}">${
+    [1,2,3].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")
+  }<b>${LEVEL_LABEL[n]}</b></span>`;
+}
 function examplesHtml(c){
   return c.examples.map(e => `
     <div class="ex">
       ${speakerBtn(e.es, true)}
-      <div class="txt"><div class="es">${esc(e.es)}</div><div class="en">${esc(e.en)}</div></div>
+      <div class="txt">
+        <div class="es">${esc(e.es)}</div>
+        <div class="en">${esc(e.en)}</div>
+        ${levelPips(e.level)}
+      </div>
     </div>`).join("");
+}
+function soundsHtml(c){
+  if(!c.sounds) return "";
+  return `<div class="sounds">
+    <span class="slabel">sounds like</span>
+    <span class="sval">${esc(c.sounds)}</span>
+  </div>`;
 }
 function tierBadge(c){
   const reg = c.register === "vulgar" ? `<span class="badge vulgar">careful</span>` : "";
@@ -2295,9 +2541,10 @@ function renderLearn(){
         <div class="meaning">${esc(c.meaning)}</div>
         ${c.literal ? `<div class="lit">literally: ${esc(c.literal)}</div>` : ""}
       </div>
+      ${soundsHtml(c)}
     </div>
     <div class="card">
-      <p class="sec-label">In real sentences</p>
+      <p class="sec-label">In real sentences · gentlest first</p>
       ${examplesHtml(c)}
     </div>
     <div class="stack" style="margin-top:16px">
@@ -2318,7 +2565,7 @@ function nextCard(){
   const id = session.queue.shift();
   if(!id){ session.card = null; return; }
   const c = byId(id);
-  const ex = c.examples[Math.floor(Math.random() * c.examples.length)];
+  const ex = pickExample(c, srs[id]);
   session.card = {chunk: c, ex, cloze: makeCloze(ex.es, c.chunk)};
 }
 
@@ -2363,6 +2610,7 @@ function renderReview(){
           <div class="es" style="font-size:27px">${esc(c.chunk)} ${speakerBtn(ex.es)}</div>
           <div class="meaning">${esc(c.meaning)}</div>
         </div>
+        ${soundsHtml(c)}
       </div>` : ""}
     <div style="margin-top:16px">
       ${shown ? gradesHtml(srs[c.id]) : `<button class="btn primary" data-reveal="1">Show answer</button>`}
@@ -2424,7 +2672,7 @@ function buildEarCard(){
   if(!earQ || !earQ.length) earQ = shuffle(pool).slice(0, 12);
   const id = earQ.shift();
   const c = byId(id);
-  const ex = c.examples[Math.floor(Math.random() * c.examples.length)];
+  const ex = pickExample(c, srs[c.id]);
   const wrong = shuffle(CHUNKS.filter(o => o.id !== id && o.category === c.category))
     .slice(0, 3).map(o => o.examples[0].en);
   while(wrong.length < 3){
@@ -2519,7 +2767,7 @@ function renderShadow(){
   if(!shadowQ || !shadowQ.length){
     shadowQ = shuffle(deck).slice(0, 12).map(id => {
       const c = byId(id);
-      return {c, ex: c.examples[Math.floor(Math.random()*c.examples.length)], reps: 0};
+      return {c, ex: pickExample(c, srs[id]), reps: 0};
     });
   }
   const item = shadowQ[0];
@@ -2739,7 +2987,7 @@ let drillCard = null, drillState = "ready", drillResult = null, drillHeard = "",
 function buildDrill(){
   const pool = Object.keys(srs);
   const c = byId(pool[Math.floor(Math.random()*pool.length)]);
-  drillCard = {c, ex: c.examples[Math.floor(Math.random()*c.examples.length)]};
+  drillCard = {c, ex: pickExample(c, srs[c.id])};
   drillState = "ready"; drillResult = null; drillHeard = "";
 }
 function clearDrillTimer(){ if(drillTimer){ clearInterval(drillTimer); drillTimer = null; } }

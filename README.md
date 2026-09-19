@@ -2,7 +2,7 @@
 
 A single-file, offline-capable PWA that teaches **spoken Mexican Spanish** through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses.
 
-Everything lives in one `index.html`: 242 chunks, 492 example sentences, 8 dialogues, a spaced-repetition engine, a pronunciation scorer and six study modes. No build step, no dependencies, no backend, no network calls.
+Everything lives in one `index.html`: 242 chunks, 520 example sentences, 8 dialogues, a spaced-repetition engine, a pronunciation scorer and six study modes. No build step, no dependencies, no backend, no network calls.
 
 *Calle* is Spanish for "street" — the register this teaches.
 
@@ -42,6 +42,14 @@ All tones are **synthesised with the Web Audio API**, so there are no audio file
 
 ### Learn
 Introduces unseen chunks in frequency order: the phrase, what it *does* conversationally (filler, hedge, softener…), a literal gloss where it helps (18 chunks have one — `no manches` is literally "don't stain"), a register tag, and its example sentences with playback.
+
+Where speech and spelling diverge, it shows **how it actually sounds**:
+
+> **¿qué onda?** — sounds like `ké-ÓN-da — one word, no gap`
+> **ahorita** — sounds like `o-RÍ-ta — the h is silent (often just "orita")`
+> **¿verdad?** — sounds like `ver-DÁ — the final d disappears`
+
+CAPS marks the stressed syllable. 104 of the 242 chunks carry one; a chunk without a note sounds the way it looks. This is the gap that makes fast Mexican Spanish unintelligible to people who can read it perfectly — silent `h`, seseo, yeísmo, `para` → `pa`, `está` → `tá`, `nada más` → `namás`, final `-d` dropping.
 
 One primary action — **Got it** — adds it to your deck. Passing is a secondary link, because a beginner has no basis to judge a chunk they've just met, and making that a 50/50 decision on every card is friction dressed as choice. A skipped chunk is remembered and sinks below ones you haven't seen.
 
@@ -95,7 +103,7 @@ Eight exchanges built from chunks already in the collection. You take one side a
 
 ## The collection
 
-**242 chunks · 492 example sentences · 167 Tier 1 / 71 Tier 2 / 4 Tier 3**
+**242 chunks · 520 example sentences · 167 Tier 1 / 71 Tier 2 / 4 Tier 3**
 
 | Key | Category | Count |
 |---|---|---|
@@ -171,6 +179,22 @@ Two ideas do the work.
 | **`r` vs `rr` kept distinct** | `pero` ≠ `perro` |
 
 That last row matters: `r`/`rr` is phonemic in Spanish, so collapsing it would forgive a real error.
+
+### Sentence difficulty
+
+A tier-1 chunk taught inside a sentence full of *other* slang is not a tier-1 lesson. The chunk's frequency tier said nothing about the sentence carrying it, so `o sea` — the very first chunk anyone meets — was introduced with:
+
+> *"O sea, no es que no quiera ir, es que ando sin lana."* — 13 words, three other chunks, and a subjunctive.
+
+Every example sentence is now rated **simple / natural / fast** on its own, from its length plus the tier of any *other* chunks inside it (sub-phrases of the chunk being taught don't count against it). Examples sort gentlest-first, and the sentence you're shown is matched to how well you know the chunk:
+
+| Chunk maturity | Sentences it can draw |
+|---|---|
+| new / learning | simple |
+| interval ≥ 5 days | simple + natural |
+| interval ≥ 21 days | all three |
+
+So `o sea` opens with *"O sea, ¿cómo?"* and only reaches that 13-word sentence once the chunk is genuinely known. If nothing gentle enough exists it takes the gentlest that does, never the whole set. 28 Tier-1 chunks had no easy sentence at all and were given one, so **every Tier-1 chunk now has a gentle way in**. Current spread: 70% simple, 24% natural, 6% fast.
 
 ### Milestones
 
@@ -301,4 +325,3 @@ Playback uses whatever Spanish voices your OS has installed. If there are none t
 
 - **No service worker.** A single file can't register one (blob URLs are rejected as SW scripts), so offline relies on the HTTP cache rather than a guaranteed shell.
 - **Tier imbalance** — 167 Tier 1 against 4 Tier 3, so the frequency curve flattens near the end.
-- **No connected-speech notes.** The reductions that make real speech hard (`para el` → `pal`, `¿qué onda?` → "ké-onda") aren't taught explicitly yet. Probably the highest-value thing left to add.
