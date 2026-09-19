@@ -3162,11 +3162,21 @@ const EAR_RATES = [0.7, 0.85, 1.0, 1.15];
 const EAR_LABELS = ["slow", "easy", "normal", "fast"];
 const earLevel = id => Math.min(EAR_RATES.length - 1, ears[id] || 0);
 
+/* Practice used to top its queue up silently, so it ran until you closed it.
+   A round has a finish line, a score, and a decision to carry on. */
+const EAR_ROUND = 10;
 let earQ = null, earCard = null, earPick = null, earPlayed = null;
+let earScore = {right:0, total:0}, earRoundSize = 0;
+
+function startEarRound(){
+  const pool = Object.keys(srs);
+  earQ = shuffle(pool).slice(0, Math.min(EAR_ROUND, pool.length));
+  earRoundSize = earQ.length;
+  earScore = {right:0, total:0};
+  earCard = null;
+}
 
 function buildEarCard(){
-  const pool = Object.keys(srs);
-  if(!earQ || !earQ.length) earQ = shuffle(pool).slice(0, 12);
   const id = earQ.shift();
   const c = byId(id);
   const ex = pickExample(c, srs[c.id]);
@@ -3191,14 +3201,22 @@ function renderListen(){
       `<button class="btn primary" data-go="learn">Learn some chunks</button>`;
     return;
   }
-  if(!earCard) buildEarCard();
+  if(!earQ) startEarRound();
+  if(!earCard){
+    if(!earQ.length){
+      /* A daily session sets its own length, so keep feeding it. */
+      if(flow) startEarRound(); else return renderEarDone();
+    }
+    buildEarCard();
+  }
   const {c, ex, options} = earCard;
   const lvl = earLevel(c.id);
   const answered = earPick !== null;
   const right = answered && earPick === ex.en;
 
   view.innerHTML = header("Listen", flow ? `Session · ${flowDone()+1} of ${flow.plan.total}`
-                                         : `No text · ${EAR_LABELS[lvl]} speed`) + flowBar() + comboBadge() + `
+                                         : `${earScore.total+1} of ${earRoundSize} · ${EAR_LABELS[lvl]} speed`)
+    + flowBar() + comboBadge() + `
     <div class="card center" style="padding:26px 16px">
       <button class="spk" style="width:76px;height:76px;font-size:30px" data-ear="play">\u{1F50A}</button>
       <div class="tiny muted" style="margin-top:12px">${answered ? "" : "Tap to hear it again"}</div>
@@ -3237,8 +3255,29 @@ function renderListen(){
   }
 }
 
+function renderEarDone(){
+  const {right, total} = earScore;
+  const pct = total ? Math.round(right / total * 100) : 0;
+  const atFull = Object.values(ears).filter(l => l >= EAR_RATES.length - 1).length;
+  SFX.done();
+  view.innerHTML = header("Listen", "Round complete") + `
+    <div class="card center" style="padding:26px 16px">
+      <div class="score" style="color:${scoreColor(pct)}">${right}<span>/${total}</span></div>
+      <div style="font-weight:650;margin-top:4px">${
+        pct === 100 ? "Perfect round" : pct >= 70 ? "Good round" : "Worth another go"}</div>
+      <div class="muted tiny" style="margin-top:10px">
+        ${atFull} chunk${atFull===1?"":"s"} you now recognise at full speed, no text.</div>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn primary" data-ear="again">Another round</button>
+      <button class="btn ghost" data-go="practice">Back to Practice</button>
+    </div>`;
+}
+
 /* ----- Shadow ----- */
+const SHADOW_ROUND = 8;
 let listening = false, heard = "", result = null, recNote = null, shadowSpoken = null;
+let shadowDoneCount = 0;
 
 function resetAttempt(){ listening = false; heard = ""; result = null; recNote = null; }
 
@@ -3249,8 +3288,9 @@ function leaveMode(){
   resetAttempt();
   shadowSpoken = null;
   clearDrillTimer();
-  drillCard = null;
-  earCard = null;
+  drillCard = null; drillRound = null;
+  earCard = null; earQ = null;
+  shadowQ = null;
   dlg = null;
 }
 
@@ -3261,12 +3301,14 @@ function renderShadow(){
       "Add a few chunks from Learn, then come back and repeat them out loud.");
     return;
   }
-  if(!shadowQ || !shadowQ.length){
-    shadowQ = shuffle(deck).slice(0, 12).map(id => {
+  if(!shadowQ){
+    shadowQ = shuffle(deck).slice(0, Math.min(SHADOW_ROUND, deck.length)).map(id => {
       const c = byId(id);
       return {c, ex: pickExample(c, srs[id]), reps: 0};
     });
+    shadowDoneCount = 0;
   }
+  if(!shadowQ.length) return renderShadowDone();
   const item = shadowQ[0];
   const best = scores[item.c.id];
   const blocked = recProblem();
@@ -3320,6 +3362,20 @@ function renderShadow(){
     shadowSpoken = item.c.id;
     speak(item.ex.es);
   }
+}
+
+function renderShadowDone(){
+  SFX.done();
+  view.innerHTML = header("Shadow", "Round complete") + `
+    <div class="card center" style="padding:26px 16px">
+      <div class="score">${shadowDoneCount}<span> phrases</span></div>
+      <div style="font-weight:650;margin-top:4px">Said out loud</div>
+      <div class="muted tiny" style="margin-top:10px">${totals.shadowReps} reps all time.</div>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn primary" data-shadow="again">Another round</button>
+      <button class="btn ghost" data-go="practice">Back to Practice</button>
+    </div>`;
 }
 
 const scoreColor = s => s >= 85 ? "var(--green)" : s >= 60 ? "var(--accent)" : "var(--red)";
@@ -3484,8 +3540,9 @@ function renderDialogue(){
 /* ----- Quick-fire: production under time pressure ----- */
 /* Recall with unlimited time doesn't build the sub-second retrieval a real
    conversation needs, so this one runs on a clock. */
-const DRILL_SECONDS = 5;
+const DRILL_SECONDS = 5, DRILL_ROUND = 8;
 let drillCard = null, drillState = "ready", drillResult = null, drillHeard = "", drillTimer = null, drillLeft = 0;
+let drillRound = null;   // {done, scores[]}
 
 function buildDrill(){
   const pool = Object.keys(srs);
@@ -3542,12 +3599,14 @@ function renderDrill(){
       `<button class="btn primary" data-go="learn">Learn some chunks</button>`;
     return;
   }
+  if(!drillRound) drillRound = {done:0, scores:[]};
+  if(drillRound.done >= DRILL_ROUND) return renderDrillDone();
   if(!drillCard) buildDrill();
   const {c, ex} = drillCard;
   const blocked = recProblem();
   const pct = drillState === "go" ? (drillLeft / DRILL_SECONDS) * 100 : 0;
 
-  view.innerHTML = header("Quick-fire", `Say it fast · ${totals.drills || 0} drilled`) + `
+  view.innerHTML = header("Quick-fire", `${drillRound.done + 1} of ${DRILL_ROUND} · say it fast`) + `
     <div class="card center" style="padding:24px 16px">
       <div class="sec-label" style="margin-bottom:10px">Say this in Spanish</div>
       <div style="font-size:23px;font-weight:650;line-height:1.35">${esc(ex.en)}</div>
@@ -3573,6 +3632,24 @@ function renderDrill(){
         : drillState === "go"    ? `<button class="btn" data-drill="stop">I'm done</button>`
         :                          `<button class="btn primary" data-drill="next">Next phrase</button>`}
       ${drillState === "done" && !blocked ? `<button class="btn ghost" data-drill="retry">Try this one again</button>` : ""}
+    </div>`;
+}
+
+function renderDrillDone(){
+  const s = drillRound.scores;
+  const avg = s.length ? Math.round(s.reduce((a,b)=>a+b,0)/s.length) : 0;
+  SFX.done();
+  view.innerHTML = header("Quick-fire", "Round complete") + `
+    <div class="card center" style="padding:26px 16px">
+      ${s.length ? `<div class="score" style="color:${scoreColor(avg)}">${avg}<span>%</span></div>
+        <div style="font-weight:650;margin-top:4px">Average, producing cold</div>`
+        : `<div style="font-weight:650">Round done</div>`}
+      <div class="muted tiny" style="margin-top:10px">
+        ${s.filter(x=>x>=85).length} of ${DRILL_ROUND} nailed at 85% or better.</div>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn primary" data-drill="again">Another round</button>
+      <button class="btn ghost" data-go="practice">Back to Practice</button>
     </div>`;
 }
 
@@ -3973,6 +4050,7 @@ document.addEventListener("click", e => {
   /* ----- Listen ----- */
   if(t.dataset.ear){
     const act = t.dataset.ear;
+    if(act === "again"){ startEarRound(); return render(); }
     if(act === "play")  speak(earCard.ex.es, EAR_RATES[earLevel(earCard.c.id)]);
     if(act === "slow")  speak(earCard.ex.es, 0.6);
     if(act === "next"){
@@ -3988,6 +4066,7 @@ document.addEventListener("click", e => {
     const lvl = earLevel(id), right = earPick === earCard.ex.en;
     ears[id] = right ? Math.min(EAR_RATES.length - 1, lvl + 1) : Math.max(0, lvl - 1);
     saveEars(); markStudied();
+    earScore.total++; if(right) earScore.right++;
     right ? gotItRight() : gotItWrong();
     render(); return;
   }
@@ -3998,7 +4077,13 @@ document.addEventListener("click", e => {
     if(act === "start" || act === "retry"){ startDrill(); return; }
     if(act === "stop"){ clearDrillTimer(); stopListening(); return; }
     if(act === "reveal"){ drillState = "done"; drillResult = {blocked:"Mic unavailable — check it yourself."}; render(); return; }
-    if(act === "next"){ clearDrillTimer(); stopListening(); buildDrill(); render(); return; }
+    if(act === "again"){ clearDrillTimer(); stopListening(); drillRound = null; drillCard = null; render(); return; }
+    if(act === "next"){
+      clearDrillTimer(); stopListening();
+      drillRound.done++;
+      if(drillResult && !drillResult.blocked) drillRound.scores.push(drillResult.score);
+      drillCard = null; render(); return;
+    }
   }
 
   /* ----- Conversations ----- */
@@ -4062,15 +4147,16 @@ document.addEventListener("click", e => {
   if(t.dataset.shadow){
     const item = shadowQ[0];
     const act = t.dataset.shadow;
+    if(act === "again"){ shadowQ = null; shadowSpoken = null; resetAttempt(); return render(); }
     if(act === "listen"){ beginListening(); return; }
     if(act === "stop"){ stopListening(); listening = false; render(); return; }
     if(act === "rep"){
       item.reps++; totals.shadowReps++; saveTotals(); markStudied();
       resetAttempt();
-      if(item.reps >= 3){ shadowQ.shift(); shadowSpoken = null; }
+      if(item.reps >= 3){ shadowQ.shift(); shadowDoneCount++; shadowSpoken = null; }
       else { shadowSpoken = item.c.id; speak(item.ex.es); }
     }else{
-      stopListening(); resetAttempt(); shadowQ.shift(); shadowSpoken = null;
+      stopListening(); resetAttempt(); shadowQ.shift(); shadowDoneCount++; shadowSpoken = null;
     }
     render(); return;
   }

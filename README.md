@@ -66,6 +66,12 @@ All tones are **synthesised with the Web Audio API**, so there are no audio file
 | **Quick-fire** | Production against a 5-second clock | mic + net |
 | **Conversations** | Turn-taking — holding your end of an exchange | — |
 
+### Rounds
+
+The three open-ended practice modes run in **rounds** rather than forever — Listen 10 items, Shadow 8 phrases, Quick-fire 8 prompts — each ending on a summary with an *Another round* button.
+
+They originally topped their queues up silently whenever they emptied, so they had no finish line at all: you came out of a daily session that ended with a summary straight into a mode that never ended, and a perfect run earned no acknowledgement. The daily session still sets its own listening quota and is unaffected.
+
 ### Learn
 Introduces unseen chunks in frequency order: the phrase, what it *does* conversationally (filler, hedge, softener…), a literal gloss where it helps (18 chunks have one — `no manches` is literally "don't stain"), a register tag, and its example sentences with playback.
 
@@ -96,13 +102,13 @@ Each chunk carries its own speed level and ramps as you prove yourself:
 slow      easy      normal    fast
 ```
 
-Right answer moves you up, wrong moves you down. A turtle button gives a one-off slow replay without costing a level.
+Right answer moves you up, wrong moves you down. A turtle button gives a one-off slow replay without costing a level. Ten items to a round, then a score.
 
 ### Shadow
-Plays a sentence, you repeat it aloud, and the mic scores you. Three reps per phrase. See [Pronunciation scoring](#pronunciation-scoring).
+Plays a sentence, you repeat it aloud, and the mic scores you. Three reps per phrase, eight phrases to a round. See [Pronunciation scoring](#pronunciation-scoring).
 
 ### Quick-fire
-English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer.
+English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer. Eight prompts to a round.
 
 ### Conversations
 Twelve exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are *plausible but off*, usually in register rather than meaning:
