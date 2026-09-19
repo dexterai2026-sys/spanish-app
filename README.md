@@ -19,6 +19,16 @@ Traditional courses front-load conjugation and subjunctive mood, then leave you 
 
 ---
 
+## First run
+
+A three-card intro sells the method before dropping anyone into `o sea` — chunks instead of grammar, the ear training, and mic scoring — then goes straight to learning. It shows once and is remembered.
+
+## Feedback and reward
+
+Correct answers flash green and play a short rising tone; wrong ones flash red. Consecutive correct answers build a combo (`🔥 4 in a row`) shown in Review and Listen, and your best run is kept. Completing a session and unlocking a milestone each get their own sound, and a milestone unlock interrupts with a celebration — once, never twice for the same one.
+
+All tones are **synthesised with the Web Audio API**, so there are no audio files and it works with the network off. Toggle in Settings; on by default.
+
 ## The six modes
 
 | Mode | What it trains | Needs |
@@ -31,7 +41,9 @@ Traditional courses front-load conjugation and subjunctive mood, then leave you 
 | **Conversations** | Turn-taking — holding your end of an exchange | — |
 
 ### Learn
-Introduces unseen chunks in frequency order: the phrase, what it *does* conversationally (filler, hedge, softener…), a literal gloss where it helps (18 chunks have one — `no manches` is literally "don't stain"), a register tag, and its example sentences with playback. "Add to my deck" creates its SRS state.
+Introduces unseen chunks in frequency order: the phrase, what it *does* conversationally (filler, hedge, softener…), a literal gloss where it helps (18 chunks have one — `no manches` is literally "don't stain"), a register tag, and its example sentences with playback.
+
+One primary action — **Got it** — adds it to your deck. Passing is a secondary link, because a beginner has no basis to judge a chunk they've just met, and making that a 50/50 decision on every card is friction dressed as choice. A skipped chunk is remembered and sinks below ones you haven't seen.
 
 ### Review
 The spaced-repetition core. A random example is shown with the chunk **blanked out**, plus the English as a prompt. You recall, reveal, then self-grade Again / Hard / Good / Easy.
@@ -39,7 +51,7 @@ The spaced-repetition core. A random example is shown with the chunk **blanked o
 86% of examples can be blanked this way. The other 14% are cases where the sentence uses a variant form — `tengo que` appearing inside a conjugated sentence, say — so the app falls back to **produce mode**: it shows the English and asks you to generate the Spanish. That fallback is deliberate, not a failure case; it gives useful variety.
 
 ### Listen
-The mode that matters most, and the one most apps skip.
+The mode that matters most, and the one most apps skip. Needs a few chunks in your deck first — quizzing you on phrases you've never met is a guess, not listening practice, so it says so rather than ambushing you.
 
 Every other mode shows Spanish text while audio plays, which trains *reading with audio support* — you can score full marks and still be lost when a taquero talks to you. Listen plays a sentence with **no text at all** and asks which meaning it was, from four options.
 
@@ -243,8 +255,10 @@ All under the `calle_` prefix in `localStorage`:
 | `calle_ears` | listening speed level per chunk |
 | `calle_dialogDone` | best % per dialogue |
 | `calle_skipped` | chunks you passed on in Learn, so they sink in the queue |
-| `calle_totals` | lifetime reviews, shadow reps, attempts, drills |
-| `calle_settings` | chosen voice, speech rate |
+| `calle_unlocked` | milestones already celebrated, so it never fires twice |
+| `calle_seenIntro` | whether the first-run intro has been shown |
+| `calle_totals` | lifetime reviews, shadow reps, attempts, drills, best combo |
+| `calle_settings` | chosen voice, speech rate, sound on/off |
 
 Day keys are built from **local** date parts, not `toISOString()` — UTC would break the streak for anyone behind it (an evening session in Mexico would count as tomorrow).
 

@@ -191,6 +191,44 @@ input{font:inherit}
 /* ---------- browse ---------- */
 .lnk{color:var(--accent);text-decoration:underline;font:inherit}
 
+/* reward feedback */
+.flash{position:fixed;inset:0;z-index:60;pointer-events:none;animation:flashout .43s ease-out forwards}
+.flash.ok{background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--green) 32%,transparent),transparent 62%)}
+.flash.bad{background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--red) 26%,transparent),transparent 62%)}
+@keyframes flashout{from{opacity:1}to{opacity:0}}
+.combo{
+  text-align:center;font-size:13px;font-weight:700;color:var(--accent);
+  margin:-6px 0 10px;animation:pop .3s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
+
+.celebrate{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:61;
+  width:min(320px,86vw);background:var(--surface);border-radius:24px;
+  padding:30px 24px;text-align:center;
+  animation:celebIn .4s cubic-bezier(.2,1.3,.4,1);
+}
+@keyframes celebIn{from{transform:translate(-50%,-50%) scale(.75);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.celebrate .cem{font-size:58px;line-height:1;animation:bounce .65s ease .1s both}
+@keyframes bounce{0%{transform:scale(.4)}55%{transform:scale(1.22)}100%{transform:scale(1)}}
+.celebrate .ctitle{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-top:14px}
+.celebrate .cname{font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:5px}
+
+/* first run */
+.intro{display:flex;flex-direction:column;align-items:center;text-align:center;padding:34px 6px 0;min-height:76vh}
+.intro .iem{font-size:62px;line-height:1}
+.intro h1{font-size:27px;letter-spacing:-.025em;margin:20px 0 0}
+.intro p{color:var(--muted);font-size:15px;line-height:1.6;margin:12px 0 0;max-width:330px}
+.intro p b{color:var(--text);font-weight:650}
+.iline{
+  display:flex;align-items:center;gap:10px;margin-top:22px;padding:12px 16px;
+  background:var(--surface);border-radius:14px;font-size:17px;font-weight:650;
+}
+.idots{display:flex;gap:7px;margin:auto 0 20px}
+.idot{width:7px;height:7px;border-radius:50%;background:var(--surface-3)}
+.idot.on{background:var(--accent);width:20px;border-radius:99px}
+.intro .btn{max-width:330px}
+
 /* multiple-choice options */
 .btn.opt{justify-content:flex-start;text-align:left;font-weight:550;font-size:15px;line-height:1.35;padding:14px 16px}
 .btn.opt-right{background:color-mix(in srgb,var(--green) 26%,var(--surface-2));color:var(--text)}
@@ -1470,10 +1508,12 @@ let scores   = LS.get("scores", {});       // id -> best pronunciation score 0-1
 let ears     = LS.get("ears", {});         // id -> listening level, indexes EAR_RATES
 let drills   = LS.get("drills", {});       // id -> best cold-recall score (Quick-fire)
 let skipped  = LS.get("skipped", {});      // id -> when you passed on it in Learn
+let unlocked = LS.get("unlocked", {});     // milestone name -> when it was earned
+let seenIntro = LS.get("seenIntro", false);
 let dialogDone = LS.get("dialogDone", {}); // dialogue id -> best % of replies right
 /* Merged over defaults so decks saved by an earlier version pick up new keys. */
 let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0, drills:0}, LS.get("totals", {}));
-let settings = Object.assign({rate:0.92, voice:null}, LS.get("settings", {}));
+let settings = Object.assign({rate:0.92, voice:null, sound:true}, LS.get("settings", {}));
 
 const saveSrs      = () => LS.set("srs", srs);
 const saveStreak   = () => LS.set("streak", streak);
@@ -1630,6 +1670,59 @@ function speak(text, rate){
   /* Chrome occasionally parks the queue in a paused state. */
   setTimeout(() => { if(SS.paused) SS.resume(); }, 150);
 }
+
+/* ---------- 4a. SOUND & REWARD ----------
+   Tones are synthesised rather than loaded, so the app stays one file and
+   still chimes with the network off. */
+let actx = null;
+function sfx(notes, o){
+  if(settings.sound === false) return;
+  o = o || {};
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    actx = actx || new AC();
+    if(actx.state === "suspended") actx.resume();
+    notes.forEach((f, i) => {
+      const t0  = actx.currentTime + i * (o.gap != null ? o.gap : 0.07);
+      const dur = o.dur || 0.18;
+      const osc = actx.createOscillator(), gain = actx.createGain();
+      osc.type = o.type || "sine";
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(o.vol || 0.13, t0 + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(gain); gain.connect(actx.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.03);
+    });
+  }catch(e){}
+}
+const SFX = {
+  right : ()  => sfx([784, 1047], {gap:0.055, dur:0.16}),
+  combo : n   => sfx([784 + n*55, 1047 + n*55], {gap:0.05, dur:0.15}),
+  wrong : ()  => sfx([210, 165], {gap:0.07, dur:0.2, type:"triangle", vol:0.09}),
+  unlock: ()  => sfx([523, 659, 784, 1047], {gap:0.085, dur:0.32, vol:0.15}),
+  done  : ()  => sfx([523, 659, 784], {gap:0.105, dur:0.36, vol:0.15}),
+};
+
+function flash(ok){
+  const el = document.createElement("div");
+  el.className = "flash " + (ok ? "ok" : "bad");
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 430);
+}
+
+/* One streak of correct answers across whatever you're doing right now. */
+let combo = 0;
+function gotItRight(){
+  combo++;
+  if(combo > (totals.bestCombo || 0)){ totals.bestCombo = combo; saveTotals(); }
+  flash(true);
+  if(combo >= 3) SFX.combo(Math.min(combo, 7)); else SFX.right();
+}
+function gotItWrong(){ combo = 0; flash(false); SFX.wrong(); }
+const comboBadge = () => combo >= 2
+  ? `<div class="combo">\u{1F525} ${combo} in a row</div>` : "";
 
 /* ---------- 4b. SPEECH IN (pronunciation scoring) ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -1854,7 +1947,7 @@ function tierBadge(c){
 
 /* ---------- 6. VIEWS ---------- */
 const view = $("#view");
-let tab = "home";
+let tab = seenIntro ? "home" : "intro";
 let session = null;   // review session
 let shadowQ = null;   // shadowing queue
 
@@ -1870,16 +1963,55 @@ const VIEWS = {
   stats:    () => renderStats(),
   browse:   () => renderBrowse(),
   sessionDone: () => renderSessionDone(),
+  intro:    () => renderIntro(),
 };
 
 function render(){
   (VIEWS[tab] || VIEWS.home)();
-  renderNav();
+  const nav = $("#nav");
+  nav.style.display = tab === "intro" ? "none" : "";
+  if(tab !== "intro") renderNav();
   view.scrollTop = 0;
   window.scrollTo(0,0);
 }
 
 function go(t){ tab = t; render(); }
+
+/* ----- First run: sell the method before dropping anyone into "o sea" ----- */
+const INTRO = [
+  ["\u{1F5FA}\u{FE0F}", "Forget the grammar",
+   "No conjugation tables, no subjunctive. You'll learn the chunks Mexicans actually reuse — <b>o sea</b>, <b>la neta</b>, <b>ni modo</b> — always inside a real sentence.",
+   "¿Qué onda? ¿Cómo has estado?"],
+  ["\u{1F442}", "Train your ear",
+   "Real street Spanish is fast and runs together. Listening mode hides the text completely and speeds up as you improve, so it stops sounding like one long word.",
+   "Ahí nomás, chambeando."],
+  ["\u{1F3A4}", "Say it out loud",
+   "Shadow and Quick-fire score your pronunciation through the mic — judged by <b>sound</b>, not spelling, so Mexican pronunciation counts as right.",
+   "¡No manches, neta!"],
+];
+let introStep = 0;
+
+function renderIntro(){
+  const [em, title, body, line] = INTRO[introStep];
+  view.innerHTML = `
+    <div class="intro">
+      <div class="iem">${em}</div>
+      <h1>${title}</h1>
+      <p>${body}</p>
+      <div class="iline">
+        <span>${esc(line)}</span>
+        ${speakerBtn(line, true)}
+      </div>
+      <div class="idots">
+        ${INTRO.map((_,i) => `<span class="idot${i===introStep?" on":""}"></span>`).join("")}
+      </div>
+      <button class="btn primary" data-intro="next">
+        ${introStep < INTRO.length-1 ? "Next" : "Empecemos — let's go"}
+      </button>
+      ${introStep < INTRO.length-1
+        ? `<button class="lnk tiny" style="margin-top:14px" data-intro="skip">Skip</button>` : ""}
+    </div>`;
+}
 
 /* ----- Milestones: what you can DO, not how many cards you've seen ----- */
 const MILESTONES = [
@@ -1892,6 +2024,36 @@ const MILESTONES = [
   ["\u{1F6DF}", "Survive being lost",     ["¿me repites?","no te entendí","más despacio, porfa","¿cómo se dice...?","¿mande?","estoy aprendiendo","¿por dónde queda?","derechito","está a la vuelta","¿qué significa...?"]],
   ["\u{1F91D}", "Make plans",             ["¿te late?","¿qué tal si...?","sale","¿cómo quedamos?","al rato","ahorita","te marco","mándame ubicación","¿va?","la próxima"]],
 ];
+
+/* Unlocking used to be a bar quietly filling. Now it interrupts, once. */
+function checkMilestones(){
+  for(const [em, name, names] of MILESTONES){
+    const {got, total} = milestoneProgress(names);
+    if(got >= total && !unlocked[name]){
+      unlocked[name] = Date.now();
+      LS.set("unlocked", unlocked);
+      celebrate(em, name);
+      return;                       // one at a time, never a pile-up
+    }
+  }
+}
+function celebrate(em, name){
+  SFX.unlock();
+  const w = document.createElement("div");
+  w.innerHTML = `
+    <div class="scrim" data-close="1"></div>
+    <div class="celebrate">
+      <div class="cem">${em}</div>
+      <div class="ctitle">Unlocked</div>
+      <div class="cname">${esc(name)}</div>
+      <p class="muted tiny" style="margin:10px 0 0">You've got the chunks for this one.</p>
+      <button class="btn primary" style="margin-top:18px">¡Órale!</button>
+    </div>`;
+  document.body.appendChild(w);
+  const close = () => w.remove();
+  w.querySelector("[data-close]").onclick = close;
+  w.querySelector("button").onclick = close;
+}
 
 function milestoneProgress(chunkNames){
   const ids = chunkNames.map(n => {
@@ -2025,6 +2187,7 @@ function renderSessionDone(){
   const d = flow ? flow.did : {review:0, learn:0, listen:0};
   const total = d.review + d.learn + d.listen;
   flow = null;
+  SFX.done();
   view.innerHTML = header("Done for today", "Session complete") + `
     <div class="card center" style="padding:26px 16px">
       <div class="flame" style="font-size:44px">\u{1F525}</div>
@@ -2070,8 +2233,8 @@ function renderLearn(){
       ${examplesHtml(c)}
     </div>
     <div class="stack" style="margin-top:16px">
-      <button class="btn primary" data-learn="add">Add to my deck</button>
-      <button class="btn ghost" data-learn="skip">Skip for now</button>
+      <button class="btn primary" data-learn="add">Got it — keep this one</button>
+      <div class="center"><button class="lnk tiny" data-learn="skip">Not this one</button></div>
     </div>`;
 }
 
@@ -2123,6 +2286,7 @@ function renderReview(){
 
   view.innerHTML = header("Review", `${session.done+1} of ${session.total}`) + `
     <div class="progbar"><i style="width:${pct}%"></i></div>
+    ${comboBadge()}
     <div class="card" style="padding:22px 16px">${prompt}</div>
     ${shown ? `
       <div class="card">
@@ -2188,8 +2352,7 @@ const earLevel = id => Math.min(EAR_RATES.length - 1, ears[id] || 0);
 let earQ = null, earCard = null, earPick = null, earPlayed = null;
 
 function buildEarCard(){
-  const deck = Object.keys(srs);
-  const pool = deck.length ? deck : CHUNKS.filter(c => c.tier === 1).map(c => c.id);
+  const pool = Object.keys(srs);
   if(!earQ || !earQ.length) earQ = shuffle(pool).slice(0, 12);
   const id = earQ.shift();
   const c = byId(id);
@@ -2206,8 +2369,13 @@ function buildEarCard(){
 }
 
 function renderListen(){
-  if(!Object.keys(srs).length && !CHUNKS.length){
-    view.innerHTML = header("Listen", "Train your ear") + empty("\u{1F442}", "Nothing to hear yet", "Add a few chunks in Learn first.");
+  /* Never quiz a beginner on chunks they've never met — that's a guess, not
+     listening practice. */
+  if(!Object.keys(srs).length){
+    view.innerHTML = header("Listen", "Train your ear") +
+      empty("\u{1F442}", "Learn a few chunks first",
+            "Then you'll hear them with no text on screen, speeding up as you get them.") +
+      `<button class="btn primary" data-go="learn">Learn some chunks</button>`;
     return;
   }
   if(!earCard) buildEarCard();
@@ -2217,7 +2385,7 @@ function renderListen(){
   const right = answered && earPick === ex.en;
 
   view.innerHTML = header("Listen", flow ? `Session · ${flowDone()+1} of ${flow.plan.total}`
-                                         : `No text · ${EAR_LABELS[lvl]} speed`) + flowBar() + `
+                                         : `No text · ${EAR_LABELS[lvl]} speed`) + flowBar() + comboBadge() + `
     <div class="card center" style="padding:26px 16px">
       <button class="spk" style="width:76px;height:76px;font-size:30px" data-ear="play">\u{1F50A}</button>
       <div class="tiny muted" style="margin-top:12px">${answered ? "" : "Tap to hear it again"}</div>
@@ -2373,9 +2541,10 @@ function beginListening(){
       }
       /* A scored attempt IS a rep — otherwise the mic is a side quest and only
          the manual button moves the queue. */
-      if(r.score >= 60){ item.reps++; totals.shadowReps++; }
+      if(r.score >= 60){ item.reps++; totals.shadowReps++; gotItRight(); } else gotItWrong();
       saveTotals();
       markStudied();
+      checkMilestones();
       render();
     }
   });
@@ -2500,8 +2669,7 @@ const DRILL_SECONDS = 5;
 let drillCard = null, drillState = "ready", drillResult = null, drillHeard = "", drillTimer = null, drillLeft = 0;
 
 function buildDrill(){
-  const deck = Object.keys(srs);
-  const pool = deck.length ? deck : CHUNKS.filter(c => c.tier === 1).map(c => c.id);
+  const pool = Object.keys(srs);
   const c = byId(pool[Math.floor(Math.random()*pool.length)]);
   drillCard = {c, ex: c.examples[Math.floor(Math.random()*c.examples.length)]};
   drillState = "ready"; drillResult = null; drillHeard = "";
@@ -2537,6 +2705,8 @@ function startDrill(){
         const id = drillCard.c.id;
         if(drills[id] == null || r.score > drills[id]){ drills[id] = r.score; saveDrills(); }
         saveTotals(); markStudied();
+        r.score >= 60 ? gotItRight() : gotItWrong();
+        checkMilestones();
       }else{
         drillResult = {blocked: "Didn't catch anything — try again."};
       }
@@ -2546,6 +2716,13 @@ function startDrill(){
 }
 
 function renderDrill(){
+  if(!Object.keys(srs).length){
+    view.innerHTML = header("Quick-fire", "Say it fast") +
+      empty("\u{26A1}", "Learn a few chunks first",
+            "Producing a sentence you've never seen isn't a drill, it's a guess.") +
+      `<button class="btn primary" data-go="learn">Learn some chunks</button>`;
+    return;
+  }
   if(!drillCard) buildDrill();
   const {c, ex} = drillCard;
   const blocked = recProblem();
@@ -2835,6 +3012,11 @@ function openSettings(){
         <span>Speed <b id="rateVal" class="muted tiny">${settings.rate.toFixed(2)}×</b></span>
         <input type="range" id="rate" min="0.6" max="1.2" step="0.02" value="${settings.rate}">
       </div>
+      <div class="field">
+        <span>Sounds</span>
+        <button class="btn sm" id="soundTog" style="width:auto;padding:8px 16px">
+          ${settings.sound === false ? "Off" : "On"}</button>
+      </div>
       <button class="btn sm" id="testVoice" style="margin-top:12px">Test: ¿Qué onda, güey?</button>
       <button class="btn sm ghost" id="reset" style="margin-top:10px;color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)">Reset all progress</button>
     </div>`;
@@ -2851,12 +3033,21 @@ function openSettings(){
     wrap.querySelector("#rateVal").textContent = settings.rate.toFixed(2) + "×";
     saveSettings();
   };
+  const tog = wrap.querySelector("#soundTog");
+  tog.onclick = () => {
+    settings.sound = settings.sound === false;
+    saveSettings();
+    tog.textContent = settings.sound === false ? "Off" : "On";
+    if(settings.sound) SFX.right();
+  };
   wrap.querySelector("#testVoice").onclick = () => speak("¿Qué onda, güey? ¿Cómo has estado?");
   wrap.querySelector("#reset").onclick = () => {
     if(!confirm("Erase your deck, streak and all progress? This can't be undone.")) return;
     srs = {}; streak = {count:0,last:null,days:{}}; scores = {}; ears = {};
-    dialogDone = {}; drills = {}; skipped = {};
-    totals = {reviews:0, shadowReps:0, attempts:0, drills:0};
+    dialogDone = {}; drills = {}; skipped = {}; unlocked = {};
+    LS.set("unlocked", unlocked);
+    combo = 0;
+    totals = {reviews:0, shadowReps:0, attempts:0, drills:0, bestCombo:0};
     saveSrs(); saveStreak(); saveScores(); saveEars(); saveDialogs();
     saveDrills(); saveSkipped(); saveTotals();
     leaveMode();
@@ -2867,7 +3058,7 @@ function openSettings(){
 
 /* ---------- 7. EVENTS ---------- */
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session]");
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro]");
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
@@ -2880,6 +3071,12 @@ document.addEventListener("click", e => {
     return;
   }
   if(t.dataset.session){ leaveMode(); startSessionFlow(); return; }
+
+  if(t.dataset.intro){
+    if(t.dataset.intro === "next" && introStep < INTRO.length - 1){ introStep++; return render(); }
+    seenIntro = true; LS.set("seenIntro", true);
+    go("home"); return;
+  }
 
   /* ----- Listen ----- */
   if(t.dataset.ear){
@@ -2896,11 +3093,10 @@ document.addEventListener("click", e => {
   if(t.dataset.earPick !== undefined){
     const id = earCard.c.id;
     earPick = t.dataset.earPick;
-    const lvl = earLevel(id);
-    ears[id] = earPick === earCard.ex.en
-      ? Math.min(EAR_RATES.length - 1, lvl + 1)
-      : Math.max(0, lvl - 1);
+    const lvl = earLevel(id), right = earPick === earCard.ex.en;
+    ears[id] = right ? Math.min(EAR_RATES.length - 1, lvl + 1) : Math.max(0, lvl - 1);
     saveEars(); markStudied();
+    right ? gotItRight() : gotItWrong();
     render(); return;
   }
 
@@ -2918,7 +3114,7 @@ document.addEventListener("click", e => {
   if(t.dataset.dlgPick !== undefined){
     const turn = dlg.d.turns[dlg.turn];
     dlg.picked = t.dataset.dlgPick;
-    if(dlg.picked === turn.es) dlg.right++;
+    if(dlg.picked === turn.es){ dlg.right++; gotItRight(); } else gotItWrong();
     speak(turn.es);
     markStudied();
     render(); return;
@@ -2964,8 +3160,8 @@ document.addEventListener("click", e => {
     saveSrs();
     totals.reviews++; saveTotals();
     markStudied();
-    if(GRADE[t.dataset.grade] === GRADE.again) session.queue.push(c.id);
-    else { session.done++; flowTick("review"); }
+    if(GRADE[t.dataset.grade] === GRADE.again){ session.queue.push(c.id); gotItWrong(); }
+    else { session.done++; gotItRight(); checkMilestones(); flowTick("review"); }
     nextCard();
     if(!session.card && flow) return flowNext();
     render(); return;
