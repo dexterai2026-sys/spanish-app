@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12100e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Calle">
+<title>Calle — Real Mexican Spanish</title>
+<style>
+:root{
+  --bg:#12100e; --surface:#1c1917; --surface-2:#292524; --surface-3:#3a3532;
+  --text:#fafaf9; --muted:#a8a29e; --faint:#57534e;
+  --accent:#f59e0b; --accent-ink:#1c1200;
+  --teal:#2dd4bf; --green:#4ade80; --red:#f87171; --blue:#60a5fa; --violet:#c084fc;
+  --radius:16px; --radius-sm:10px;
+  --tap:#ffffff0d;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+@media(prefers-color-scheme:light){
+  :root{
+    --bg:#faf8f5; --surface:#ffffff; --surface-2:#f4f1ec; --surface-3:#e7e2da;
+    --text:#1c1917; --muted:#78716c; --faint:#a8a29e;
+    --accent:#b45309; --accent-ink:#fff;
+    --teal:#0d9488; --green:#16a34a; --red:#dc2626; --blue:#2563eb; --violet:#7c3aed;
+    --tap:#0000000a;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  font-size:16px; line-height:1.5;
+  overscroll-behavior-y:none;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+input{font:inherit}
+#app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+#view{flex:1;padding:16px 16px calc(84px + var(--safe-b));animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ---------- header ---------- */
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 20px}
+.hdr h1{font-size:26px;line-height:1.1;margin:0;letter-spacing:-.02em;font-weight:700}
+.hdr p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.icon-btn{width:38px;height:38px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;font-size:17px;flex:none}
+.icon-btn:active{background:var(--surface-3)}
+
+/* ---------- generic ---------- */
+.card{background:var(--surface);border-radius:var(--radius);padding:16px}
+.card + .card{margin-top:12px}
+.row{display:flex;gap:12px}
+.muted{color:var(--muted)}
+.tiny{font-size:12px}
+.center{text-align:center}
+.stack>*+*{margin-top:12px}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:15px 18px;border-radius:14px;font-weight:650;font-size:16px;
+  background:var(--surface-2);transition:transform .08s,filter .12s;
+}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border:1.5px solid var(--surface-3);color:var(--muted)}
+.btn.sm{padding:11px 14px;font-size:14px;border-radius:12px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+
+.badge{
+  display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;
+  font-weight:650;letter-spacing:.03em;text-transform:uppercase;
+  background:var(--surface-2);color:var(--muted);
+}
+.badge.tier1{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.badge.tier2{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue)}
+.badge.tier3{background:color-mix(in srgb,var(--violet) 18%,transparent);color:var(--violet)}
+.badge.vulgar{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
+
+/* ---------- home ---------- */
+.streak{
+  display:flex;align-items:center;gap:14px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,var(--surface)),var(--surface));
+  border-radius:var(--radius);padding:18px;
+}
+.streak .flame{font-size:34px;line-height:1}
+.streak b{font-size:28px;display:block;line-height:1.1;letter-spacing:-.02em}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border-radius:var(--radius-sm);padding:13px 10px;text-align:center}
+.stat b{display:block;font-size:22px;letter-spacing:-.02em;line-height:1.2}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.action{
+  display:flex;align-items:center;gap:14px;background:var(--surface);
+  border-radius:var(--radius);padding:16px;width:100%;text-align:left;
+}
+.action:active{background:var(--surface-2)}
+.action .em{font-size:26px;flex:none;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:var(--surface-2)}
+.action .t{flex:1;min-width:0}
+.action .t b{display:block;font-size:16px}
+.action .t span{font-size:13px;color:var(--muted)}
+.action .n{
+  flex:none;min-width:28px;height:28px;padding:0 9px;border-radius:99px;background:var(--accent);
+  color:var(--accent-ink);font-size:13px;font-weight:700;display:grid;place-items:center;
+}
+.action .n.zero{background:var(--surface-2);color:var(--faint)}
+
+/* ---------- chunk card ---------- */
+.chunk-hero{text-align:center;padding:8px 0 4px}
+.chunk-hero .es{
+  font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:1.15;
+  display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;
+}
+.chunk-hero .meaning{color:var(--muted);font-size:16px;margin-top:8px}
+.chunk-hero .lit{color:var(--faint);font-size:13px;margin-top:6px;font-style:italic}
+.spk{
+  width:40px;height:40px;border-radius:50%;background:var(--surface-2);
+  display:inline-grid;place-items:center;font-size:17px;flex:none;
+}
+.spk:active{background:var(--accent);color:var(--accent-ink)}
+.spk.sm{width:32px;height:32px;font-size:14px}
+
+.ex{display:flex;gap:12px;align-items:flex-start;padding:13px 0}
+.ex + .ex{border-top:1px solid var(--surface-2)}
+.ex .txt{flex:1;min-width:0}
+.ex .es{font-size:17px;font-weight:550;line-height:1.4}
+.ex .en{font-size:14px;color:var(--muted);margin-top:3px}
+.sec-label{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin:0 0 4px}
+
+/* ---------- review ---------- */
+.progbar{height:4px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-bottom:18px}
+.progbar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.cloze{font-size:24px;font-weight:650;line-height:1.45;letter-spacing:-.015em;text-align:center;padding:10px 0}
+.blank{
+  display:inline-block;min-width:88px;border-bottom:3px solid var(--accent);
+  vertical-align:baseline;color:transparent;
+}
+.blank.shown{color:var(--accent);border-bottom-color:transparent}
+.prompt-en{text-align:center;color:var(--muted);font-size:15px;margin-top:10px}
+.grades{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.grade{padding:13px 4px;border-radius:13px;background:var(--surface-2);text-align:center;transition:transform .08s}
+.grade:active{transform:scale(.95)}
+.grade b{display:block;font-size:14px;font-weight:650}
+.grade span{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+.grade.again b{color:var(--red)} .grade.hard b{color:var(--accent)}
+.grade.good b{color:var(--green)} .grade.easy b{color:var(--teal)}
+
+/* ---------- shadow ---------- */
+.shadow-big{
+  width:100%;aspect-ratio:1/1;max-height:300px;border-radius:24px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--teal) 20%,var(--surface)),var(--surface));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;
+}
+.shadow-big .es{font-size:23px;font-weight:650;line-height:1.35;letter-spacing:-.015em}
+.shadow-big .en{font-size:14px;color:var(--muted)}
+.pulse{animation:pulse 1s ease infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.reps{display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--surface-3)}
+.dot.on{background:var(--teal)}
+
+/* ---------- stats ---------- */
+.heat{display:grid;grid-template-columns:repeat(13,1fr);gap:3px}
+.heat i{aspect-ratio:1/1;border-radius:2.5px;background:var(--surface-2)}
+.heat i.l1{background:color-mix(in srgb,var(--accent) 30%,var(--surface-2))}
+.heat i.l2{background:color-mix(in srgb,var(--accent) 55%,var(--surface-2))}
+.heat i.l3{background:color-mix(in srgb,var(--accent) 80%,var(--surface-2))}
+.heat i.l4{background:var(--accent)}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:13px;padding:5px 0}
+.bar-row .nm{width:96px;flex:none;color:var(--muted);font-size:12px;text-transform:capitalize}
+.bar-row .track{flex:1;height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.bar-row .track i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.bar-row .v{width:42px;text-align:right;flex:none;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ---------- browse ---------- */
+.search{width:100%;padding:12px 14px;border-radius:13px;background:var(--surface-2);border:none;color:var(--text);outline:none}
+.search::placeholder{color:var(--faint)}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:12px 0;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:7px 13px;border-radius:99px;background:var(--surface-2);font-size:13px;white-space:nowrap;flex:none;font-weight:550}
+.chip.on{background:var(--accent);color:var(--accent-ink)}
+.li{display:flex;align-items:center;gap:12px;padding:13px 0;width:100%;text-align:left}
+.li + .li{border-top:1px solid var(--surface-2)}
+.li .t{flex:1;min-width:0}
+.li .t b{display:block;font-size:16px;font-weight:600}
+.li .t span{font-size:13px;color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{width:9px;height:9px;border-radius:50%;flex:none;background:var(--surface-3)}
+.pill.learning{background:var(--accent)} .pill.review{background:var(--blue)} .pill.mastered{background:var(--green)}
+
+/* ---------- empty ---------- */
+.empty{text-align:center;padding:48px 20px}
+.empty .em{font-size:46px}
+.empty h3{margin:14px 0 6px;font-size:19px}
+.empty p{margin:0;color:var(--muted);font-size:14px}
+
+/* ---------- sheet ---------- */
+.scrim{position:fixed;inset:0;background:#000a;z-index:40;animation:fade .15s}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--surface);
+  border-radius:22px 22px 0 0;padding:20px 18px calc(24px + var(--safe-b));
+  max-width:560px;margin:0 auto;max-height:86vh;overflow-y:auto;
+  animation:up .22s cubic-bezier(.2,.8,.3,1);
+}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.grip{width:38px;height:4px;border-radius:99px;background:var(--surface-3);margin:0 auto 16px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}
+.field + .field{border-top:1px solid var(--surface-2)}
+.field select,.field input[type=range]{background:var(--surface-2);border:none;color:var(--text);padding:8px 10px;border-radius:9px;max-width:200px}
+
+/* ---------- nav ---------- */
+nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;
+  max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--surface-2);padding-bottom:var(--safe-b);
+}
+nav button{padding:9px 0 8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--faint);position:relative}
+nav button .ic{font-size:19px;line-height:1}
+nav button .lb{font-size:10px;font-weight:600;letter-spacing:.01em}
+nav button.on{color:var(--accent)}
+nav .dot-n{position:absolute;top:6px;right:50%;margin-right:-20px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+.toast{
+  position:fixed;bottom:calc(90px + var(--safe-b));left:50%;transform:translateX(-50%);
+  background:var(--surface-3);color:var(--text);padding:11px 18px;border-radius:99px;
+  font-size:14px;font-weight:550;z-index:50;animation:fade .15s;white-space:nowrap;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <main id="view"></main>
+  <nav id="nav"></nav>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   CALLE — real-world Mexican Spanish, chunk-first.
+   Single-file PWA. No network, no backend. State in localStorage.
+   ============================================================ */
+
+/* ---------- 1. CONTENT ---------- */
+/* C(chunk, meaning, category, tier, register, examples[[es,en]...], literal?) */
+const CAT = {
+  filler:    {label:"Fillers",     em:"\u{1F4AC}"},
+  reaction:  {label:"Reactions",   em:"\u{1F632}"},
+  agree:     {label:"Agree / No",  em:"\u{1F44D}"},
+  ask:       {label:"Questions",   em:"\u{2753}"},
+  opinion:   {label:"Opinions",    em:"\u{1F9E0}"},
+  connect:   {label:"Connectors",  em:"\u{1F517}"},
+  soften:    {label:"Politeness",  em:"\u{1F64F}"},
+  survive:   {label:"Survival",    em:"\u{1F6DF}"},
+  slang:     {label:"Slang",       em:"\u{1F1F2}\u{1F1FD}"},
+  verb:      {label:"Verb combos", em:"\u{2699}\u{FE0F}"},
+  time:      {label:"Time",        em:"\u{23F1}\u{FE0F}"},
+  social:    {label:"Social",      em:"\u{1F91D}"},
+};
+
+let _i = 0;
+function C(chunk, meaning, category, tier, register, examples, literal){
+  return {
+    id: "c" + String(++_i).padStart(3,"0"),
+    chunk, meaning, category, tier, register, literal: literal || null,
+    examples: examples.map(e => ({es:e[0], en:e[1]}))
+  };
+}
+
+const CHUNKS = [
+
+/* ===== TIER 1 · FILLERS & HEDGES ===== */
+C("o sea","\"I mean\" / \"like\" — the #1 Mexican filler, used to restate or stall","filler",1,"casual",[
+  ["O sea, no es que no quiera ir, es que ando sin lana.","I mean, it's not that I don't want to go, it's that I'm broke."],
+  ["Es mi primo, o sea, el hijo de mi tía.","He's my cousin, I mean, my aunt's son."],
+  ["O sea, ¿neta hizo eso?","Like, he really did that?"]
+]),
+C("este...","\"um...\" — the sound Mexicans make while thinking. Use it instead of English \"uh\"","filler",1,"casual",[
+  ["Este... déjame pensarlo tantito.","Um... let me think about it for a sec."],
+  ["Se llama, este... ya se me fue el nombre.","His name is, um... I lost the name."]
+],"\"this\""),
+C("pues","\"well...\" — softens or stalls the start of any answer","filler",1,"casual",[
+  ["¿Y qué hiciste? — Pues nada, me quedé en casa.","And what did you do? — Well, nothing, I stayed home."],
+  ["Pues sí, tienes razón.","Well yeah, you're right."]
+]),
+C("la neta","\"honestly\" / \"the truth is\" — signals you're being real","filler",1,"casual",[
+  ["La neta no me gustó la película.","Honestly, I didn't like the movie."],
+  ["¿La neta? Estoy bien cansado.","Honestly? I'm really tired."],
+  ["Dime la neta, ¿qué pasó?","Tell me the truth, what happened?"]
+],"\"the net\""),
+C("digo","\"I mean\" — used to correct yourself mid-sentence","filler",1,"neutral",[
+  ["Llego a las tres, digo, a las cuatro.","I'll get there at three, I mean, at four."],
+  ["Es mi hermana, digo, mi cuñada.","She's my sister, I mean, my sister-in-law."]
+]),
+C("¿no?","tag question — \"right?\" Tacked onto the end of almost anything","filler",1,"casual",[
+  ["Está bien padre el lugar, ¿no?","The place is pretty cool, right?"],
+  ["Ya nos vamos, ¿no?","We're leaving now, right?"]
+]),
+C("¿sí me explico?","\"you know what I mean?\" — checks that you're landing","filler",1,"casual",[
+  ["No quiero pelear, sólo quiero entender, ¿sí me explico?","I don't want to fight, I just want to understand, you know what I mean?"],
+  ["Es más barato pero no tan bueno, ¿sí me explico?","It's cheaper but not as good, you know?"]
+]),
+C("tipo","\"like\" — approximating, same as English filler \"like\"","filler",1,"casual",[
+  ["Llegaron tipo cincuenta personas.","Like fifty people showed up."],
+  ["Fue tipo hace dos años.","It was like two years ago."]
+]),
+C("güey","\"dude\" — spelled güey or wey. Punctuation between friends, rude with strangers","filler",1,"casual",[
+  ["¿Qué onda, güey?","What's up, dude?"],
+  ["No manches, güey, eso está cañón.","No way, dude, that's rough."]
+]),
+C("no sé","\"I dunno\" — also a hedge dropped mid-sentence","filler",1,"neutral",[
+  ["No sé, se me hace raro.","I dunno, it seems weird to me."],
+  ["¿Vamos? — No sé, tú dime.","Should we go? — I dunno, you tell me."]
+]),
+C("es que","\"it's just that\" — the universal way to start an excuse or reason","filler",1,"neutral",[
+  ["Es que no me avisaron.","It's just that nobody told me."],
+  ["Es que ando corriendo, perdón.","It's just that I'm in a rush, sorry."]
+]),
+C("bueno","\"well\" / \"okay\" — also how you answer the phone in Mexico","filler",1,"neutral",[
+  ["¿Bueno? — ¿Qué onda?","Hello? — What's up?"],
+  ["Bueno, ya qué.","Well, whatever."]
+]),
+C("¿verdad?","\"right?\" — slightly softer than ¿no?","filler",1,"neutral",[
+  ["Tú eres el hermano de Ana, ¿verdad?","You're Ana's brother, right?"],
+  ["Hace mucho calor, ¿verdad?","It's really hot, right?"]
+]),
+C("cómo te diré","\"how can I put it\" — buys you several seconds","filler",2,"neutral",[
+  ["Es, cómo te diré, un poco intenso.","He's, how can I put it, a little intense."],
+  ["Estuvo, cómo te diré... raro.","It was, how do I say it... weird."]
+]),
+C("¿va?","\"deal?\" / \"cool?\" — checks agreement at the end of a plan","filler",1,"casual",[
+  ["Nos vemos a las ocho, ¿va?","We'll meet at eight, deal?"],
+  ["Yo llevo la bebida y tú la comida, ¿va?","I'll bring drinks and you bring food, cool?"]
+]),
+C("más o menos","\"more or less\" / \"sort of\" — the safest answer to almost any question","filler",1,"neutral",[
+  ["¿Hablas español? — Más o menos.","Do you speak Spanish? — Sort of."],
+  ["Está más o menos lejos.","It's kind of far."]
+]),
+
+/* ===== TIER 1 · MEXICAN SLANG CORE ===== */
+C("¿qué onda?","\"what's up?\" — the default Mexican greeting","slang",1,"casual",[
+  ["¿Qué onda, cómo has estado?","What's up, how've you been?"],
+  ["¿Qué onda con tu hermano? ¿Ya llegó?","What's up with your brother? Did he arrive?"]
+],"\"what wave?\""),
+C("no manches","\"no way!\" — disbelief, surprise, or outrage. Safe in any company","reaction",1,"casual",[
+  ["¡No manches! ¿Te ganaste el sorteo?","No way! You won the raffle?"],
+  ["No manches, otra vez se descompuso.","No way, it broke down again."]
+],"\"don't stain\""),
+C("órale","all-purpose: \"wow\", \"alright\", \"come on\", \"let's go\"","slang",1,"casual",[
+  ["¡Órale! No sabía que cocinabas así.","Wow! I didn't know you cooked like that."],
+  ["Órale pues, nos vemos mañana.","Alright then, see you tomorrow."],
+  ["¡Órale, apúrate!","Come on, hurry up!"]
+]),
+C("ahorita","\"right now\" — but famously elastic: could mean now, in 20 minutes, or never","time",1,"casual",[
+  ["Ahorita voy, déjame termino esto.","I'm coming right now, let me finish this."],
+  ["Ahorita te marco.","I'll call you in a bit."],
+  ["¿Me ayudas? — Ahorita.","Can you help me? — In a sec."]
+],"tiny-now (diminutive of ahora)"),
+C("neta","\"for real\" — as a question it's \"seriously?\"","slang",1,"casual",[
+  ["¿Neta? No te creo.","For real? I don't believe you."],
+  ["Neta que estuvo brutal el concierto.","The concert was seriously insane."]
+]),
+C("chido","\"cool\" / \"awesome\" — very Mexican","slang",1,"casual",[
+  ["¡Qué chido tu carro!","Your car is so cool!"],
+  ["Estuvo chido el viaje.","The trip was cool."]
+]),
+C("qué padre","\"how cool\" — interchangeable with chido, slightly broader","reaction",1,"casual",[
+  ["¡Qué padre que ya te dieron el trabajo!","How cool that they gave you the job!"],
+  ["Qué padre está tu depa.","Your apartment is really nice."]
+],"\"how father\""),
+C("sale","\"okay\" / \"deal\" — closes a plan. Often \"sale y vale\"","slang",1,"casual",[
+  ["Nos vemos allá. — ¡Sale!","See you there. — Deal!"],
+  ["Sale, yo te marco al rato.","Okay, I'll call you later."]
+]),
+C("ni modo","\"oh well\" / \"nothing to be done\" — pure Mexican resignation","slang",1,"casual",[
+  ["Se canceló el vuelo. — Pues ni modo.","The flight got cancelled. — Well, oh well."],
+  ["Ni modo, será la próxima.","Oh well, next time."]
+]),
+C("¡aguas!","\"watch out!\" / \"careful!\"","slang",1,"casual",[
+  ["¡Aguas con el escalón!","Watch out for the step!"],
+  ["Aguas, viene un coche.","Careful, a car's coming."]
+],"\"waters!\""),
+C("¿mande?","\"pardon?\" — the distinctly Mexican way to ask someone to repeat","survive",1,"neutral",[
+  ["¿Mande? No te escuché.","Pardon? I didn't hear you."],
+  ["¡Juan! — ¿Mande?","Juan! — Yes?"]
+]),
+C("ándale","\"go on\" / \"that's it\" / \"hurry\" — encouragement or agreement","slang",1,"casual",[
+  ["Ándale, eso es justo lo que quise decir.","That's it, that's exactly what I meant."],
+  ["Ándale pues, vamos.","Alright then, let's go."]
+]),
+C("híjole","\"geez\" / \"yikes\" — sympathy or mild alarm","reaction",1,"casual",[
+  ["Híjole, qué mala onda.","Geez, that sucks."],
+  ["Híjole, no sé si alcance el tiempo.","Yikes, I don't know if there's enough time."]
+]),
+C("me late","\"I'm into it\" / \"sounds good to me\"","slang",1,"casual",[
+  ["¿Vamos por tacos? — Me late.","Tacos? — Sounds good."],
+  ["Me late tu idea.","I like your idea."]
+],"\"it beats me\" (like a heartbeat)"),
+C("qué mala onda","\"that sucks\" / \"how uncool\" — sympathy or disapproval","reaction",1,"casual",[
+  ["¿Te dejaron plantado? Qué mala onda.","They stood you up? That sucks."],
+  ["Qué mala onda que no te invitaron.","How uncool that they didn't invite you."]
+]),
+C("qué hueva","\"what a drag\" — the feeling of not wanting to do anything","slang",1,"casual",[
+  ["Qué hueva ir a trabajar mañana.","What a drag going to work tomorrow."],
+  ["Me da hueva salir.","I can't be bothered to go out."]
+]),
+C("un chorro","\"a ton\" / \"loads\"","slang",1,"casual",[
+  ["Había un chorro de gente.","There were a ton of people."],
+  ["Te quiero un chorro.","I love you loads."]
+],"\"a stream\""),
+C("¿a poco?","\"really?\" / \"you don't say\" — surprise, often playful doubt","reaction",1,"casual",[
+  ["¿A poco no sabías?","You really didn't know?"],
+  ["Me voy a mudar. — ¿A poco?","I'm moving. — Really?"]
+]),
+C("está cañón","\"that's rough\" / \"that's intense\" — hard situations or impressive feats","slang",1,"casual",[
+  ["Trabaja doble turno, está cañón.","He works a double shift, that's rough."],
+  ["Está cañón el examen.","The exam is brutal."]
+]),
+C("chamba","\"work\" / \"job\" — chambear = to work","slang",1,"casual",[
+  ["Ando buscando chamba.","I'm looking for work."],
+  ["Tengo mucha chamba esta semana.","I have a lot of work this week."]
+]),
+C("lana","\"money\" / \"cash\"","slang",1,"casual",[
+  ["No traigo lana.","I don't have any cash on me."],
+  ["Juntó lana para el viaje.","He saved up money for the trip."]
+],"\"wool\""),
+C("qué oso","\"how embarrassing\" — for cringe moments","slang",2,"casual",[
+  ["Me caí enfrente de todos, qué oso.","I fell in front of everyone, how embarrassing."],
+  ["Qué oso, se me olvidó su nombre.","So embarrassing, I forgot his name."]
+],"\"what a bear\""),
+
+/* ===== TIER 1 · AGREE / DISAGREE ===== */
+C("claro","\"of course\" / \"sure\" — the fastest way to agree","agree",1,"neutral",[
+  ["¿Me ayudas? — Claro.","Can you help me? — Of course."],
+  ["Claro que sí, cuenta conmigo.","Of course, count on me."]
+]),
+C("exacto","\"exactly\" — confirms someone nailed it","agree",1,"neutral",[
+  ["Entonces llegamos antes. — Exacto.","So we arrive early. — Exactly."],
+  ["¡Exacto! Eso es lo que digo.","Exactly! That's what I'm saying."]
+]),
+C("para nada","\"not at all\" — firm but friendly denial","agree",1,"neutral",[
+  ["¿Te molestó? — Para nada.","Did it bother you? — Not at all."],
+  ["Para nada, no te preocupes.","Not at all, don't worry."]
+]),
+C("símon","\"yep\" — street-level yes","agree",2,"casual",[
+  ["¿Vas a ir? — Símon.","Are you going? — Yep."],
+  ["Símon, ahí nos vemos.","Yep, see you there."]
+]),
+C("nel","\"nope\" — street-level no","agree",2,"casual",[
+  ["¿Quieres? — Nel, gracias.","Want some? — Nope, thanks."],
+  ["Nel, mejor otro día.","Nah, another day is better."]
+]),
+C("obvio","\"obviously\" / \"duh\" — very common among younger speakers","agree",1,"casual",[
+  ["¿Vas a venir? — Obvio sí.","Are you coming? — Obviously yes."],
+  ["Obvio no le dije nada.","Obviously I didn't tell him anything."]
+]),
+C("tal cual","\"exactly that\" / \"just like that\"","agree",2,"neutral",[
+  ["Dijo que no vendría, tal cual.","He said he wouldn't come, just like that."],
+  ["¿Así fue? — Tal cual.","Is that how it went? — Exactly."]
+]),
+C("ya sé","\"I know\" — agreement, sometimes mild impatience","agree",1,"casual",[
+  ["Está carrísimo. — Ya sé.","It's super expensive. — I know."],
+  ["Ya sé, ya sé, ya voy.","I know, I know, I'm coming."]
+]),
+C("tienes razón","\"you're right\" — concedes gracefully","agree",1,"neutral",[
+  ["Tienes razón, mejor lo dejamos así.","You're right, let's leave it like that."],
+  ["Sí, tienes razón, no lo había pensado.","Yeah, you're right, I hadn't thought of that."]
+]),
+C("puede ser","\"could be\" / \"maybe\" — polite non-commitment","agree",1,"neutral",[
+  ["¿Crees que llueva? — Puede ser.","Do you think it'll rain? — Could be."],
+  ["Puede ser, pero no estoy seguro.","Maybe, but I'm not sure."]
+]),
+C("ni de chiste","\"no way in hell\" — emphatic refusal, still playful","agree",2,"casual",[
+  ["¿Le prestarías tu coche? — Ni de chiste.","Would you lend him your car? — No way."],
+  ["Ni de chiste me subo a eso.","No way am I getting on that."]
+],"\"not even as a joke\""),
+C("hasta crees","\"yeah right\" — sarcastic disbelief","agree",2,"casual",[
+  ["Dice que paga él. — Hasta crees.","He says he'll pay. — Yeah right."],
+  ["¿Tú cocinaste? Hasta crees.","You cooked? Yeah right."]
+]),
+C("no creo","\"I don't think so\" — soft disagreement","agree",1,"neutral",[
+  ["No creo que alcance el tiempo.","I don't think there'll be enough time."],
+  ["¿Va a venir? — No creo.","Is he coming? — I don't think so."]
+]),
+
+/* ===== TIER 1 · QUESTION STARTERS ===== */
+C("¿cómo ves?","\"what do you think?\" — asks for a read on a situation","ask",1,"casual",[
+  ["Quiero renunciar, ¿cómo ves?","I want to quit, what do you think?"],
+  ["¿Cómo ves si vamos el sábado?","What do you think about going Saturday?"]
+]),
+C("¿qué tal si...?","\"what if we...\" — the natural way to propose a plan","ask",1,"neutral",[
+  ["¿Qué tal si nos vemos a las siete?","What if we meet at seven?"],
+  ["¿Qué tal si mejor pedimos a domicilio?","What if we order delivery instead?"]
+]),
+C("¿sabes qué?","\"you know what?\" — sets up a decision or announcement","ask",1,"casual",[
+  ["¿Sabes qué? Mejor me quedo.","You know what? I'd rather stay."],
+  ["¿Sabes qué? Tienes razón.","You know what? You're right."]
+]),
+C("¿te late?","\"you into it?\" — casual \"does that work for you?\"","ask",1,"casual",[
+  ["Vamos al cine, ¿te late?","Let's go to the movies, sound good?"],
+  ["¿Te late el jueves?","Does Thursday work for you?"]
+]),
+C("¿me pasas...?","\"can you pass me...\" — everyday request","ask",1,"neutral",[
+  ["¿Me pasas la sal?","Can you pass me the salt?"],
+  ["¿Me pasas su número?","Can you send me his number?"]
+]),
+C("¿te parece?","\"does that work for you?\" — slightly more polite than ¿te late?","ask",1,"neutral",[
+  ["Nos vemos a las seis, ¿te parece?","We'll meet at six, does that work?"],
+  ["¿Te parece si lo vemos mañana?","How about we look at it tomorrow?"]
+]),
+C("¿qué onda con...?","\"what's the deal with...\" — asks for an update on anything","ask",1,"casual",[
+  ["¿Qué onda con la mudanza?","What's the deal with the move?"],
+  ["¿Qué onda con tu jefe? ¿Sigue igual?","What's up with your boss? Still the same?"]
+]),
+C("¿y si mejor...?","\"how about instead we...\" — redirects a plan gently","ask",2,"casual",[
+  ["¿Y si mejor vamos el domingo?","How about we go Sunday instead?"],
+  ["¿Y si mejor le hablamos?","What if we just call him instead?"]
+]),
+C("¿en serio?","\"seriously?\" — neutral-register surprise","ask",1,"neutral",[
+  ["¿En serio te dijo eso?","He seriously said that to you?"],
+  ["Renunció. — ¿En serio?","He quit. — Seriously?"]
+]),
+C("¿tú crees?","\"you think?\" — can be genuine or skeptical","ask",1,"casual",[
+  ["¿Tú crees que le guste?","Do you think he'll like it?"],
+  ["Dice que llega temprano. — ¿Tú crees?","He says he'll be early. — You think?"]
+]),
+
+/* ===== TIER 1 · OPINION STARTERS ===== */
+C("se me hace que","\"it seems to me that\" — the most Mexican way to give an opinion","opinion",1,"casual",[
+  ["Se me hace que no va a venir.","I have a feeling he's not coming."],
+  ["Se me hace caro.","It seems expensive to me."]
+]),
+C("la verdad es que","\"the truth is\" — frames an honest admission","opinion",1,"neutral",[
+  ["La verdad es que no tenía ganas.","The truth is I didn't feel like it."],
+  ["La verdad es que sí me gustó.","Honestly, I did like it."]
+]),
+C("yo creo que","\"I think that\" — the workhorse opinion opener","opinion",1,"neutral",[
+  ["Yo creo que es mejor esperar.","I think it's better to wait."],
+  ["Yo creo que sí alcanzamos.","I think we'll make it."]
+]),
+C("lo que pasa es que","\"the thing is\" — sets up an explanation","opinion",1,"neutral",[
+  ["Lo que pasa es que ya había quedado con otros.","The thing is I'd already made plans with others."],
+  ["Lo que pasa es que no me avisaron a tiempo.","The thing is they didn't tell me in time."]
+]),
+C("el chiste es que","\"the point is\" / \"the trick is\"","opinion",2,"casual",[
+  ["El chiste es que llegues temprano.","The point is for you to get there early."],
+  ["El chiste es no pensarlo tanto.","The trick is not overthinking it."]
+],"\"the joke is that\""),
+C("resulta que","\"turns out\" — launches a story","opinion",1,"neutral",[
+  ["Resulta que ya se habían ido.","Turns out they'd already left."],
+  ["Resulta que sí era su hermano.","Turns out it really was his brother."]
+]),
+C("para mí","\"for me\" / \"in my view\"","opinion",1,"neutral",[
+  ["Para mí está bien así.","For me it's fine like this."],
+  ["Para mí que está mintiendo.","If you ask me, he's lying."]
+]),
+C("yo siento que","\"I feel like\" — softer than yo creo que","opinion",2,"casual",[
+  ["Yo siento que le falta sal.","I feel like it needs salt."],
+  ["Yo siento que no le cayó bien.","I feel like he didn't take it well."]
+]),
+
+/* ===== TIER 1 · CONNECTORS ===== */
+C("entonces","\"so\" / \"then\" — the glue of spoken narrative","connect",1,"neutral",[
+  ["Entonces le dije que no.","So I told him no."],
+  ["¿Entonces qué hacemos?","So what do we do?"]
+]),
+C("o sea que","\"so basically\" — draws a conclusion from what was just said","connect",1,"casual",[
+  ["O sea que no vas a ir.","So basically you're not going."],
+  ["O sea que sí era cierto.","So it was true after all."]
+]),
+C("total que","\"long story short\" — skips to the end of a story","connect",1,"casual",[
+  ["Total que nunca llegó.","Long story short, he never showed."],
+  ["Total que acabé pagando yo.","Bottom line, I ended up paying."]
+]),
+C("por eso","\"that's why\" — links cause to result","connect",1,"neutral",[
+  ["Por eso te dije que salieras antes.","That's why I told you to leave earlier."],
+  ["Ah, por eso no contestaba.","Ah, that's why he wasn't answering."]
+]),
+C("aparte","\"besides\" / \"on top of that\" — stacks another reason","connect",1,"casual",[
+  ["Está lejos y aparte es caro.","It's far and on top of that it's expensive."],
+  ["Aparte ni me avisaron.","Besides, they didn't even tell me."]
+]),
+C("de hecho","\"actually\" / \"in fact\"","connect",1,"neutral",[
+  ["De hecho ya lo había visto.","Actually, I'd already seen it."],
+  ["De hecho me gusta más así.","In fact I like it better this way."]
+]),
+C("por cierto","\"by the way\" — drops in a new topic","connect",1,"neutral",[
+  ["Por cierto, ¿ya le hablaste?","By the way, did you call him?"],
+  ["Por cierto, gracias por lo de ayer.","By the way, thanks for yesterday."]
+]),
+C("en fin","\"anyway\" — closes a tangent and moves on","connect",1,"neutral",[
+  ["En fin, ya será en otra ocasión.","Anyway, another time then."],
+  ["En fin, ¿tú cómo vas?","Anyway, how are you doing?"]
+]),
+C("pero bueno","\"but anyway\" / \"oh well\" — accepts and moves on","connect",1,"casual",[
+  ["No me gustó mucho, pero bueno.","I didn't love it, but oh well."],
+  ["Pero bueno, ya qué.","But anyway, what can you do."]
+]),
+C("así que","\"so\" — introduces a consequence","connect",1,"neutral",[
+  ["Ya es tarde, así que mejor me voy.","It's late, so I'd better go."],
+  ["No contestó, así que le mandé mensaje.","He didn't answer, so I texted him."]
+]),
+C("a todo esto","\"speaking of which\" — pivots to a related question","connect",2,"casual",[
+  ["A todo esto, ¿quién va a manejar?","Speaking of which, who's driving?"],
+  ["A todo esto, ¿ya comiste?","By the way, have you eaten?"]
+]),
+C("luego luego","\"right away\" — distinctly Mexican doubling","time",1,"casual",[
+  ["Luego luego se notó que estaba molesto.","You could tell right away he was upset."],
+  ["Llegó y luego luego se fue.","He arrived and left immediately."]
+]),
+
+/* ===== TIER 1 · POLITENESS & SOFTENERS ===== */
+C("no te preocupes","\"don't worry about it\" — defuses almost anything","soften",1,"neutral",[
+  ["Perdón por la tardanza. — No te preocupes.","Sorry I'm late. — Don't worry about it."],
+  ["No te preocupes, yo lo arreglo.","Don't worry, I'll fix it."]
+]),
+C("no hay bronca","\"no problem\" — Mexican, friendly, very common","soften",1,"casual",[
+  ["¿Te puedo pagar mañana? — No hay bronca.","Can I pay you tomorrow? — No problem."],
+  ["No hay bronca, yo te espero.","No worries, I'll wait for you."]
+]),
+C("¿me haces un paro?","\"can you do me a solid?\" — asking a favor between friends","soften",1,"casual",[
+  ["¿Me haces un paro y me cubres el turno?","Can you do me a solid and cover my shift?"],
+  ["Hazme un paro, no le digas nada.","Do me a favor, don't tell him anything."]
+]),
+C("¿me regalas...?","\"could I get...\" — Mexican politeness for ordering or asking","soften",1,"neutral",[
+  ["¿Me regalas un vaso de agua?","Could I get a glass of water?"],
+  ["¿Me regalas la cuenta, por favor?","Could I get the check, please?"]
+],"\"will you gift me...\""),
+C("porfa","\"please\" — short for por favor; porfis is cuter","soften",1,"casual",[
+  ["¿Me esperas tantito, porfa?","Can you wait for me a sec, please?"],
+  ["Un café porfa.","A coffee please."]
+]),
+C("con permiso","\"excuse me\" — to pass by or leave a room. Reply: \"propio\"","soften",1,"neutral",[
+  ["Con permiso, voy pasando.","Excuse me, coming through."],
+  ["Con permiso, ya me tengo que ir.","Excuse me, I have to go now."]
+]),
+C("¿me das chance?","\"can you give me a sec / a chance?\"","soften",1,"casual",[
+  ["¿Me das chance de terminar?","Can you give me a sec to finish?"],
+  ["Dame chance, ahorita voy.","Give me a minute, I'm coming."]
+]),
+C("qué pena contigo","\"I'm so embarrassed / sorry to trouble you\" — very Mexican apology","soften",2,"neutral",[
+  ["Qué pena contigo, se me olvidó por completo.","I'm so sorry, I completely forgot."],
+  ["Qué pena contigo, ¿te puedo pedir otro favor?","So sorry to bother you, can I ask another favor?"]
+]),
+C("una disculpa","\"my apologies\" — slightly formal, very useful","soften",2,"neutral",[
+  ["Una disculpa por la demora.","My apologies for the delay."],
+  ["Te debo una disculpa.","I owe you an apology."]
+]),
+
+/* ===== TIER 1 · SURVIVAL ===== */
+C("¿me repites?","\"can you say that again?\" — your most important phrase as a learner","survive",1,"neutral",[
+  ["¿Me repites, por favor? No te entendí.","Can you repeat that please? I didn't catch it."],
+  ["Perdón, ¿me repites el nombre?","Sorry, can you repeat the name?"]
+]),
+C("no te entendí","\"I didn't understand you\" — honest and disarming","survive",1,"neutral",[
+  ["Perdón, no te entendí.","Sorry, I didn't understand you."],
+  ["No te entendí la última parte.","I didn't get the last part."]
+]),
+C("más despacio, porfa","\"slower, please\" — gets you 80% of the way to comprehension","survive",1,"casual",[
+  ["¿Puedes hablar más despacio, porfa?","Can you speak slower, please?"],
+  ["Más despacio porfa, apenas estoy aprendiendo.","Slower please, I'm just learning."]
+]),
+C("¿cómo se dice...?","\"how do you say...\" — turns any gap into a lesson","survive",1,"neutral",[
+  ["¿Cómo se dice \"spoon\" en español?","How do you say \"spoon\" in Spanish?"],
+  ["¿Cómo se dice esto?","How do you say this?"]
+]),
+C("¿qué significa...?","\"what does ... mean?\"","survive",1,"neutral",[
+  ["¿Qué significa \"órale\"?","What does \"órale\" mean?"],
+  ["¿Qué significa eso?","What does that mean?"]
+]),
+C("estoy aprendiendo","\"I'm learning\" — buys you patience instantly","survive",1,"neutral",[
+  ["Perdón, apenas estoy aprendiendo español.","Sorry, I'm just learning Spanish."],
+  ["Estoy aprendiendo, ten paciencia.","I'm learning, be patient with me."]
+]),
+C("se me fue","\"it slipped my mind\" / \"I lost it\"","survive",1,"casual",[
+  ["Se me fue el nombre.","The name slipped my mind."],
+  ["Se me fue lo que iba a decir.","I lost what I was going to say."]
+]),
+C("no me acuerdo","\"I don't remember\"","survive",1,"neutral",[
+  ["No me acuerdo dónde lo dejé.","I don't remember where I left it."],
+  ["No me acuerdo de su cara.","I don't remember his face."]
+]),
+C("¿cómo se llama esto?","\"what's this called?\" — point at the thing and ask","survive",1,"neutral",[
+  ["¿Cómo se llama esto en español?","What's this called in Spanish?"],
+  ["¿Cómo se llama el lugar ese?","What's that place called?"]
+]),
+C("¿cuánto es?","\"how much is it?\" — also \"¿cuánto le debo?\"","survive",1,"neutral",[
+  ["¿Cuánto es todo?","How much is it all together?"],
+  ["¿Cuánto le debo?","How much do I owe you?"]
+]),
+
+/* ===== TIER 1 · VERB COMBOS (no conjugation drilling) ===== */
+C("voy a + verb","\"I'm going to ___\" — covers the entire future tense. Skip learning the future","verb",1,"neutral",[
+  ["Voy a ver qué pasa.","I'm going to see what happens."],
+  ["Ahorita voy a salir.","I'm about to head out."],
+  ["¿Vas a ir a la fiesta?","Are you going to the party?"]
+]),
+C("tengo que + verb","\"I have to ___\" — obligation without touching subjunctive","verb",1,"neutral",[
+  ["Tengo que irme.","I have to go."],
+  ["Tengo que trabajar mañana temprano.","I have to work early tomorrow."]
+]),
+C("hay que + verb","\"we/one should ___\" — impersonal obligation, extremely common","verb",1,"neutral",[
+  ["Hay que apurarnos.","We need to hurry."],
+  ["Hay que ver cómo sale.","We'll have to see how it turns out."]
+]),
+C("acabo de + verb","\"I just ___\" — replaces the whole recent-past construction","verb",1,"neutral",[
+  ["Acabo de llegar.","I just got here."],
+  ["Acaba de salir.","He just left."]
+]),
+C("quiero + verb","\"I want to ___\" — also \"quisiera\" for polite requests","verb",1,"neutral",[
+  ["Quiero ir pero no puedo.","I want to go but I can't."],
+  ["Quiero pedir algo de comer.","I want to order something to eat."]
+]),
+C("puedo + verb","\"can I ___\" — permission and ability in one","verb",1,"neutral",[
+  ["¿Puedo pasar?","Can I come in?"],
+  ["No puedo ahorita, ando ocupado.","I can't right now, I'm busy."]
+]),
+C("me da + noun","\"it gives me ___\" — the Mexican emotion formula: pena, risa, flojera, miedo","verb",1,"casual",[
+  ["Me da pena hablar en público.","I get embarrassed speaking in public."],
+  ["Me da flojera salir hoy.","I can't be bothered to go out today."],
+  ["Me da risa cómo lo dice.","It cracks me up how he says it."]
+]),
+C("se me antoja","\"I'm craving\" — essential around food","verb",1,"casual",[
+  ["Se me antoja un café.","I'm craving a coffee."],
+  ["¿No se te antoja algo dulce?","Don't you feel like something sweet?"]
+]),
+C("me choca","\"I can't stand it\" — strong dislike, still polite","verb",2,"casual",[
+  ["Me choca el tráfico.","I can't stand the traffic."],
+  ["Me choca que lleguen tarde.","I hate it when they show up late."]
+]),
+C("ando + adjective/verb","\"I'm being / I'm going around ___\" — temporary states, very Mexican","verb",1,"casual",[
+  ["Ando cansado, la neta.","I'm tired, honestly."],
+  ["Ando buscando depa.","I'm out looking for an apartment."]
+]),
+C("está por + verb","\"it's about to ___\"","verb",2,"neutral",[
+  ["Está por empezar la película.","The movie is about to start."],
+  ["Estoy por salir.","I'm about to leave."]
+]),
+
+/* ===== TIER 1-2 · TIME ===== */
+C("al rato","\"later\" / \"in a while\" — vaguer than ahorita","time",1,"casual",[
+  ["Al rato te marco.","I'll call you later."],
+  ["Nos vemos al rato.","See you later."]
+]),
+C("ya mero","\"almost\" / \"any second now\"","time",1,"casual",[
+  ["Ya mero llego.","I'm almost there."],
+  ["Ya merito acabo.","I'm just about done."]
+]),
+C("de volada","\"right away\" / \"in a flash\"","time",2,"casual",[
+  ["Voy de volada y regreso.","I'll go real quick and come back."],
+  ["Lo hizo de volada.","He did it in a flash."]
+]),
+C("hace rato","\"a while ago\"","time",1,"neutral",[
+  ["Llegó hace rato.","He got here a while ago."],
+  ["Hace rato que no te veía.","I hadn't seen you in a while."]
+]),
+C("la próxima","\"next time\"","time",1,"neutral",[
+  ["Será la próxima.","Next time then."],
+  ["La próxima yo invito.","Next time it's on me."]
+]),
+C("todavía no","\"not yet\"","time",1,"neutral",[
+  ["¿Ya comiste? — Todavía no.","Have you eaten? — Not yet."],
+  ["Todavía no me contestan.","They still haven't answered me."]
+]),
+C("ya casi","\"almost there\" — for tasks and journeys alike","time",1,"neutral",[
+  ["Ya casi acabo.","I'm almost done."],
+  ["Ya casi llegamos.","We're almost there."]
+]),
+
+/* ===== TIER 1-2 · SOCIAL ===== */
+C("mucho gusto","\"nice to meet you\" — reply: \"igualmente\"","social",1,"neutral",[
+  ["Mucho gusto, soy Roberto.","Nice to meet you, I'm Roberto."],
+  ["Mucho gusto. — Igualmente.","Nice to meet you. — Likewise."]
+]),
+C("que te vaya bien","\"hope it goes well\" — standard warm goodbye","social",1,"neutral",[
+  ["Me voy. — ¡Que te vaya bien!","I'm off. — Take care!"],
+  ["Que te vaya bien en el examen.","Good luck on the exam."]
+]),
+C("nos vemos","\"see you\" — the default sign-off","social",1,"casual",[
+  ["Bueno, nos vemos.","Alright, see you."],
+  ["Nos vemos el sábado.","See you Saturday."]
+]),
+C("échame un grito","\"give me a shout\" — casual \"let me know\"","social",2,"casual",[
+  ["Cuando llegues, échame un grito.","When you get there, give me a shout."],
+  ["Échame un grito si necesitas algo.","Holler at me if you need anything."]
+]),
+C("saludos a","\"say hi to ___ for me\"","social",1,"neutral",[
+  ["Saludos a tu mamá.","Say hi to your mom for me."],
+  ["Saludos a todos por allá.","Regards to everyone over there."]
+]),
+C("qué gusto verte","\"so good to see you\"","social",2,"neutral",[
+  ["¡Qué gusto verte! Hace un chorro.","So good to see you! It's been ages."],
+  ["Qué gusto verte por aquí.","Good to see you around here."]
+]),
+C("cúidate","\"take care\" — warm, universal closer","social",1,"neutral",[
+  ["Bueno, cúidate mucho.","Alright, take good care."],
+  ["Cúidate, cualquier cosa me hablas.","Take care, call me if anything comes up."]
+]),
+C("¿cómo has estado?","\"how have you been?\" — for people you haven't seen in a while","social",1,"neutral",[
+  ["¡Cuanto tiempo! ¿Cómo has estado?","Long time! How have you been?"],
+  ["¿Cómo has estado? ¿Qué me cuentas?","How've you been? What's new?"]
+]),
+];
+
+/* ---------- 2. STORAGE ---------- */
+const LS = {
+  get(k, dflt){ try{ const v = localStorage.getItem("calle_"+k); return v==null ? dflt : JSON.parse(v); }catch(e){ return dflt; } },
+  set(k, v){ try{ localStorage.setItem("calle_"+k, JSON.stringify(v)); }catch(e){} },
+};
+
+const DAY = 864e5;
+const todayKey = () => new Date().toISOString().slice(0,10);
+
+let srs      = LS.get("srs", {});          // id -> {ease,interval,due,reps,lapses,status}
+let streak   = LS.get("streak", {count:0, last:null, days:{}});
+let totals   = LS.get("totals", {reviews:0, shadowReps:0});
+let settings = LS.get("settings", {rate:0.92, voice:null});
+
+const saveSrs      = () => LS.set("srs", srs);
+const saveStreak   = () => LS.set("streak", streak);
+const saveTotals   = () => LS.set("totals", totals);
+const saveSettings = () => LS.set("settings", settings);
+
+/* ---------- 3. SRS ENGINE (SM-2 lite) ---------- */
+const LEARN_STEPS = [1/1440, 10/1440];   // 1 min, 10 min (in days)
+const GRADE = {again:0, hard:1, good:2, easy:3};
+const MASTERED_AT = 21;                  // days interval == "mastered"
+
+function newState(){
+  return {ease:2.5, interval:0, due:Date.now(), reps:0, lapses:0, step:0, status:"learning"};
+}
+
+function schedule(st, grade){
+  const s = {...st};
+  s.reps++;
+  if(s.status === "learning"){
+    if(grade === GRADE.again){ s.step = 0; }
+    else if(grade === GRADE.easy){ s.status = "review"; s.interval = 4; s.step = 0; }
+    else if(grade === GRADE.hard){ /* repeat current step */ }
+    else { s.step++; if(s.step >= LEARN_STEPS.length){ s.status = "review"; s.interval = 1; } }
+    s.due = s.status === "review"
+      ? Date.now() + s.interval * DAY
+      : Date.now() + LEARN_STEPS[Math.min(s.step, LEARN_STEPS.length-1)] * DAY;
+    return s;
+  }
+  // review cards
+  if(grade === GRADE.again){
+    s.lapses++; s.ease = Math.max(1.3, s.ease - 0.2);
+    s.status = "learning"; s.step = 0; s.interval = 0;
+    s.due = Date.now() + LEARN_STEPS[0] * DAY;
+    return s;
+  }
+  if(grade === GRADE.hard){ s.ease = Math.max(1.3, s.ease - 0.15); s.interval = Math.max(1, s.interval * 1.2); }
+  else if(grade === GRADE.good){ s.interval = Math.max(1, s.interval * s.ease); }
+  else { s.ease = Math.min(2.8, s.ease + 0.15); s.interval = Math.max(1, s.interval * s.ease * 1.3); }
+  s.interval = Math.round(s.interval * 10) / 10;
+  s.due = Date.now() + s.interval * DAY;
+  return s;
+}
+
+function previewInterval(st, grade){
+  const s = schedule(st, grade);
+  const d = (s.due - Date.now()) / DAY, mins = d * 1440;
+  if(mins < 1)  return "<1m";
+  if(mins < 60) return Math.round(mins) + "m";
+  if(d < 1)     return Math.round(d*24) + "h";
+  if(d < 30)    return Math.round(d) + "d";
+  return (d/30).toFixed(1).replace(/\.0$/,"") + "mo";
+}
+
+const inDeck   = id => !!srs[id];
+const dueCards = () => Object.keys(srs).filter(id => srs[id].due <= Date.now());
+const newCards = () => CHUNKS.filter(c => !inDeck(c.id)).sort((a,b) => a.tier - b.tier);
+const statusOf = id => {
+  const s = srs[id];
+  if(!s) return "new";
+  if(s.status === "learning") return "learning";
+  return s.interval >= MASTERED_AT ? "mastered" : "review";
+};
+
+function markStudied(){
+  const t = todayKey();
+  streak.days[t] = (streak.days[t] || 0) + 1;
+  if(streak.last !== t){
+    const y = new Date(Date.now() - DAY).toISOString().slice(0,10);
+    streak.count = streak.last === y ? streak.count + 1 : 1;
+    streak.last = t;
+  }
+  saveStreak();
+}
+
+/* current streak, recomputed so it decays when you skip a day */
+function liveStreak(){
+  if(!streak.last) return 0;
+  const t = todayKey(), y = new Date(Date.now()-DAY).toISOString().slice(0,10);
+  return (streak.last === t || streak.last === y) ? streak.count : 0;
+}
+
+/* ---------- 4. SPEECH ---------- */
+let voices = [];
+function loadVoices(){ voices = (window.speechSynthesis && speechSynthesis.getVoices()) || []; }
+if(window.speechSynthesis){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function esVoices(){ return voices.filter(v => /^es/i.test(v.lang)); }
+function pickVoice(){
+  const list = esVoices();
+  if(!list.length) return null;
+  if(settings.voice){
+    const saved = list.find(v => v.voiceURI === settings.voice);
+    if(saved) return saved;
+  }
+  return list.find(v => /es[-_]MX/i.test(v.lang))
+      || list.find(v => /es[-_]US/i.test(v.lang))
+      || list.find(v => /es[-_](419|CO|AR)/i.test(v.lang))
+      || list[0];
+}
+function speak(text, rate){
+  if(!window.speechSynthesis) return toast("Speech not supported here");
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "es-MX";
+  u.rate = rate || settings.rate;
+  const v = pickVoice();
+  if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+
+/* ---------- 5. HELPERS ---------- */
+const $  = (sel, root) => (root||document).querySelector(sel);
+const esc = s => String(s).replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const byId = id => CHUNKS.find(c => c.id === id);
+const shuffle = a => { const r = a.slice(); for(let i=r.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [r[i],r[j]]=[r[j],r[i]]; } return r; };
+
+/* Blank the chunk inside an example sentence. Falls back to produce-mode
+   when the sentence uses a variant form (conjugated, contracted, etc.). */
+function makeCloze(sentence, chunk){
+  const core = chunk.replace(/\s*\+.*$/, "").replace(/[¿?¡!.]/g, "").trim();
+  const i = sentence.toLowerCase().indexOf(core.toLowerCase());
+  if(i < 0 || !core) return null;
+  return {
+    before: sentence.slice(0, i),
+    hidden: sentence.slice(i, i + core.length),
+    after:  sentence.slice(i + core.length)
+  };
+}
+
+let toastTimer;
+function toast(msg){
+  const old = $(".toast"); if(old) old.remove();
+  const el = document.createElement("div");
+  el.className = "toast"; el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 1700);
+}
+
+function speakerBtn(text, small){
+  return `<button class="spk${small?" sm":""}" data-speak="${esc(text)}" aria-label="Play audio">\u{1F50A}</button>`;
+}
+function examplesHtml(c){
+  return c.examples.map(e => `
+    <div class="ex">
+      ${speakerBtn(e.es, true)}
+      <div class="txt"><div class="es">${esc(e.es)}</div><div class="en">${esc(e.en)}</div></div>
+    </div>`).join("");
+}
+function tierBadge(c){
+  const reg = c.register === "vulgar" ? `<span class="badge vulgar">careful</span>` : "";
+  return `<span class="badge tier${c.tier}">Tier ${c.tier}</span>
+          <span class="badge">${CAT[c.category].label}</span> ${reg}`;
+}
+
+/* ---------- 6. VIEWS ---------- */
+const view = $("#view");
+let tab = "home";
+let session = null;   // review session
+let shadowQ = null;   // shadowing queue
+
+function render(){
+  if(tab === "home")   renderHome();
+  if(tab === "learn")  renderLearn();
+  if(tab === "review") renderReview();
+  if(tab === "shadow") renderShadow();
+  if(tab === "stats")  renderStats();
+  if(tab === "browse") renderBrowse();
+  renderNav();
+  view.scrollTop = 0;
+  window.scrollTo(0,0);
+}
+
+function go(t){ tab = t; render(); }
+
+/* ----- Home ----- */
+function renderHome(){
+  const due = dueCards().length;
+  const fresh = newCards().length;
+  const deck = Object.keys(srs).length;
+  const mastered = Object.keys(srs).filter(id => statusOf(id) === "mastered").length;
+  const learning = Object.keys(srs).filter(id => statusOf(id) === "learning").length;
+  const s = liveStreak();
+
+  view.innerHTML = `
+    <div class="hdr">
+      <div><h1>Calle</h1><p>Real Mexican Spanish, one chunk at a time</p></div>
+      <button class="icon-btn" data-sheet="settings" aria-label="Settings">\u{2699}\u{FE0F}</button>
+    </div>
+
+    <div class="streak">
+      <div class="flame">${s > 0 ? "\u{1F525}" : "\u{1F331}"}</div>
+      <div><b>${s}</b><span class="muted tiny">day streak · ${totals.reviews} reviews all time</span></div>
+    </div>
+
+    <div class="stat-row" style="margin-top:12px">
+      <div class="stat"><b>${learning}</b><span>Learning</span></div>
+      <div class="stat"><b>${deck - learning - mastered}</b><span>Reviewing</span></div>
+      <div class="stat"><b style="color:var(--green)">${mastered}</b><span>Mastered</span></div>
+    </div>
+
+    <div class="stack" style="margin-top:12px">
+      <button class="action" data-go="review">
+        <div class="em">\u{1F504}</div>
+        <div class="t"><b>Review</b><span>${due ? "Chunks ready to recall" : "Nothing due right now"}</span></div>
+        <div class="n${due?"":" zero"}">${due}</div>
+      </button>
+      <button class="action" data-go="learn">
+        <div class="em">\u{2728}</div>
+        <div class="t"><b>Learn new chunks</b><span>${fresh} left in the collection</span></div>
+        <div class="n${fresh?"":" zero"}">${fresh}</div>
+      </button>
+      <button class="action" data-go="shadow">
+        <div class="em">\u{1F3A7}</div>
+        <div class="t"><b>Shadow</b><span>Say them out loud · ${totals.shadowReps} reps</span></div>
+        <div class="n${deck?"":" zero"}">${deck}</div>
+      </button>
+      <button class="action" data-go="browse">
+        <div class="em">\u{1F4D6}</div>
+        <div class="t"><b>Browse all</b><span>${CHUNKS.length} chunks, phrases &amp; fillers</span></div>
+      </button>
+    </div>`;
+}
+
+/* ----- Learn ----- */
+let learnCard = null;
+function renderLearn(){
+  const pool = newCards();
+  if(!pool.length){
+    view.innerHTML = header("Learn", "New chunks") + empty("\u{1F389}", "You've seen them all",
+      "Every chunk is in your deck. Keep reviewing to lock them in.");
+    return;
+  }
+  if(!learnCard || inDeck(learnCard.id)) learnCard = pool[0];
+  const c = learnCard;
+  const left = pool.length;
+
+  view.innerHTML = header("Learn", `${left} new chunk${left===1?"":"s"} left`) + `
+    <div class="card">
+      <div class="center" style="margin-bottom:10px">${tierBadge(c)}</div>
+      <div class="chunk-hero">
+        <div class="es">${esc(c.chunk)} ${speakerBtn(c.chunk)}</div>
+        <div class="meaning">${esc(c.meaning)}</div>
+        ${c.literal ? `<div class="lit">literally: ${esc(c.literal)}</div>` : ""}
+      </div>
+    </div>
+    <div class="card">
+      <p class="sec-label">In real sentences</p>
+      ${examplesHtml(c)}
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn primary" data-learn="add">Add to my deck</button>
+      <button class="btn ghost" data-learn="skip">Skip for now</button>
+    </div>`;
+}
+
+/* ----- Review ----- */
+function startSession(){
+  const ids = shuffle(dueCards()).slice(0, 25);
+  session = {queue: ids, done: 0, total: ids.length, shown: false, card: null};
+  nextCard();
+}
+function nextCard(){
+  session.shown = false;
+  const id = session.queue.shift();
+  if(!id){ session.card = null; return; }
+  const c = byId(id);
+  const ex = c.examples[Math.floor(Math.random() * c.examples.length)];
+  session.card = {chunk: c, ex, cloze: makeCloze(ex.es, c.chunk)};
+}
+
+function renderReview(){
+  const due = dueCards().length;
+  if(!session && !due){
+    const next = Object.values(srs).sort((a,b)=>a.due-b.due)[0];
+    const when = next ? relTime(next.due) : null;
+    view.innerHTML = header("Review", "Spaced recall") + empty("\u{2705}", "All caught up",
+      when ? `Next chunk is ready ${when}.` : "Add some chunks from Learn to start reviewing.");
+    return;
+  }
+  if(!session) startSession();
+  if(!session.card){
+    const n = session.done;
+    session = null;
+    view.innerHTML = header("Review", "Session complete") + empty("\u{1F44F}", `${n} chunk${n===1?"":"s"} reviewed`,
+      "Nice. Come back when the next batch is due — or go learn something new.") +
+      `<button class="btn primary" data-go="learn">Learn new chunks</button>`;
+    return;
+  }
+
+  const {chunk:c, ex, cloze} = session.card;
+  const shown = session.shown;
+  const pct = session.total ? (session.done / session.total) * 100 : 0;
+
+  const prompt = cloze
+    ? `<div class="cloze">${esc(cloze.before)}<span class="blank${shown?" shown":""}">${esc(cloze.hidden)}</span>${esc(cloze.after)}</div>
+       <div class="prompt-en">${esc(ex.en)}</div>`
+    : `<div class="prompt-en" style="font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)">How would you say</div>
+       <div class="cloze">${esc(ex.en)}</div>
+       ${shown ? `<div class="prompt-en" style="color:var(--accent);font-size:19px;font-weight:600;margin-top:12px">${esc(ex.es)}</div>` : ""}`;
+
+  view.innerHTML = header("Review", `${session.done+1} of ${session.total}`) + `
+    <div class="progbar"><i style="width:${pct}%"></i></div>
+    <div class="card" style="padding:22px 16px">${prompt}</div>
+    ${shown ? `
+      <div class="card">
+        <div class="center" style="margin-bottom:8px">${tierBadge(c)}</div>
+        <div class="chunk-hero" style="padding-top:0">
+          <div class="es" style="font-size:27px">${esc(c.chunk)} ${speakerBtn(ex.es)}</div>
+          <div class="meaning">${esc(c.meaning)}</div>
+        </div>
+      </div>` : ""}
+    <div style="margin-top:16px">
+      ${shown ? gradesHtml(srs[c.id]) : `<button class="btn primary" data-reveal="1">Show answer</button>`}
+    </div>`;
+
+  if(shown) speak(ex.es);
+}
+
+function gradesHtml(st){
+  const g = [["again","Again"],["hard","Hard"],["good","Good"],["easy","Easy"]];
+  return `<div class="grades">` + g.map(([k,label]) =>
+    `<button class="grade ${k}" data-grade="${k}"><b>${label}</b><span>${previewInterval(st, GRADE[k])}</span></button>`
+  ).join("") + `</div>`;
+}
+
+function relTime(ts){
+  const d = (ts - Date.now()) / DAY;
+  if(d <= 0) return "now";
+  if(d < 1/24) return "in a few minutes";
+  if(d < 1) return "in " + Math.round(d*24) + "h";
+  if(d < 2) return "tomorrow";
+  return "in " + Math.round(d) + " days";
+}
+
+/* ----- Shadow ----- */
+function renderShadow(){
+  const deck = Object.keys(srs);
+  if(!deck.length){
+    view.innerHTML = header("Shadow", "Say it out loud") + empty("\u{1F3A7}", "Nothing to shadow yet",
+      "Add a few chunks from Learn, then come back and repeat them out loud.");
+    return;
+  }
+  if(!shadowQ || !shadowQ.length){
+    shadowQ = shuffle(deck).slice(0, 12).map(id => {
+      const c = byId(id);
+      return {c, ex: c.examples[Math.floor(Math.random()*c.examples.length)], reps: 0};
+    });
+  }
+  const item = shadowQ[0];
+
+  view.innerHTML = header("Shadow", `${shadowQ.length} left · ${totals.shadowReps} total reps`) + `
+    <div class="shadow-big">
+      <div class="es">${esc(item.ex.es)}</div>
+      <div class="en">${esc(item.ex.en)}</div>
+      <button class="spk" style="width:58px;height:58px;font-size:23px" data-speak="${esc(item.ex.es)}">\u{1F50A}</button>
+      <div class="reps">
+        ${[0,1,2].map(i => `<span class="dot${item.reps>i?" on":""}"></span>`).join("")}
+        <span>listen · repeat · repeat</span>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="center"><b style="font-size:19px">${esc(item.c.chunk)}</b>
+      <div class="muted tiny" style="margin-top:4px">${esc(item.c.meaning)}</div></div>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn primary" data-shadow="rep">I said it out loud</button>
+      <button class="btn ghost" data-shadow="next">Next phrase</button>
+    </div>`;
+
+  if(item.reps === 0) speak(item.ex.es);
+}
+
+/* ----- Stats ----- */
+function renderStats(){
+  const deck = Object.keys(srs);
+  const mastered = deck.filter(id => statusOf(id) === "mastered").length;
+  const learning = deck.filter(id => statusOf(id) === "learning").length;
+
+  const byCat = {};
+  CHUNKS.forEach(c => {
+    byCat[c.category] = byCat[c.category] || {total:0, got:0};
+    byCat[c.category].total++;
+    if(inDeck(c.id)) byCat[c.category].got++;
+  });
+
+  const cells = [];
+  const start = new Date(); start.setHours(0,0,0,0);
+  start.setDate(start.getDate() - 90);
+  for(let i=0; i<91; i++){
+    const d = new Date(start.getTime() + i*DAY).toISOString().slice(0,10);
+    const n = streak.days[d] || 0;
+    const lvl = n === 0 ? "" : n < 5 ? "l1" : n < 15 ? "l2" : n < 30 ? "l3" : "l4";
+    cells.push(`<i class="${lvl}" title="${d}: ${n} reviews"></i>`);
+  }
+
+  view.innerHTML = header("Progress", "Where you're at") + `
+    <div class="streak">
+      <div class="flame">${liveStreak() > 0 ? "\u{1F525}" : "\u{1F331}"}</div>
+      <div><b>${liveStreak()}</b><span class="muted tiny">day streak · longest run ${streak.count}</span></div>
+    </div>
+
+    <div class="stat-row" style="margin-top:12px">
+      <div class="stat"><b>${deck.length}</b><span>In deck</span></div>
+      <div class="stat"><b>${totals.reviews}</b><span>Reviews</span></div>
+      <div class="stat"><b>${totals.shadowReps}</b><span>Out loud</span></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <p class="sec-label">Last 13 weeks</p>
+      <div class="heat">${cells.join("")}</div>
+    </div>
+
+    <div class="card">
+      <p class="sec-label">Coverage by category</p>
+      ${Object.entries(byCat).sort((a,b)=>b[1].got/b[1].total - a[1].got/a[1].total).map(([k,v]) => `
+        <div class="bar-row">
+          <span class="nm">${CAT[k].label}</span>
+          <span class="track"><i style="width:${(v.got/v.total*100).toFixed(0)}%"></i></span>
+          <span class="v">${v.got}/${v.total}</span>
+        </div>`).join("")}
+    </div>
+
+    <div class="card">
+      <p class="sec-label">Deck health</p>
+      <div class="bar-row"><span class="nm">Learning</span><span class="track"><i style="width:${deck.length?learning/deck.length*100:0}%"></i></span><span class="v">${learning}</span></div>
+      <div class="bar-row"><span class="nm">Reviewing</span><span class="track"><i style="width:${deck.length?(deck.length-learning-mastered)/deck.length*100:0}%;background:var(--blue)"></i></span><span class="v">${deck.length-learning-mastered}</span></div>
+      <div class="bar-row"><span class="nm">Mastered</span><span class="track"><i style="width:${deck.length?mastered/deck.length*100:0}%;background:var(--green)"></i></span><span class="v">${mastered}</span></div>
+    </div>
+
+    <button class="btn ghost" style="margin-top:12px" data-sheet="settings">Settings</button>`;
+}
+
+/* ----- Browse ----- */
+let browseFilter = "all", browseQuery = "", openChunk = null;
+function renderBrowse(){
+  const q = browseQuery.toLowerCase();
+  const list = CHUNKS.filter(c =>
+    (browseFilter === "all" || c.category === browseFilter) &&
+    (!q || c.chunk.toLowerCase().includes(q) || c.meaning.toLowerCase().includes(q) ||
+      c.examples.some(e => e.es.toLowerCase().includes(q) || e.en.toLowerCase().includes(q)))
+  );
+
+  const chips = [["all","All"]].concat(Object.entries(CAT).map(([k,v]) => [k, v.label]));
+
+  view.innerHTML = header("Browse", `${list.length} of ${CHUNKS.length} chunks`) + `
+    <input class="search" id="q" placeholder="Search chunks, meanings, sentences…" value="${esc(browseQuery)}">
+    <div class="chips">${chips.map(([k,l]) =>
+      `<button class="chip${browseFilter===k?" on":""}" data-filter="${k}">${l}</button>`).join("")}</div>
+    <div class="card">
+      ${list.length ? list.map(c => {
+        const open = openChunk === c.id;
+        return `
+        <button class="li" data-open="${c.id}">
+          <span class="pill ${statusOf(c.id)}"></span>
+          <span class="t"><b>${esc(c.chunk)}</b><span>${esc(c.meaning)}</span></span>
+          <span class="badge tier${c.tier}">T${c.tier}</span>
+        </button>
+        ${open ? `<div style="padding:4px 0 14px">${examplesHtml(c)}
+          ${inDeck(c.id) ? `<div class="tiny muted center" style="padding-top:8px">In your deck · ${statusOf(c.id)}</div>`
+            : `<button class="btn sm primary" data-add="${c.id}" style="margin-top:8px">Add to my deck</button>`}
+        </div>` : ""}`;
+      }).join("") : `<p class="muted center tiny" style="padding:20px 0">Nothing matches that.</p>`}
+    </div>`;
+}
+
+/* ----- shared bits ----- */
+function header(title, sub){
+  return `<div class="hdr"><div><h1>${title}</h1><p>${sub}</p></div>
+    <button class="icon-btn" data-sheet="settings" aria-label="Settings">\u{2699}\u{FE0F}</button></div>`;
+}
+function empty(em, h, p){
+  return `<div class="empty"><div class="em">${em}</div><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`;
+}
+
+const TABS = [
+  ["home","\u{1F3E0}","Home"],
+  ["learn","\u{2728}","Learn"],
+  ["review","\u{1F504}","Review"],
+  ["shadow","\u{1F3A7}","Shadow"],
+  ["stats","\u{1F4CA}","Stats"],
+];
+function renderNav(){
+  const due = dueCards().length;
+  $("#nav").innerHTML = TABS.map(([k,ic,lb]) =>
+    `<button data-go="${k}" class="${tab===k?"on":""}">
+       <span class="ic">${ic}</span><span class="lb">${lb}</span>
+       ${k==="review" && due ? `<span class="dot-n"></span>` : ""}
+     </button>`).join("");
+}
+
+/* ----- settings sheet ----- */
+function openSettings(){
+  const list = esVoices();
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `
+    <div class="scrim" data-close="1"></div>
+    <div class="sheet">
+      <div class="grip"></div>
+      <h3 style="margin:0 0 4px;font-size:19px">Settings</h3>
+      <p class="muted tiny" style="margin:0 0 12px">Audio uses your device's built-in Spanish voices.</p>
+      <div class="field">
+        <span>Voice</span>
+        <select id="voiceSel">
+          ${list.length ? list.map(v =>
+            `<option value="${esc(v.voiceURI)}"${settings.voice===v.voiceURI?" selected":""}>${esc(v.name)} (${esc(v.lang)})</option>`
+          ).join("") : `<option value="">No Spanish voice installed</option>`}
+        </select>
+      </div>
+      <div class="field">
+        <span>Speed <b id="rateVal" class="muted tiny">${settings.rate.toFixed(2)}×</b></span>
+        <input type="range" id="rate" min="0.6" max="1.2" step="0.02" value="${settings.rate}">
+      </div>
+      <button class="btn sm" id="testVoice" style="margin-top:12px">Test: ¿Qué onda, güey?</button>
+      <button class="btn sm ghost" id="reset" style="margin-top:10px;color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)">Reset all progress</button>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  const close = () => wrap.remove();
+  wrap.querySelector("[data-close]").onclick = close;
+  const sel = wrap.querySelector("#voiceSel");
+  sel.onchange = () => { settings.voice = sel.value || null; saveSettings(); };
+  const rate = wrap.querySelector("#rate");
+  rate.oninput = () => {
+    settings.rate = parseFloat(rate.value);
+    wrap.querySelector("#rateVal").textContent = settings.rate.toFixed(2) + "×";
+    saveSettings();
+  };
+  wrap.querySelector("#testVoice").onclick = () => speak("¿Qué onda, güey? ¿Cómo has estado?");
+  wrap.querySelector("#reset").onclick = () => {
+    if(!confirm("Erase your deck, streak and all progress? This can't be undone.")) return;
+    srs = {}; streak = {count:0,last:null,days:{}}; totals = {reviews:0,shadowReps:0};
+    saveSrs(); saveStreak(); saveTotals();
+    session = null; shadowQ = null; learnCard = null;
+    close(); go("home"); toast("Progress reset");
+  };
+}
+
+/* ---------- 7. EVENTS ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add]");
+  if(!t) return;
+
+  if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
+  if(t.dataset.go){ session = null; go(t.dataset.go); return; }
+  if(t.dataset.sheet){ openSettings(); return; }
+
+  if(t.dataset.learn){
+    if(t.dataset.learn === "add"){
+      srs[learnCard.id] = newState(); saveSrs();
+      toast("Added — review it in a minute");
+    }else{
+      const pool = newCards();
+      const i = pool.findIndex(c => c.id === learnCard.id);
+      learnCard = pool[i+1] || pool[0];
+      render(); return;
+    }
+    learnCard = null; render(); return;
+  }
+
+  if(t.dataset.reveal){ session.shown = true; render(); return; }
+
+  if(t.dataset.grade){
+    const c = session.card.chunk;
+    srs[c.id] = schedule(srs[c.id], GRADE[t.dataset.grade]);
+    saveSrs();
+    totals.reviews++; saveTotals();
+    markStudied();
+    if(GRADE[t.dataset.grade] === GRADE.again) session.queue.push(c.id);
+    else session.done++;
+    nextCard();
+    render(); return;
+  }
+
+  if(t.dataset.shadow){
+    const item = shadowQ[0];
+    if(t.dataset.shadow === "rep"){
+      item.reps++; totals.shadowReps++; saveTotals(); markStudied();
+      if(item.reps >= 3) shadowQ.shift();
+      else speak(item.ex.es);
+    }else{
+      shadowQ.shift();
+    }
+    render(); return;
+  }
+
+  if(t.dataset.filter){ browseFilter = t.dataset.filter; render(); return; }
+  if(t.dataset.open){ openChunk = openChunk === t.dataset.open ? null : t.dataset.open; render(); return; }
+  if(t.dataset.add){
+    srs[t.dataset.add] = newState(); saveSrs();
+    toast("Added to your deck"); render(); return;
+  }
+});
+
+document.addEventListener("input", e => {
+  if(e.target.id === "q"){
+    browseQuery = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const el = $("#q");
+    if(el){ el.focus(); el.setSelectionRange(pos, pos); }
+  }
+});
+
+/* ---------- 8. PWA INSTALL (manifest generated inline) ---------- */
+(function manifest(){
+  const cv = document.createElement("canvas");
+  const icon = size => {
+    cv.width = cv.height = size;
+    const x = cv.getContext("2d");
+    x.fillStyle = "#12100e"; x.fillRect(0,0,size,size);
+    x.fillStyle = "#f59e0b";
+    x.font = `700 ${size*0.56}px -apple-system,Segoe UI,Roboto,sans-serif`;
+    x.textAlign = "center"; x.textBaseline = "middle";
+    x.fillText("¡", size/2, size*0.52);
+    return cv.toDataURL("image/png");
+  };
+  const mf = {
+    name: "Calle — Real Mexican Spanish",
+    short_name: "Calle",
+    start_url: location.pathname,
+    display: "standalone",
+    background_color: "#12100e",
+    theme_color: "#12100e",
+    icons: [
+      {src: icon(192), sizes: "192x192", type: "image/png", purpose: "any"},
+      {src: icon(512), sizes: "512x512", type: "image/png", purpose: "any"}
+    ]
+  };
+  const link = document.createElement("link");
+  link.rel = "manifest";
+  link.href = URL.createObjectURL(new Blob([JSON.stringify(mf)], {type:"application/manifest+json"}));
+  document.head.appendChild(link);
+
+  const apple = document.createElement("link");
+  apple.rel = "apple-touch-icon";
+  apple.href = icon(180);
+  document.head.appendChild(apple);
+})();
+
+/* ---------- 9. GO ---------- */
+render();
+</script>
+</body>
+</html>
