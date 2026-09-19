@@ -1,0 +1,257 @@
+# Calle — real-world Mexican Spanish
+
+A single-file, offline-capable PWA that teaches **spoken Mexican Spanish** through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses.
+
+Everything lives in one `index.html`: 242 chunks, 492 example sentences, 8 dialogues, a spaced-repetition engine, a pronunciation scorer and six study modes. No build step, no dependencies, no backend, no network calls.
+
+*Calle* is Spanish for "street" — the register this teaches.
+
+---
+
+## Why it's built this way
+
+Traditional courses front-load conjugation and subjunctive mood, then leave you unable to say *"I mean, honestly, I couldn't be bothered"* — which is what conversation actually sounds like. Calle inverts that:
+
+- **Chunks over grammar.** `voy a + verb` replaces the entire future tense. `tengo que + verb` covers obligation without touching the subjunctive. You learn the slot, not the paradigm.
+- **Always in context.** No chunk is ever shown alone. Each one carries 2–3 real sentences, so you absorb meaning, collocation and rhythm together.
+- **Mexican, not neutral.** `ahorita`, `órale`, `no manches`, `la neta`, `me late`, `ni modo`, `¿mande?` — plus register tags so you know what's safe to say in front of whose mother.
+- **Frequency-ordered.** Tier 1 is what you'd need in week one; Tier 3 is flavour.
+
+---
+
+## The six modes
+
+| Mode | What it trains | Needs |
+|---|---|---|
+| **Learn** | Meeting a new chunk with its examples and audio | — |
+| **Review** | Recall, via cloze or translation prompt | — |
+| **Listen** | Understanding with **no text on screen** | — |
+| **Shadow** | Saying it out loud, scored word by word | mic + net |
+| **Quick-fire** | Production against a 5-second clock | mic + net |
+| **Conversations** | Turn-taking — holding your end of an exchange | — |
+
+### Learn
+Introduces unseen chunks in frequency order: the phrase, what it *does* conversationally (filler, hedge, softener…), a literal gloss where it helps (18 chunks have one — `no manches` is literally "don't stain"), a register tag, and its example sentences with playback. "Add to my deck" creates its SRS state.
+
+### Review
+The spaced-repetition core. A random example is shown with the chunk **blanked out**, plus the English as a prompt. You recall, reveal, then self-grade Again / Hard / Good / Easy.
+
+86% of examples can be blanked this way. The other 14% are cases where the sentence uses a variant form — `tengo que` appearing inside a conjugated sentence, say — so the app falls back to **produce mode**: it shows the English and asks you to generate the Spanish. That fallback is deliberate, not a failure case; it gives useful variety.
+
+### Listen
+The mode that matters most, and the one most apps skip.
+
+Every other mode shows Spanish text while audio plays, which trains *reading with audio support* — you can score full marks and still be lost when a taquero talks to you. Listen plays a sentence with **no text at all** and asks which meaning it was, from four options.
+
+Each chunk carries its own speed level and ramps as you prove yourself:
+
+```
+0.70×  →  0.85×  →  1.00×  →  1.15×
+slow      easy      normal    fast
+```
+
+Right answer moves you up, wrong moves you down. A turtle button gives a one-off slow replay without costing a level.
+
+### Shadow
+Plays a sentence, you repeat it aloud, and the mic scores you. Three reps per phrase. See [Pronunciation scoring](#pronunciation-scoring).
+
+### Quick-fire
+English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer.
+
+### Conversations
+Eight exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are *plausible but off*, usually in register rather than meaning:
+
+> **Them:** ¿Qué le damos, joven?
+> - ¿Me regala tres de pastor, porfa? ✅
+> - Yo deseo adquirir tres tacos de pastor. ❌ *(grammatically fine, sounds like a robot)*
+> - ¿Qué me recomienda de tomar? ❌ *(wrong turn in the conversation)*
+
+| Dialogue | Turns |
+|---|---|
+| Running into a friend | 6 |
+| Ordering tacos | 8 |
+| Running late | 6 |
+| Turning down an invitation | 6 |
+| Asking for directions | 6 |
+| Reacting to big news | 6 |
+| At the corner shop | 6 |
+| Making weekend plans | 6 |
+
+50 turns total, 25 of them yours. Finishing replays the whole exchange with per-line audio.
+
+---
+
+## The collection
+
+**242 chunks · 492 example sentences · 167 Tier 1 / 71 Tier 2 / 4 Tier 3**
+
+| Key | Category | Count |
+|---|---|---|
+| `slang` | Slang | 44 |
+| `verb` | Verb combos | 32 |
+| `social` | Social | 24 |
+| `filler` | Fillers | 23 |
+| `survive` | Survival | 20 |
+| `ask` | Questions | 18 |
+| `agree` | Agree / No | 15 |
+| `connect` | Connectors | 15 |
+| `soften` | Politeness | 15 |
+| `reaction` | Reactions | 13 |
+| `time` | Time | 13 |
+| `opinion` | Opinions | 10 |
+
+Every chunk is tagged `casual`, `neutral` or `vulgar`. The two vulgar entries (`al chile`, `ando en chinga`) show a **careful** badge — they're included because you'll hear them constantly, but you should know before you use them.
+
+### Adding your own
+
+Chunks are one `C(...)` call in the `CHUNKS` array:
+
+```js
+C("no manches",                                   // the chunk
+  "\"no way!\" — disbelief, surprise or outrage", // what it DOES
+  "reaction",                                     // category key
+  1,                                              // frequency tier 1-3
+  "casual",                                       // casual | neutral | vulgar
+  [                                               // 2-3 real sentences
+    ["¡No manches! ¿Te ganaste el sorteo?", "No way! You won the raffle?"],
+    ["No manches, otra vez se descompuso.",  "No way, it broke down again."]
+  ],
+  "\"don't stain\"")                              // optional literal gloss
+```
+
+IDs are assigned automatically. Adding a chunk is enough — every mode, the search, the category bars and the milestones pick it up with no other changes.
+
+---
+
+## How the engines work
+
+### Spaced repetition
+
+A trimmed SM-2. State per chunk: `{ease, interval, due, reps, lapses, step, status}`.
+
+New cards run two learning steps (1 min → 10 min) before graduating to a 1-day interval. After that:
+
+| Grade | Effect |
+|---|---|
+| **Again** | back to learning, `ease − 0.2`, lapse recorded |
+| **Hard** | `interval × 1.2`, `ease − 0.15` |
+| **Good** | `interval × ease` |
+| **Easy** | `interval × ease × 1.3`, `ease + 0.15` |
+
+`ease` is clamped to 1.3–2.8. A chunk counts as **mastered** at a 21-day interval. Each button previews its own next interval so the grade is an informed choice.
+
+### Pronunciation scoring
+
+Two ideas do the work.
+
+**1. Alignment, not position matching.** Your attempt is aligned to the target with Needleman–Wunsch, so dropping or adding a word shifts the rest instead of failing everything after it. Each target word comes back marked `hit`, `close` or `miss`; the score is `(hits + 0.5 × close) / target words`.
+
+**2. Comparison by sound, not spelling.** Words are collapsed to how they're actually pronounced in Mexican Spanish before comparison, so the recogniser's spelling choice doesn't cost you points:
+
+| Feature | Effect |
+|---|---|
+| seseo | `casa` = `caza`, `cerveza` = `serbesa` |
+| yeísmo | `llama` = `yama` |
+| silent h | `hace` = `ase` |
+| b/v merger | `vamos` = `bamos` |
+| `qu`/`c` → k | `qué` = `ke` |
+| `g`/`j` before e,i | `gente` = `jente` |
+| **`r` vs `rr` kept distinct** | `pero` ≠ `perro` |
+
+That last row matters: `r`/`rr` is phonemic in Spanish, so collapsing it would forgive a real error.
+
+### Milestones
+
+Progress reads as **capabilities**, not card counts — "Order without English 7/10" beats "20 mastered". Eight milestones, each a hand-picked bundle of chunks, unlocking as those chunks leave the learning stage:
+
+🌮 Order without English · 👋 Greet like a local · 😲 React like you mean it · 💬 Stall like a native · 🧠 Hold an opinion · 📖 Tell a story · 🛟 Survive being lost · 🤝 Make plans
+
+### Daily session
+
+One button on Today builds a mixed queue — up to 20 due reviews, 5 new chunks, 4 listening items — so there are no decisions to make before starting.
+
+---
+
+## Running it
+
+**Just open `index.html`** in any modern browser. Learn, Review, Listen, Conversations and all audio work immediately, with no server and no internet.
+
+**For the microphone modes** (Shadow, Quick-fire) the page must be *served*, because browsers refuse the mic to `file://` pages no matter what you allow — there's no origin to attach the permission to:
+
+```bash
+cd <folder with index.html>
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+This is still fully offline — `localhost` never touches the internet.
+
+> **One genuine caveat:** Chrome and Edge don't do speech recognition on-device; they stream audio to Google's servers. So the *scoring* in Shadow and Quick-fire needs a connection even when served locally. Everything else works with the network off. The app detects all of this and says which case you're in — check Settings (⚙).
+
+### Installing on a phone
+
+Serve it over HTTPS (GitHub Pages works) and use **Add to Home Screen**. The web app manifest is generated at runtime with a canvas-drawn icon, so it installs standalone with no extra files.
+
+---
+
+## Architecture
+
+One file, no dependencies, no build:
+
+```
+index.html
+├── <style>                inline CSS, dark + light via prefers-color-scheme
+└── <script>
+    ├── 1.  CHUNKS         the 242-chunk collection + category table
+    ├── 1b. DIALOGUES      8 scripted exchanges
+    ├── 2.  STORAGE        localStorage wrapper, defaults merged on load
+    ├── 3.  SRS            SM-2 scheduling
+    ├── 4.  SPEECH OUT     TTS: voice selection, error surfacing
+    ├── 4b. SPEECH IN      recognition + microphone permission
+    ├── 4c. SCORING        phonetic normalisation + alignment
+    ├── 5.  HELPERS        escaping, cloze building, toasts
+    ├── 6.  VIEWS          one render function per mode
+    ├── 7.  EVENTS         single delegated click handler
+    └── 8.  PWA            runtime-generated manifest + icon
+```
+
+Rendering is deliberately dumb: every view rebuilds its own `innerHTML` from state, and one delegated listener on `document` routes every `data-*` action. No framework, no virtual DOM, no reconciliation to reason about.
+
+### Stored state
+
+All under the `calle_` prefix in `localStorage`:
+
+| Key | Holds |
+|---|---|
+| `calle_srs` | per-chunk scheduling state |
+| `calle_streak` | streak count, last day, per-day review counts |
+| `calle_scores` | best pronunciation score per chunk |
+| `calle_ears` | listening speed level per chunk |
+| `calle_dialogDone` | best % per dialogue |
+| `calle_totals` | lifetime reviews, shadow reps, attempts, drills |
+| `calle_settings` | chosen voice, speech rate |
+
+Day keys are built from **local** date parts, not `toISOString()` — UTC would break the streak for anyone behind it (an evening session in Mexico would count as tomorrow).
+
+> ⚠️ There's no export yet. Clearing site data wipes your progress.
+
+---
+
+## Browser support
+
+| | Playback | Mic scoring |
+|---|---|---|
+| Chrome / Edge | ✅ | ✅ *(served + online)* |
+| Safari | ✅ | ✅ *(served)* |
+| Firefox | ✅ | ❌ *(no SpeechRecognition)* |
+
+Playback uses whatever Spanish voices your OS has installed. If there are none the app says so and points at the right system settings — it never fails silently. Where scoring isn't available the mic UI hides itself and the manual rep counter takes over.
+
+---
+
+## Known gaps
+
+- **No service worker.** A single file can't register one (blob URLs are rejected as SW scripts), so offline relies on the HTTP cache rather than a guaranteed shell.
+- **No progress export/backup.**
+- **Tier imbalance** — 167 Tier 1 against 4 Tier 3, so the frequency curve flattens near the end.
+- **No connected-speech notes.** The reductions that make real speech hard (`para el` → `pal`, `¿qué onda?` → "ké-onda") aren't taught explicitly yet. Probably the highest-value thing left to add.
