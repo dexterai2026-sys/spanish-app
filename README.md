@@ -162,13 +162,26 @@ That last row matters: `r`/`rr` is phonemic in Spanish, so collapsing it would f
 
 ### Milestones
 
-Progress reads as **capabilities**, not card counts — "Order without English 7/10" beats "20 mastered". Eight milestones, each a hand-picked bundle of chunks, unlocking as those chunks leave the learning stage:
+Progress reads as **capabilities**, not card counts — "Order without English 7/10" beats "20 mastered". Eight milestones, each a hand-picked bundle of chunks:
 
 🌮 Order without English · 👋 Greet like a local · 😲 React like you mean it · 💬 Stall like a native · 🧠 Hold an opinion · 📖 Tell a story · 🛟 Survive being lost · 🤝 Make plans
 
+A chunk counts toward its milestone once you've either **recalled it** (scheduler status `review` or `mastered`) **or said it well** (85%+ in Shadow or Quick-fire). A milestone claims you can *do* something, so speaking it is evidence too — otherwise the practice modes would move nothing.
+
 ### Daily session
 
-One button on Today builds a mixed queue — up to 20 due reviews, 5 new chunks, 4 listening items — so there are no decisions to make before starting.
+One button on Today runs three stages back to back — up to 20 due reviews, then 5 new chunks, then 4 listening items — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
+
+### Two speaking scores, kept apart
+
+Shadow and Quick-fire both score speech, but they measure different skills:
+
+| | Shows you | Measures |
+|---|---|---|
+| **Shadow** | the Spanish sentence | pronunciation — you can see what to say |
+| **Quick-fire** | the English only, on a clock | recall **and** pronunciation |
+
+Reading aloud will always beat producing cold, so they keep **separate** records (`calle_scores` vs `calle_drills`) and Progress reports them side by side. Pooling them would let the easier task mask the harder one.
 
 ---
 
@@ -224,10 +237,12 @@ All under the `calle_` prefix in `localStorage`:
 | Key | Holds |
 |---|---|
 | `calle_srs` | per-chunk scheduling state |
-| `calle_streak` | streak count, last day, per-day review counts |
-| `calle_scores` | best pronunciation score per chunk |
+| `calle_streak` | streak count, last day, per-day activity counts |
+| `calle_scores` | best Shadow score per chunk (reading aloud) |
+| `calle_drills` | best Quick-fire score per chunk (cold recall) |
 | `calle_ears` | listening speed level per chunk |
 | `calle_dialogDone` | best % per dialogue |
+| `calle_skipped` | chunks you passed on in Learn, so they sink in the queue |
 | `calle_totals` | lifetime reviews, shadow reps, attempts, drills |
 | `calle_settings` | chosen voice, speech rate |
 
