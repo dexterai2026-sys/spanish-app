@@ -183,13 +183,36 @@ input{font:inherit}
 .heat i.l3{background:color-mix(in srgb,var(--accent) 80%,var(--surface-2))}
 .heat i.l4{background:var(--accent)}
 .bar-row{display:flex;align-items:center;gap:10px;font-size:13px;padding:5px 0}
-.bar-row .nm{width:96px;flex:none;color:var(--muted);font-size:12px;text-transform:capitalize}
+.bar-row .nm{width:96px;flex:none;color:var(--muted);font-size:12px}
 .bar-row .track{flex:1;height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden}
 .bar-row .track i{display:block;height:100%;border-radius:99px;background:var(--accent)}
 .bar-row .v{width:42px;text-align:right;flex:none;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 
 /* ---------- browse ---------- */
 .lnk{color:var(--accent);text-decoration:underline;font:inherit}
+
+/* multiple-choice options */
+.btn.opt{justify-content:flex-start;text-align:left;font-weight:550;font-size:15px;line-height:1.35;padding:14px 16px}
+.btn.opt-right{background:color-mix(in srgb,var(--green) 26%,var(--surface-2));color:var(--text)}
+.btn.opt-wrong{background:color-mix(in srgb,var(--red) 26%,var(--surface-2));color:var(--text)}
+.btn.opt-dim{opacity:.4}
+
+/* listening speed ramp */
+.speed-pips{display:flex;gap:5px;justify-content:center;margin-top:12px}
+.pip{width:22px;height:4px;border-radius:99px;background:var(--surface-3)}
+.pip.on{background:var(--accent)}
+
+/* quick-fire countdown */
+.timer{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:18px}
+.timer i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width 1s linear}
+
+/* dialogue bubbles */
+.bubble{padding:11px 14px;border-radius:15px;margin:7px 0;max-width:86%}
+.bubble .es{font-size:16px;font-weight:600;line-height:1.4}
+.bubble .en{font-size:13px;color:var(--muted);margin-top:3px}
+.bubble.them{background:var(--surface-2);border-bottom-left-radius:5px}
+.bubble.you{background:color-mix(in srgb,var(--accent) 20%,var(--surface-2));margin-left:auto;border-bottom-right-radius:5px}
+.bubble.live{outline:1.5px solid color-mix(in srgb,var(--accent) 45%,transparent)}
 .cmd{
   display:block;margin-top:5px;padding:9px 11px;border-radius:9px;
   background:var(--bg);color:var(--accent);
@@ -1319,6 +1342,116 @@ C("sí, ahí va","\"yeah, it's coming along\"","social",2,"casual",[
 ]),
 ];
 
+/* ---------- 1b. DIALOGUES ---------- */
+/* Chunks in isolation don't teach turn-taking. Each dialogue is a real
+   exchange; on your turns you pick the natural reply from three options,
+   where the wrong ones are plausible but off in register or meaning. */
+function D(title, setting, turns){ return {id:"d"+title.length+turns.length+title.charCodeAt(0), title, setting, turns}; }
+function THEM(es, en){ return {who:"them", es, en}; }
+function YOU(es, en, wrong){ return {who:"you", es, en, wrong}; }
+
+const DIALOGUES = [
+  D("Running into a friend", "You bump into a friend you haven't seen in months.", [
+    THEM("¡Qué onda! ¿Cómo has estado?", "Hey! How have you been?"),
+    YOU("Aquí nomás, chambeando. ¿Y tú?", "Just getting by, working. And you?",
+        ["Estoy muy bien, gracias señor.", "No entiendo nada de nada."]),
+    THEM("Pues ahí la llevo. Oye, ¿qué milagro!", "Getting by too. Hey, long time no see!"),
+    YOU("¡Neta! Hace un chorro que no nos veíamos.", "Seriously! It's been ages since we saw each other.",
+        ["Sí, hace mucho tiempo desde nuestro encuentro previo.", "No manches, qué mala onda."]),
+    THEM("Oye, ¿y si vamos por unos tacos al rato?", "Hey, what if we grab tacos later?"),
+    YOU("¡Sale! Me late.", "Deal! Sounds good to me.",
+        ["Ni de chiste.", "Qué pena contigo."]),
+  ]),
+
+  D("Ordering tacos", "At a taco stand, the guy is moving fast.", [
+    THEM("¿Qué le damos, joven?", "What'll it be, young man?"),
+    YOU("¿Me regala tres de pastor, porfa?", "Could I get three al pastor, please?",
+        ["Yo deseo adquirir tres tacos de pastor.", "¿Qué me recomienda de tomar?"]),
+    THEM("¿Con todo?", "With everything?"),
+    YOU("Sí, pero sin cebolla.", "Yes, but no onion.",
+        ["Sí, con todo el respeto.", "No hay bronca, gracias."]),
+    THEM("¿Y de tomar?", "And to drink?"),
+    YOU("Una chela bien fría.", "An ice-cold beer.",
+        ["Un vaso de agua potable.", "Me da igual, la neta."]),
+    THEM("Va. ¿Pica la verde, eh?", "Coming up. The green one's spicy, heads up."),
+    YOU("¡Aguas! Entonces poquita.", "Whoa! Just a little then.",
+        ["Guácala, no me gusta.", "Ni modo, ya qué."]),
+  ]),
+
+  D("Running late", "You're twenty minutes behind and texting.", [
+    THEM("¿Dónde andas? Ya estamos todos aquí.", "Where are you? We're all here already."),
+    YOU("Perdón, se me hizo tarde. Ya voy en camino.", "Sorry, I ran late. I'm on my way.",
+        ["Estoy llegando tarde porque no me organicé.", "Ahí nos vidrios."]),
+    THEM("¿Como en cuánto llegas?", "How long till you get here?"),
+    YOU("Ya mero, como diez minutos.", "Almost there, like ten minutes.",
+        ["Ahorita.", "Quién sabe, sepa."]),
+    THEM("Órale, aquí te esperamos.", "Alright, we'll wait for you here."),
+    YOU("Sale, gracias. Ya casi llego.", "Cool, thanks. I'm nearly there.",
+        ["Me vale, ahí voy.", "Con permiso, propio."]),
+  ]),
+
+  D("Turning down an invitation", "A coworker invites you out but you're wiped.", [
+    THEM("Oye, ¿te caes al after? Vamos por unas chelas.", "Hey, you coming out after? We're getting beers."),
+    YOU("Uy, la neta ando bien cansado.", "Ugh, honestly I'm really tired.",
+        ["No, no quiero ir contigo.", "¡Obvio sí! Vamos."]),
+    THEM("¡No manches! Ándale, nada más un rato.", "Come on! Just for a bit."),
+    YOU("Es que mañana entro temprano… será la próxima.", "It's just that I start early tomorrow... next time.",
+        ["Ni de chiste voy contigo.", "Me da igual, vamos pues."]),
+    THEM("Ni modo. Que descanses.", "Oh well. Get some rest."),
+    YOU("Gracias, que te vaya bien. Saludos a todos.", "Thanks, have a good one. Say hi to everyone.",
+        ["Adiós para siempre.", "Qué hueva, la verdad."]),
+  ]),
+
+  D("Asking for directions", "You're lost looking for the metro.", [
+    YOU("Disculpe, ¿por dónde queda el metro?", "Excuse me, whereabouts is the metro?",
+        ["Oye tú, ¿dónde está el metro?", "¿Me haces un paro con el metro?"]),
+    THEM("Sigue derechito y das vuelta a la derecha en el semáforo.", "Keep straight and turn right at the light."),
+    YOU("¿Me repites? No te entendí bien.", "Can you say that again? I didn't quite catch it.",
+        ["Sí, ya entendí todo perfectamente.", "Qué mala onda, no sé."]),
+    THEM("Claro. Derechito dos cuadras, y en el semáforo a la derecha.", "Sure. Straight two blocks, then right at the light."),
+    YOU("¡Ah, ya! Muchas gracias, muy amable.", "Oh, got it! Thanks a lot, very kind of you.",
+        ["Más despacio, porfa.", "Ni modo, ya qué."]),
+    THEM("De nada. Aguas con el tráfico al cruzar.", "You're welcome. Watch out for traffic crossing."),
+  ]),
+
+  D("Reacting to big news", "Your friend drops something huge.", [
+    THEM("¿A que no sabes qué? Me voy a mudar a Monterrey.", "Guess what? I'm moving to Monterrey."),
+    YOU("¡No manches! ¿Neta?", "No way! Seriously?",
+        ["Qué bueno para ti, felicidades señor.", "Ah, órale, qué hueva."]),
+    THEM("Neta. Me salió una chamba allá.", "For real. A job came up there."),
+    YOU("¡Qué padre! ¿Y cuándo te vas?", "How cool! And when do you leave?",
+        ["Qué mala onda, no manches.", "Me vale, la verdad."]),
+    THEM("El mes que entra. Está cañón, pero se me hace que vale la pena.", "Next month. It's intense, but I think it's worth it."),
+    YOU("Pues échale ganas. Te va a ir buenísimo.", "Well, give it your all. You're going to do great.",
+        ["Ni modo, así es la vida.", "Hasta crees que te va a ir bien."]),
+  ]),
+
+  D("At the corner shop", "Buying a few things you can't quite name.", [
+    THEM("Buenas, ¿qué va a llevar?", "Afternoon, what are you taking?"),
+    YOU("¿Me regala dos de estos? Y… este…", "Could I get two of these? And... um...",
+        ["Quiero comprar productos variados.", "Sepa, quién sabe."]),
+    THEM("¿Mande?", "Sorry?"),
+    YOU("Perdón, ¿cómo se llama esto?", "Sorry, what's this called?",
+        ["No importa, olvídelo.", "¿Tú crees que sí?"]),
+    THEM("Ah, eso es jamaica. ¿Cuánta le doy?", "Ah, that's hibiscus. How much do you want?"),
+    YOU("Tantito nada más. ¿Cuánto es todo?", "Just a little. How much is it all?",
+        ["Un chorro, porfa.", "Me da igual cuánto."]),
+  ]),
+
+  D("Making weekend plans", "Nailing down when and where.", [
+    THEM("¿Qué tal si nos vemos el sábado?", "What if we meet up Saturday?"),
+    YOU("Me late. ¿Como a qué hora?", "Sounds good. Around what time?",
+        ["No sé, quién sabe, sepa.", "Ni de chiste el sábado."]),
+    THEM("¿Te late como a las siete?", "Does seven work for you?"),
+    YOU("Va. ¿Y dónde quedamos?", "Deal. And where should we meet?",
+        ["Ahorita te digo, al rato.", "Qué flojera, la neta."]),
+    THEM("En mi depa y de ahí nos vamos, ¿sale?", "At my place and we'll head out from there, cool?"),
+    YOU("Sale. Mándame ubicación porfa.", "Cool. Send me the location please.",
+        ["¿Me das un aventón?", "Con todo respeto, prefiero no."]),
+  ]),
+];
+DIALOGUES.forEach((d,i) => d.id = "d" + (i+1));
+
 /* ---------- 2. STORAGE ---------- */
 const LS = {
   get(k, dflt){ try{ const v = localStorage.getItem("calle_"+k); return v==null ? dflt : JSON.parse(v); }catch(e){ return dflt; } },
@@ -1334,13 +1467,17 @@ const yesterdayKey = () => { const d = new Date(); d.setDate(d.getDate()-1); ret
 let srs      = LS.get("srs", {});          // id -> {ease,interval,due,reps,lapses,status}
 let streak   = LS.get("streak", {count:0, last:null, days:{}});
 let scores   = LS.get("scores", {});       // id -> best pronunciation score 0-100
+let ears     = LS.get("ears", {});         // id -> listening level, indexes EAR_RATES
+let dialogDone = LS.get("dialogDone", {}); // dialogue id -> best % of replies right
 /* Merged over defaults so decks saved by an earlier version pick up new keys. */
-let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0}, LS.get("totals", {}));
+let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0, drills:0}, LS.get("totals", {}));
 let settings = Object.assign({rate:0.92, voice:null}, LS.get("settings", {}));
 
 const saveSrs      = () => LS.set("srs", srs);
 const saveStreak   = () => LS.set("streak", streak);
 const saveScores   = () => LS.set("scores", scores);
+const saveEars     = () => LS.set("ears", ears);
+const saveDialogs  = () => LS.set("dialogDone", dialogDone);
 const saveTotals   = () => LS.set("totals", totals);
 const saveSettings = () => LS.set("settings", settings);
 
@@ -1714,13 +1851,21 @@ let tab = "home";
 let session = null;   // review session
 let shadowQ = null;   // shadowing queue
 
+const VIEWS = {
+  home:     () => renderHome(),
+  learn:    () => renderLearn(),
+  review:   () => renderReview(),
+  practice: () => renderPractice(),
+  listen:   () => renderListen(),
+  shadow:   () => renderShadow(),
+  drill:    () => renderDrill(),
+  dialogue: () => renderDialogue(),
+  stats:    () => renderStats(),
+  browse:   () => renderBrowse(),
+};
+
 function render(){
-  if(tab === "home")   renderHome();
-  if(tab === "learn")  renderLearn();
-  if(tab === "review") renderReview();
-  if(tab === "shadow") renderShadow();
-  if(tab === "stats")  renderStats();
-  if(tab === "browse") renderBrowse();
+  (VIEWS[tab] || VIEWS.home)();
   renderNav();
   view.scrollTop = 0;
   window.scrollTo(0,0);
@@ -1728,14 +1873,42 @@ function render(){
 
 function go(t){ tab = t; render(); }
 
+/* ----- Milestones: what you can DO, not how many cards you've seen ----- */
+const MILESTONES = [
+  ["\u{1F32E}", "Order without English",  ["¿me regalas...?","para llevar","con todo","¿pica?","la cuenta, porfa","¿cuánto es?","¿qué me recomienda?","está buenísimo","provecho","chela"]],
+  ["\u{1F44B}", "Greet like a local",     ["¿qué onda?","¿cómo has estado?","aquí nomás","¿qué me cuentas?","cuánto tiempo","nos vemos","que te vaya bien","cuídate","mucho gusto","qué milagro"]],
+  ["\u{1F632}", "React like you mean it", ["no manches","órale","¡no inventes!","¿a poco?","híjole","qué padre","qué mala onda","neta","¿en serio?","qué bárbaro"]],
+  ["\u{1F4AC}", "Stall like a native",    ["o sea","este...","pues","la neta","¿sí me explico?","digo","más o menos","es que","algo así","ya sabes"]],
+  ["\u{1F9E0}", "Hold an opinion",        ["se me hace que","yo creo que","la verdad es que","lo que pasa es que","para mí","a lo mejor","no creo","puede ser","yo siento que","resulta que"]],
+  ["\u{1F4D6}", "Tell a story",           ["entonces","total que","y entonces","fíjate que","imagínate","resulta que","el caso es que","por eso","en fin","aparte"]],
+  ["\u{1F6DF}", "Survive being lost",     ["¿me repites?","no te entendí","más despacio, porfa","¿cómo se dice...?","¿mande?","estoy aprendiendo","¿por dónde queda?","derechito","está a la vuelta","¿qué significa...?"]],
+  ["\u{1F91D}", "Make plans",             ["¿te late?","¿qué tal si...?","sale","¿cómo quedamos?","al rato","ahorita","te marco","mándame ubicación","¿va?","la próxima"]],
+];
+
+function milestoneProgress(chunkNames){
+  const ids = chunkNames.map(n => {
+    const c = CHUNKS.find(x => x.chunk === n);
+    return c && c.id;
+  }).filter(Boolean);
+  const got = ids.filter(id => {
+    const s = statusOf(id);
+    return s === "review" || s === "mastered";
+  }).length;
+  return {got, total: ids.length};
+}
+
 /* ----- Home ----- */
 function renderHome(){
   const due = dueCards().length;
   const fresh = newCards().length;
   const deck = Object.keys(srs).length;
-  const mastered = Object.keys(srs).filter(id => statusOf(id) === "mastered").length;
-  const learning = Object.keys(srs).filter(id => statusOf(id) === "learning").length;
   const s = liveStreak();
+  const doneToday = (streak.days[todayKey()] || 0);
+  const plan = sessionPlan();
+
+  const ms = MILESTONES.map(([em, name, names]) => ({em, name, ...milestoneProgress(names)}))
+    .sort((a,b) => (b.got/b.total) - (a.got/a.total));
+  const unlocked = ms.filter(m => m.got >= m.total).length;
 
   view.innerHTML = `
     <div class="hdr">
@@ -1745,16 +1918,30 @@ function renderHome(){
 
     <div class="streak">
       <div class="flame">${s > 0 ? "\u{1F525}" : "\u{1F331}"}</div>
-      <div><b>${s}</b><span class="muted tiny">day streak · ${totals.reviews} reviews all time</span></div>
+      <div><b>${s}</b><span class="muted tiny">day streak · ${doneToday} done today</span></div>
     </div>
 
-    <div class="stat-row" style="margin-top:12px">
-      <div class="stat"><b>${learning}</b><span>Learning</span></div>
-      <div class="stat"><b>${deck - learning - mastered}</b><span>Reviewing</span></div>
-      <div class="stat"><b style="color:var(--green)">${mastered}</b><span>Mastered</span></div>
+    <button class="btn primary" style="margin-top:14px;padding:18px" data-session="start">
+      ${plan.length ? `Start today's session · ${plan.length} items` : "You're all caught up — learn more"}
+    </button>
+    <p class="tiny muted center" style="margin:8px 0 0">
+      ${plan.length ? `${plan.filter(p=>p.kind==="review").length} to review, ${plan.filter(p=>p.kind==="new").length} new, ${plan.filter(p=>p.kind==="listen").length} listening`
+                    : "Nothing due right now"}
+    </p>
+
+    <p class="sec-label" style="margin:22px 0 8px">What you can do</p>
+    <div class="card">
+      ${ms.slice(0,4).map(m => `
+        <div class="bar-row">
+          <span class="nm" style="width:auto;flex:1">${m.em} ${esc(m.name)}</span>
+          <span class="track" style="max-width:88px"><i style="width:${(m.got/m.total*100).toFixed(0)}%;${m.got>=m.total?"background:var(--green)":""}"></i></span>
+          <span class="v">${m.got}/${m.total}</span>
+        </div>`).join("")}
+      <button class="lnk tiny" style="margin-top:10px" data-sheet="milestones">
+        See all ${MILESTONES.length} · ${unlocked} unlocked</button>
     </div>
 
-    <div class="stack" style="margin-top:12px">
+    <div class="stack" style="margin-top:14px">
       <button class="action" data-go="review">
         <div class="em">\u{1F504}</div>
         <div class="t"><b>Review</b><span>${due ? "Chunks ready to recall" : "Nothing due right now"}</span></div>
@@ -1765,16 +1952,35 @@ function renderHome(){
         <div class="t"><b>Learn new chunks</b><span>${fresh} left in the collection</span></div>
         <div class="n${fresh?"":" zero"}">${fresh}</div>
       </button>
-      <button class="action" data-go="shadow">
-        <div class="em">\u{1F3A7}</div>
-        <div class="t"><b>Shadow</b><span>Say them out loud · ${totals.shadowReps} reps</span></div>
-        <div class="n${deck?"":" zero"}">${deck}</div>
+      <button class="action" data-go="practice">
+        <div class="em">\u{1F3AF}</div>
+        <div class="t"><b>Practice</b><span>Listen, shadow, quick-fire, conversations</span></div>
+        <div class="n${deck?"":" zero"}">4</div>
       </button>
       <button class="action" data-go="browse">
         <div class="em">\u{1F4D6}</div>
         <div class="t"><b>Browse all</b><span>${CHUNKS.length} chunks, phrases &amp; fillers</span></div>
       </button>
     </div>`;
+}
+
+/* ----- Daily session: one tap, no decisions ----- */
+const NEW_PER_DAY = 5;
+function sessionPlan(){
+  const plan = dueCards().slice(0, 20).map(id => ({kind:"review", id}));
+  newCards().slice(0, NEW_PER_DAY).forEach(c => plan.push({kind:"new", id:c.id}));
+  const deck = Object.keys(srs);
+  if(deck.length >= 4) shuffle(deck).slice(0, 4).forEach(id => plan.push({kind:"listen", id}));
+  return plan;
+}
+function startSessionFlow(){
+  const plan = sessionPlan();
+  if(!plan.some(p => p.kind === "review")){
+    if(plan.some(p => p.kind === "new")) return go("learn");
+    return go("listen");
+  }
+  session = null;
+  go("review");
 }
 
 /* ----- Learn ----- */
@@ -1889,10 +2095,121 @@ function relTime(ts){
   return "in " + Math.round(d) + " days";
 }
 
+/* ----- Practice hub ----- */
+function renderPractice(){
+  const deck = Object.keys(srs).length;
+  const heard = Object.keys(ears).length;
+  const modes = [
+    ["listen",  "\u{1F442}", "Listen",      "Understand it with no text on screen", deck ? `${heard}/${deck} trained` : "Add chunks first"],
+    ["shadow",  "\u{1F3A7}", "Shadow",      "Repeat out loud, scored by the mic",   `${totals.shadowReps} said out loud`],
+    ["drill",   "\u{26A1}",  "Quick-fire",  "Say it in five seconds, from English", `${totals.drills || 0} drilled`],
+    ["dialogue","\u{1F5E3}\u{FE0F}", "Conversations", "Hold your end of a real exchange", `${Object.keys(dialogDone).length}/${DIALOGUES.length} done`],
+  ];
+  view.innerHTML = header("Practice", "Four ways to make it stick") + `
+    <div class="stack">
+      ${modes.map(([k,em,title,sub,meta]) => `
+        <button class="action" data-go="${k}">
+          <div class="em">${em}</div>
+          <div class="t"><b>${title}</b><span>${esc(sub)}</span></div>
+          <div class="tiny muted" style="flex:none;text-align:right;max-width:88px">${esc(meta)}</div>
+        </button>`).join("")}
+    </div>
+    ${!deck ? `<p class="tiny muted center" style="margin-top:18px">
+      These open up once you've added a few chunks in Learn.</p>` : ""}`;
+}
+
+/* ----- Listen: audio-first recognition with a speed ramp ----- */
+/* Reading the text while hearing it teaches reading. Hiding the text is the
+   only way to train the ear for fast, reduced Mexican speech. */
+const EAR_RATES = [0.7, 0.85, 1.0, 1.15];
+const EAR_LABELS = ["slow", "easy", "normal", "fast"];
+const earLevel = id => Math.min(EAR_RATES.length - 1, ears[id] || 0);
+
+let earQ = null, earCard = null, earPick = null, earPlayed = null;
+
+function buildEarCard(){
+  const deck = Object.keys(srs);
+  const pool = deck.length ? deck : CHUNKS.filter(c => c.tier === 1).map(c => c.id);
+  if(!earQ || !earQ.length) earQ = shuffle(pool).slice(0, 12);
+  const id = earQ.shift();
+  const c = byId(id);
+  const ex = c.examples[Math.floor(Math.random() * c.examples.length)];
+  const wrong = shuffle(CHUNKS.filter(o => o.id !== id && o.category === c.category))
+    .slice(0, 3).map(o => o.examples[0].en);
+  while(wrong.length < 3){
+    const r = CHUNKS[Math.floor(Math.random()*CHUNKS.length)];
+    if(r.id !== id && !wrong.includes(r.examples[0].en)) wrong.push(r.examples[0].en);
+  }
+  earCard = {c, ex, options: shuffle([ex.en, ...wrong])};
+  earPick = null;
+  earPlayed = null;
+}
+
+function renderListen(){
+  if(!Object.keys(srs).length && !CHUNKS.length){
+    view.innerHTML = header("Listen", "Train your ear") + empty("\u{1F442}", "Nothing to hear yet", "Add a few chunks in Learn first.");
+    return;
+  }
+  if(!earCard) buildEarCard();
+  const {c, ex, options} = earCard;
+  const lvl = earLevel(c.id);
+  const answered = earPick !== null;
+  const right = answered && earPick === ex.en;
+
+  view.innerHTML = header("Listen", `No text · playing at ${EAR_LABELS[lvl]} speed`) + `
+    <div class="card center" style="padding:26px 16px">
+      <button class="spk" style="width:76px;height:76px;font-size:30px" data-ear="play">\u{1F50A}</button>
+      <div class="tiny muted" style="margin-top:12px">${answered ? "" : "Tap to hear it again"}</div>
+      <div class="speed-pips">${EAR_RATES.map((r,i) =>
+        `<span class="pip${i <= lvl ? " on" : ""}" title="${r}x"></span>`).join("")}</div>
+      ${answered ? `
+        <div class="es" style="font-size:21px;font-weight:650;margin-top:14px;line-height:1.35">${esc(ex.es)}</div>
+        <div class="muted tiny" style="margin-top:6px">${esc(c.chunk)} — ${esc(c.meaning)}</div>`
+      : `<button class="btn ghost sm" style="margin-top:14px;width:auto;display:inline-flex" data-ear="slow">\u{1F422} Slower</button>`}
+    </div>
+
+    <p class="sec-label" style="margin:18px 0 8px">What did you hear?</p>
+    <div class="stack">
+      ${options.map(o => {
+        let cls = "";
+        if(answered){
+          if(o === ex.en) cls = " opt-right";
+          else if(o === earPick) cls = " opt-wrong";
+          else cls = " opt-dim";
+        }
+        return `<button class="btn opt${cls}" ${answered ? "" : `data-ear-pick="${esc(o)}"`}>${esc(o)}</button>`;
+      }).join("")}
+    </div>
+
+    ${answered ? `
+      <div class="card center" style="margin-top:14px">
+        <b style="color:${right ? "var(--green)" : "var(--red)"}">
+          ${right ? (lvl >= EAR_RATES.length-1 ? "Nailed it at full speed" : "Right — speeding up") : "Not quite — slowing down"}
+        </b>
+      </div>
+      <button class="btn primary" style="margin-top:12px" data-ear="next">Next</button>` : ""}`;
+
+  if(!answered && earPlayed !== c.id + ex.es){
+    earPlayed = c.id + ex.es;
+    speak(ex.es, EAR_RATES[lvl]);
+  }
+}
+
 /* ----- Shadow ----- */
 let listening = false, heard = "", result = null, recNote = null, shadowSpoken = null;
 
 function resetAttempt(){ listening = false; heard = ""; result = null; recNote = null; }
+
+/* Tear down anything a mode left running before switching away from it. */
+function leaveMode(){
+  stopListening();
+  resetAttempt();
+  shadowSpoken = null;
+  clearDrillTimer();
+  drillCard = null;
+  earCard = null;
+  dlg = null;
+}
 
 function renderShadow(){
   const deck = Object.keys(srs);
@@ -1995,6 +2312,202 @@ function beginListening(){
       render();
     }
   });
+}
+
+/* ----- Conversations ----- */
+let dlg = null;   // {d, turn, picked, right, total}
+
+function startDialogue(id){
+  const d = DIALOGUES.find(x => x.id === id);
+  dlg = {d, turn: 0, picked: null, right: 0, total: d.turns.filter(t => t.who === "you").length, opts: null};
+  prepDialogueTurn();
+}
+function prepDialogueTurn(){
+  const t = dlg.d.turns[dlg.turn];
+  dlg.picked = null;
+  dlg.opts = t && t.who === "you" ? shuffle([t.es, ...t.wrong]) : null;
+}
+
+function renderDialogue(){
+  if(!dlg){
+    view.innerHTML = header("Conversations", "Hold your end of a real exchange") + `
+      <div class="card">
+        ${DIALOGUES.map(d => {
+          const best = dialogDone[d.id];
+          return `<button class="li" data-dlg="${d.id}">
+            <span class="pill${best != null ? (best >= 80 ? " mastered" : " review") : ""}"></span>
+            <span class="t"><b>${esc(d.title)}</b><span>${esc(d.setting)}</span></span>
+            ${best != null ? `<span class="badge" style="color:${scoreColor(best)}">${best}%</span>`
+                           : `<span class="badge">new</span>`}
+          </button>`;
+        }).join("")}
+      </div>
+      <p class="tiny muted center" style="margin-top:14px">
+        Each one strings together chunks you're already learning.</p>`;
+    return;
+  }
+
+  const {d, turn} = dlg;
+  const done = turn >= d.turns.length;
+  if(done){
+    const pct = dlg.total ? Math.round(dlg.right / dlg.total * 100) : 100;
+    view.innerHTML = header(d.title, "Conversation complete") + `
+      <div class="card center" style="padding:24px 16px">
+        <div class="score" style="color:${scoreColor(pct)}">${pct}<span>%</span></div>
+        <div style="font-weight:650;margin-top:4px">${dlg.right} of ${dlg.total} replies spot on</div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <p class="sec-label">The whole exchange</p>
+        ${d.turns.map(t => `
+          <div class="ex">
+            ${speakerBtn(t.es, true)}
+            <div class="txt">
+              <div class="es" style="${t.who==="you"?"color:var(--accent)":""}">${esc(t.es)}</div>
+              <div class="en">${esc(t.en)}</div>
+            </div>
+          </div>`).join("")}
+      </div>
+      <div class="stack" style="margin-top:16px">
+        <button class="btn primary" data-dlg-act="replay">Run it again</button>
+        <button class="btn ghost" data-dlg-act="list">Back to conversations</button>
+      </div>`;
+    return;
+  }
+
+  const t = d.turns[turn];
+  const history = d.turns.slice(0, turn);
+
+  view.innerHTML = header(d.title, `${esc(d.setting)}`) + `
+    <div class="card">
+      ${history.length ? history.map(h => `
+        <div class="bubble ${h.who}">
+          <div class="es">${esc(h.es)}</div>
+          <div class="en">${esc(h.en)}</div>
+        </div>`).join("") : `<p class="tiny muted center" style="margin:6px 0">The conversation starts here.</p>`}
+
+      ${t.who === "them" ? `
+        <div class="bubble them live">
+          <div class="row" style="align-items:flex-start;gap:10px">
+            <div style="flex:1;min-width:0">
+              <div class="es">${esc(t.es)}</div>
+              <div class="en">${esc(t.en)}</div>
+            </div>
+            ${speakerBtn(t.es, true)}
+          </div>
+        </div>` : ""}
+    </div>
+
+    ${t.who === "them" ? `
+      <button class="btn primary" style="margin-top:16px" data-dlg-act="next">Your turn →</button>`
+    : `
+      <p class="sec-label" style="margin:18px 0 8px">How do you reply?</p>
+      <div class="stack">
+        ${dlg.opts.map(o => {
+          let cls = "";
+          if(dlg.picked !== null){
+            if(o === t.es) cls = " opt-right";
+            else if(o === dlg.picked) cls = " opt-wrong";
+            else cls = " opt-dim";
+          }
+          return `<button class="btn opt${cls}" ${dlg.picked !== null ? "" : `data-dlg-pick="${esc(o)}"`}>${esc(o)}</button>`;
+        }).join("")}
+      </div>
+      ${dlg.picked !== null ? `
+        <div class="card center" style="margin-top:14px">
+          <b style="color:${dlg.picked === t.es ? "var(--green)" : "var(--red)"}">
+            ${dlg.picked === t.es ? "That's how you'd say it" : "Close, but this lands better:"}
+          </b>
+          <div style="margin-top:8px;font-size:17px;font-weight:600">${esc(t.es)}</div>
+          <div class="muted tiny" style="margin-top:3px">${esc(t.en)}</div>
+          ${speakerBtn(t.es, true)}
+        </div>
+        <button class="btn primary" style="margin-top:12px" data-dlg-act="next">Continue</button>` : ""}`}`;
+
+  if(t.who === "them" && dlg.picked === null) speak(t.es);
+}
+
+/* ----- Quick-fire: production under time pressure ----- */
+/* Recall with unlimited time doesn't build the sub-second retrieval a real
+   conversation needs, so this one runs on a clock. */
+const DRILL_SECONDS = 5;
+let drillCard = null, drillState = "ready", drillResult = null, drillHeard = "", drillTimer = null, drillLeft = 0;
+
+function buildDrill(){
+  const deck = Object.keys(srs);
+  const pool = deck.length ? deck : CHUNKS.filter(c => c.tier === 1).map(c => c.id);
+  const c = byId(pool[Math.floor(Math.random()*pool.length)]);
+  drillCard = {c, ex: c.examples[Math.floor(Math.random()*c.examples.length)]};
+  drillState = "ready"; drillResult = null; drillHeard = "";
+}
+function clearDrillTimer(){ if(drillTimer){ clearInterval(drillTimer); drillTimer = null; } }
+
+function startDrill(){
+  const {ex} = drillCard;
+  drillState = "go"; drillHeard = ""; drillResult = null;
+  drillLeft = DRILL_SECONDS;
+  render();
+  clearDrillTimer();
+  drillTimer = setInterval(() => {
+    drillLeft--;
+    if(drillLeft <= 0){ clearDrillTimer(); stopListening(); }
+    if(drillState === "go") render();
+  }, 1000);
+
+  startListening({
+    partial(t){ drillHeard = t; if(drillState === "go") render(); },
+    fail(msg){ clearDrillTimer(); drillState = "done"; drillResult = {blocked: msg}; render(); },
+    done(text){
+      clearDrillTimer();
+      drillState = "done";
+      if(text){
+        const r = scoreAttempt(ex.es, text);
+        r.said = text;
+        drillResult = r;
+        totals.drills = (totals.drills || 0) + 1;
+        const id = drillCard.c.id;
+        if(scores[id] == null || r.score > scores[id]){ scores[id] = r.score; saveScores(); }
+        saveTotals(); markStudied();
+      }else{
+        drillResult = {blocked: "Didn't catch anything — try again."};
+      }
+      render();
+    }
+  });
+}
+
+function renderDrill(){
+  if(!drillCard) buildDrill();
+  const {c, ex} = drillCard;
+  const blocked = recProblem();
+  const pct = drillState === "go" ? (drillLeft / DRILL_SECONDS) * 100 : 0;
+
+  view.innerHTML = header("Quick-fire", `Say it fast · ${totals.drills || 0} drilled`) + `
+    <div class="card center" style="padding:24px 16px">
+      <div class="sec-label" style="margin-bottom:10px">Say this in Spanish</div>
+      <div style="font-size:23px;font-weight:650;line-height:1.35">${esc(ex.en)}</div>
+      ${drillState === "go" ? `
+        <div class="timer"><i style="width:${pct}%"></i></div>
+        <div style="font-size:31px;font-weight:700;margin-top:6px;color:${drillLeft<=2?"var(--red)":"var(--accent)"}">${drillLeft}</div>
+        <div class="tiny muted" style="margin-top:4px">${drillHeard ? esc(drillHeard) : "Listening…"}</div>` : ""}
+      ${drillState === "done" ? `
+        <div style="margin-top:16px">
+          ${drillResult && drillResult.blocked
+            ? `<div class="tiny" style="color:var(--accent)">${esc(drillResult.blocked)}</div>`
+            : `<div class="score" style="color:${scoreColor(drillResult.score)}">${drillResult.score}<span>%</span></div>
+               <div class="muted tiny" style="margin-top:6px">You said: “${esc(drillResult.said)}”</div>`}
+          <div style="font-size:19px;font-weight:650;margin-top:14px">${esc(ex.es)}</div>
+          <div class="muted tiny" style="margin-top:4px">${esc(c.chunk)} — ${esc(c.meaning)}</div>
+          <button class="spk sm" style="margin-top:10px" data-speak="${esc(ex.es)}">\u{1F50A}</button>
+        </div>` : ""}
+    </div>
+    <div class="stack" style="margin-top:16px">
+      ${blocked ? `<div class="tiny muted center">${esc(blocked)}</div>
+                   <button class="btn primary" data-drill="reveal">Show the answer</button>`
+        : drillState === "ready" ? `<button class="btn primary" data-drill="start">\u{26A1} Start — ${DRILL_SECONDS}s</button>`
+        : drillState === "go"    ? `<button class="btn" data-drill="stop">I'm done</button>`
+        :                          `<button class="btn primary" data-drill="next">Next phrase</button>`}
+      ${drillState === "done" && !blocked ? `<button class="btn ghost" data-drill="retry">Try this one again</button>` : ""}
+    </div>`;
 }
 
 /* ----- Stats ----- */
@@ -2117,19 +2630,57 @@ function empty(em, h, p){
 }
 
 const TABS = [
-  ["home","\u{1F3E0}","Home"],
+  ["home","\u{1F3E0}","Today"],
   ["learn","\u{2728}","Learn"],
   ["review","\u{1F504}","Review"],
-  ["shadow","\u{1F3A7}","Shadow"],
-  ["stats","\u{1F4CA}","Stats"],
+  ["practice","\u{1F3AF}","Practice"],
+  ["stats","\u{1F4CA}","Progress"],
 ];
+/* modes that live under Practice keep that tab lit */
+const NAV_OF = {listen:"practice", shadow:"practice", drill:"practice", dialogue:"practice", browse:"stats"};
 function renderNav(){
   const due = dueCards().length;
+  const active = NAV_OF[tab] || tab;
   $("#nav").innerHTML = TABS.map(([k,ic,lb]) =>
-    `<button data-go="${k}" class="${tab===k?"on":""}">
+    `<button data-go="${k}" class="${active===k?"on":""}">
        <span class="ic">${ic}</span><span class="lb">${lb}</span>
        ${k==="review" && due ? `<span class="dot-n"></span>` : ""}
      </button>`).join("");
+}
+
+/* ----- milestones sheet ----- */
+function openMilestones(){
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `
+    <div class="scrim" data-close="1"></div>
+    <div class="sheet">
+      <div class="grip"></div>
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:19px">What you can do</h3>
+        <button class="icon-btn" id="closeSheet" aria-label="Close">✕</button>
+      </div>
+      <p class="muted tiny" style="margin:6px 0 14px">
+        Each one unlocks when its chunks are out of learning and into review.</p>
+      ${MILESTONES.map(([em, name, names]) => {
+        const {got, total} = milestoneProgress(names);
+        const done = got >= total;
+        return `
+        <div style="padding:11px 0;border-top:1px solid var(--surface-2)">
+          <div class="row" style="align-items:center;gap:10px">
+            <span style="font-size:21px;${done?"":"filter:grayscale(1);opacity:.5"}">${em}</span>
+            <b style="flex:1;font-size:15px">${esc(name)}</b>
+            <span class="tiny" style="color:${done?"var(--green)":"var(--muted)"}">${got}/${total}</span>
+          </div>
+          <span class="track" style="display:block;height:6px;margin-top:8px;border-radius:99px;background:var(--surface-2);overflow:hidden">
+            <i style="display:block;height:100%;width:${(got/total*100).toFixed(0)}%;border-radius:99px;background:${done?"var(--green)":"var(--accent)"}"></i>
+          </span>
+        </div>`;
+      }).join("")}
+    </div>`;
+  document.body.appendChild(wrap);
+  const close = () => wrap.remove();
+  wrap.querySelector("[data-close]").onclick = close;
+  wrap.querySelector("#closeSheet").onclick = close;
 }
 
 /* ----- settings sheet ----- */
@@ -2210,26 +2761,85 @@ function openSettings(){
   wrap.querySelector("#testVoice").onclick = () => speak("¿Qué onda, güey? ¿Cómo has estado?");
   wrap.querySelector("#reset").onclick = () => {
     if(!confirm("Erase your deck, streak and all progress? This can't be undone.")) return;
-    srs = {}; streak = {count:0,last:null,days:{}}; scores = {};
-    totals = {reviews:0, shadowReps:0, attempts:0};
-    saveSrs(); saveStreak(); saveScores(); saveTotals();
-    stopListening(); resetAttempt();
-    session = null; shadowQ = null; learnCard = null; shadowSpoken = null;
+    srs = {}; streak = {count:0,last:null,days:{}}; scores = {}; ears = {}; dialogDone = {};
+    totals = {reviews:0, shadowReps:0, attempts:0, drills:0};
+    saveSrs(); saveStreak(); saveScores(); saveEars(); saveDialogs(); saveTotals();
+    leaveMode();
+    session = null; shadowQ = null; learnCard = null; earQ = null;
     close(); go("home"); toast("Progress reset");
   };
 }
 
 /* ---------- 7. EVENTS ---------- */
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add]");
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session]");
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
   if(t.dataset.go){
-    stopListening(); resetAttempt(); shadowSpoken = null;
+    leaveMode();
     session = null; go(t.dataset.go); return;
   }
-  if(t.dataset.sheet){ openSettings(); return; }
+  if(t.dataset.sheet){
+    if(t.dataset.sheet === "milestones") openMilestones(); else openSettings();
+    return;
+  }
+  if(t.dataset.session){ leaveMode(); startSessionFlow(); return; }
+
+  /* ----- Listen ----- */
+  if(t.dataset.ear){
+    const act = t.dataset.ear;
+    if(act === "play")  speak(earCard.ex.es, EAR_RATES[earLevel(earCard.c.id)]);
+    if(act === "slow")  speak(earCard.ex.es, 0.6);
+    if(act === "next"){ earCard = null; render(); }
+    return;
+  }
+  if(t.dataset.earPick !== undefined){
+    const id = earCard.c.id;
+    earPick = t.dataset.earPick;
+    const lvl = earLevel(id);
+    ears[id] = earPick === earCard.ex.en
+      ? Math.min(EAR_RATES.length - 1, lvl + 1)
+      : Math.max(0, lvl - 1);
+    saveEars(); markStudied();
+    render(); return;
+  }
+
+  /* ----- Quick-fire ----- */
+  if(t.dataset.drill){
+    const act = t.dataset.drill;
+    if(act === "start" || act === "retry"){ startDrill(); return; }
+    if(act === "stop"){ clearDrillTimer(); stopListening(); return; }
+    if(act === "reveal"){ drillState = "done"; drillResult = {blocked:"Mic unavailable — check it yourself."}; render(); return; }
+    if(act === "next"){ clearDrillTimer(); stopListening(); buildDrill(); render(); return; }
+  }
+
+  /* ----- Conversations ----- */
+  if(t.dataset.dlg){ startDialogue(t.dataset.dlg); render(); return; }
+  if(t.dataset.dlgPick !== undefined){
+    const turn = dlg.d.turns[dlg.turn];
+    dlg.picked = t.dataset.dlgPick;
+    if(dlg.picked === turn.es) dlg.right++;
+    speak(turn.es);
+    markStudied();
+    render(); return;
+  }
+  if(t.dataset.dlgAct){
+    const act = t.dataset.dlgAct;
+    if(act === "next"){
+      dlg.turn++;
+      prepDialogueTurn();
+      if(dlg.turn >= dlg.d.turns.length){
+        const pct = dlg.total ? Math.round(dlg.right / dlg.total * 100) : 100;
+        if(dialogDone[dlg.d.id] == null || pct > dialogDone[dlg.d.id]){
+          dialogDone[dlg.d.id] = pct; saveDialogs();
+        }
+      }
+    }
+    if(act === "replay") startDialogue(dlg.d.id);
+    if(act === "list")   dlg = null;
+    render(); return;
+  }
 
   if(t.dataset.learn){
     if(t.dataset.learn === "add"){
