@@ -189,6 +189,13 @@ input{font:inherit}
 .bar-row .v{width:42px;text-align:right;flex:none;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 
 /* ---------- browse ---------- */
+.lnk{color:var(--accent);text-decoration:underline;font:inherit}
+.cmd{
+  display:block;margin-top:5px;padding:9px 11px;border-radius:9px;
+  background:var(--bg);color:var(--accent);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
+  user-select:all;-webkit-user-select:all;overflow-x:auto;white-space:nowrap;
+}
 .search{width:100%;padding:12px 14px;border-radius:13px;background:var(--surface-2);border:none;color:var(--text);outline:none}
 .search::placeholder{color:var(--faint)}
 .chips{display:flex;gap:7px;overflow-x:auto;padding:12px 0;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
@@ -1482,6 +1489,15 @@ function speak(text, rate){
 
 /* ---------- 4b. SPEECH IN (pronunciation scoring) ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+/* A page opened straight from disk has no real origin, so browsers refuse it
+   the microphone no matter what the user allows. Nothing in the app can fix
+   that, so say what will. */
+const IS_FILE = location.protocol === "file:";
+const FILE_MSG = "Browsers won't give the microphone to a page opened from disk. "
+               + "Serve this folder and open it from there — see Settings.";
+const SERVE_CMD = "python3 -m http.server 8000";
+
 function recProblem(){
   if(!SR) return "This browser can't listen — try Chrome, Edge or Safari.";
   if(!window.isSecureContext) return "Scoring needs https:// or localhost.";
@@ -1489,19 +1505,46 @@ function recProblem(){
 }
 
 const REC_ERRORS = {
-  "not-allowed":        "Microphone blocked — allow mic access and try again.",
-  "service-not-allowed":"The browser blocked the microphone.",
+  "not-allowed":        IS_FILE ? FILE_MSG : "Microphone blocked — allow mic access for this site, then try again.",
+  "service-not-allowed":IS_FILE ? FILE_MSG : "The browser blocked the microphone.",
   "no-speech":          "Didn't catch anything — try again.",
   "audio-capture":      "No microphone found.",
   "network":            "Scoring needs an internet connection.",
   "aborted":            null,
 };
 
+function micErrorMessage(err){
+  const n = (err && err.name) || String(err);
+  if(n === "NotAllowedError" || n === "SecurityError")
+    return IS_FILE ? FILE_MSG : "Microphone blocked — allow mic access for this site, then try again.";
+  if(n === "NotFoundError" || n === "DevicesNotFoundError") return "No microphone found.";
+  if(n === "NotReadableError" || n === "TrackStartError")   return "Your microphone is in use by another app.";
+  return "Couldn't open the microphone (" + n + ").";
+}
+
 let rec = null;
 function startListening(handlers){
   const problem = recProblem();
   if(problem) return handlers.fail(problem);
   stopListening();
+
+  /* Ask for the mic directly first: the recognizer's own failure is a bare
+     "not-allowed" with no indication of why, while getUserMedia distinguishes
+     denied from missing from busy. */
+  const md = navigator.mediaDevices;
+  if(md && md.getUserMedia){
+    md.getUserMedia({audio:true})
+      .then(stream => {
+        stream.getTracks().forEach(t => t.stop());   // recognizer opens its own
+        beginRecognition(handlers);
+      })
+      .catch(err => handlers.fail(micErrorMessage(err)));
+  }else{
+    beginRecognition(handlers);
+  }
+}
+
+function beginRecognition(handlers){
   try{ rec = new SR(); }
   catch(e){ return handlers.fail("Couldn't start the microphone."); }
 
@@ -1903,6 +1946,9 @@ function renderShadow(){
         : listening
           ? `<button class="btn" data-shadow="stop">Stop listening</button>`
           : `<button class="btn primary" data-shadow="listen">\u{1F3A4} ${result ? "Try again" : "Score my pronunciation"}</button>`}
+      ${!blocked && IS_FILE ? `<div class="tiny muted center" style="line-height:1.6">
+        Opened from disk — the mic needs a served page.
+        <button class="lnk" data-sheet="settings">How to fix</button></div>` : ""}
       <button class="btn${blocked ? " primary" : ""}" data-shadow="rep">I said it out loud</button>
       <button class="btn ghost" data-shadow="next">Next phrase</button>
     </div>`;
@@ -2091,13 +2137,20 @@ function openSettings(){
   refreshVoices();
   const list = esVoices();
   const problem = audioProblem();
+  const rp = recProblem();
+  const recStatus = rp        ? {label: rp,                     color: "var(--muted)"}
+                  : IS_FILE   ? {label: "Needs a served page",  color: "var(--accent)"}
+                              : {label: "Available",            color: "var(--green)"};
   const wrap = document.createElement("div");
   wrap.innerHTML = `
     <div class="scrim" data-close="1"></div>
     <div class="sheet">
       <div class="grip"></div>
-      <h3 style="margin:0 0 4px;font-size:19px">Settings</h3>
-      <p class="muted tiny" style="margin:0 0 12px">Audio uses your device's built-in Spanish voices.</p>
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <h3 style="margin:0;font-size:19px">Settings</h3>
+        <button class="icon-btn" id="closeSheet" aria-label="Close settings">✕</button>
+      </div>
+      <p class="muted tiny" style="margin:6px 0 12px">Audio uses your device's built-in Spanish voices.</p>
       ${problem ? `
         <div class="card tiny" style="background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red);margin-bottom:12px">
           <b>${esc(problem)}</b>
@@ -2120,10 +2173,20 @@ function openSettings(){
       </div>
       <div class="field">
         <span>Pronunciation scoring</span>
-        <span class="tiny ${recProblem() ? "muted" : ""}" style="${recProblem() ? "" : "color:var(--green)"}">
-          ${recProblem() ? esc(recProblem()) : "Available"}
-        </span>
+        <span class="tiny" style="color:${recStatus.color};text-align:right">${esc(recStatus.label)}</span>
       </div>
+      ${IS_FILE ? `
+        <div class="card tiny" style="background:var(--surface-2);margin-top:12px;line-height:1.65">
+          <b>Microphone blocked? This is why.</b>
+          <div class="muted" style="margin-top:6px">
+            This page was opened straight from a file, and browsers refuse the
+            microphone to <code>file://</code> pages whatever you allow.
+            Playback still works — only scoring needs this.
+            <div style="margin-top:8px">In the folder holding this file, run:</div>
+            <div class="cmd">${esc(SERVE_CMD)}</div>
+            <div style="margin-top:6px">then open <b>http://localhost:8000</b> and use it there.</div>
+          </div>
+        </div>` : ""}
       <div class="field">
         <span>Speed <b id="rateVal" class="muted tiny">${settings.rate.toFixed(2)}×</b></span>
         <input type="range" id="rate" min="0.6" max="1.2" step="0.02" value="${settings.rate}">
@@ -2135,6 +2198,7 @@ function openSettings(){
 
   const close = () => wrap.remove();
   wrap.querySelector("[data-close]").onclick = close;
+  wrap.querySelector("#closeSheet").onclick = close;
   const sel = wrap.querySelector("#voiceSel");
   sel.onchange = () => { settings.voice = sel.value || null; saveSettings(); };
   const rate = wrap.querySelector("#rate");
