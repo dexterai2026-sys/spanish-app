@@ -1468,6 +1468,8 @@ let srs      = LS.get("srs", {});          // id -> {ease,interval,due,reps,laps
 let streak   = LS.get("streak", {count:0, last:null, days:{}});
 let scores   = LS.get("scores", {});       // id -> best pronunciation score 0-100
 let ears     = LS.get("ears", {});         // id -> listening level, indexes EAR_RATES
+let drills   = LS.get("drills", {});       // id -> best cold-recall score (Quick-fire)
+let skipped  = LS.get("skipped", {});      // id -> when you passed on it in Learn
 let dialogDone = LS.get("dialogDone", {}); // dialogue id -> best % of replies right
 /* Merged over defaults so decks saved by an earlier version pick up new keys. */
 let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0, drills:0}, LS.get("totals", {}));
@@ -1477,6 +1479,8 @@ const saveSrs      = () => LS.set("srs", srs);
 const saveStreak   = () => LS.set("streak", streak);
 const saveScores   = () => LS.set("scores", scores);
 const saveEars     = () => LS.set("ears", ears);
+const saveDrills   = () => LS.set("drills", drills);
+const saveSkipped  = () => LS.set("skipped", skipped);
 const saveDialogs  = () => LS.set("dialogDone", dialogDone);
 const saveTotals   = () => LS.set("totals", totals);
 const saveSettings = () => LS.set("settings", settings);
@@ -1530,7 +1534,10 @@ function previewInterval(st, grade){
 
 const inDeck   = id => !!srs[id];
 const dueCards = () => Object.keys(srs).filter(id => srs[id].due <= Date.now());
-const newCards = () => CHUNKS.filter(c => !inDeck(c.id)).sort((a,b) => a.tier - b.tier);
+/* Skipped chunks sink below everything you haven't judged yet, so passing on
+   one moves it out of the way instead of handing it straight back. */
+const newCards = () => CHUNKS.filter(c => !inDeck(c.id))
+  .sort((a,b) => (!!skipped[a.id] - !!skipped[b.id]) || (a.tier - b.tier));
 const statusOf = id => {
   const s = srs[id];
   if(!s) return "new";
@@ -1862,6 +1869,7 @@ const VIEWS = {
   dialogue: () => renderDialogue(),
   stats:    () => renderStats(),
   browse:   () => renderBrowse(),
+  sessionDone: () => renderSessionDone(),
 };
 
 function render(){
@@ -1890,9 +1898,12 @@ function milestoneProgress(chunkNames){
     const c = CHUNKS.find(x => x.chunk === n);
     return c && c.id;
   }).filter(Boolean);
+  /* A milestone claims you can DO something, so saying it well counts as
+     evidence alongside recalling it — otherwise Shadow and Quick-fire move
+     nothing and the whole motivational surface ignores four of six modes. */
   const got = ids.filter(id => {
     const s = statusOf(id);
-    return s === "review" || s === "mastered";
+    return s === "review" || s === "mastered" || scores[id] >= 85 || drills[id] >= 85;
   }).length;
   return {got, total: ids.length};
 }
@@ -1922,11 +1933,12 @@ function renderHome(){
     </div>
 
     <button class="btn primary" style="margin-top:14px;padding:18px" data-session="start">
-      ${plan.length ? `Start today's session · ${plan.length} items` : "You're all caught up — learn more"}
+      ${plan.total ? `Start today's session · ${plan.total} items` : "You're all caught up — learn more"}
     </button>
     <p class="tiny muted center" style="margin:8px 0 0">
-      ${plan.length ? `${plan.filter(p=>p.kind==="review").length} to review, ${plan.filter(p=>p.kind==="new").length} new, ${plan.filter(p=>p.kind==="listen").length} listening`
-                    : "Nothing due right now"}
+      ${plan.total ? [plan.review && `${plan.review} to review`, plan.fresh && `${plan.fresh} new`,
+                      plan.listen && `${plan.listen} listening`].filter(Boolean).join(", ")
+                   : "Nothing due right now"}
     </p>
 
     <p class="sec-label" style="margin:22px 0 8px">What you can do</p>
@@ -1964,23 +1976,70 @@ function renderHome(){
     </div>`;
 }
 
-/* ----- Daily session: one tap, no decisions ----- */
-const NEW_PER_DAY = 5;
+/* ----- Daily session -----
+   One queue that actually runs all three stages back to back. The modes stay
+   the same; the flow just decides what comes next and counts what got done. */
+const NEW_PER_DAY = 5, LISTEN_PER_DAY = 4, REVIEW_CAP = 20;
+let flow = null;
+
 function sessionPlan(){
-  const plan = dueCards().slice(0, 20).map(id => ({kind:"review", id}));
-  newCards().slice(0, NEW_PER_DAY).forEach(c => plan.push({kind:"new", id:c.id}));
-  const deck = Object.keys(srs);
-  if(deck.length >= 4) shuffle(deck).slice(0, 4).forEach(id => plan.push({kind:"listen", id}));
-  return plan;
+  const review = Math.min(dueCards().length, REVIEW_CAP);
+  const fresh  = Math.min(newCards().length, NEW_PER_DAY);
+  const listen = Object.keys(srs).length >= 4 ? LISTEN_PER_DAY : 0;
+  return {review, fresh, listen, total: review + fresh + listen};
 }
+
 function startSessionFlow(){
-  const plan = sessionPlan();
-  if(!plan.some(p => p.kind === "review")){
-    if(plan.some(p => p.kind === "new")) return go("learn");
-    return go("listen");
-  }
-  session = null;
-  go("review");
+  const p = sessionPlan();
+  if(!p.total) return go("learn");
+  const stages = [];
+  if(p.review) stages.push("review");
+  if(p.fresh)  stages.push("learn");
+  if(p.listen) stages.push("listen");
+  flow = {stages, i:0, left:{learn:p.fresh, listen:p.listen}, plan:p, did:{review:0, learn:0, listen:0}};
+  session = null; earCard = null; learnCard = null;
+  go(stages[0]);
+}
+
+/* Called when a stage runs out of work. Returns true if the flow handled it. */
+function flowNext(){
+  if(!flow) return false;
+  flow.i++;
+  session = null; earCard = null; learnCard = null;
+  go(flow.i >= flow.stages.length ? "sessionDone" : flow.stages[flow.i]);
+  return true;
+}
+function flowTick(stage){
+  if(!flow) return false;
+  flow.did[stage]++;
+  if(stage === "review") return false;          // review ends when its queue empties
+  return --flow.left[stage] <= 0 ? flowNext() : false;
+}
+const flowDone = () => flow ? flow.did.review + flow.did.learn + flow.did.listen : 0;
+function flowBar(){
+  if(!flow) return "";
+  return `<div class="progbar" style="margin-bottom:14px"><i style="width:${(flowDone()/flow.plan.total*100).toFixed(0)}%"></i></div>`;
+}
+
+function renderSessionDone(){
+  const d = flow ? flow.did : {review:0, learn:0, listen:0};
+  const total = d.review + d.learn + d.listen;
+  flow = null;
+  view.innerHTML = header("Done for today", "Session complete") + `
+    <div class="card center" style="padding:26px 16px">
+      <div class="flame" style="font-size:44px">\u{1F525}</div>
+      <div class="score" style="font-size:40px;margin-top:6px">${total}<span> items</span></div>
+      <div class="muted tiny" style="margin-top:6px">${liveStreak()} day streak</div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F504} Reviewed</span><span class="v">${d.review}</span></div>
+      <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{2728} Learned</span><span class="v">${d.learn}</span></div>
+      <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F442} Heard</span><span class="v">${d.listen}</span></div>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn primary" data-go="practice">Keep going in Practice</button>
+      <button class="btn ghost" data-go="home">Back to Today</button>
+    </div>`;
 }
 
 /* ----- Learn ----- */
@@ -1996,7 +2055,8 @@ function renderLearn(){
   const c = learnCard;
   const left = pool.length;
 
-  view.innerHTML = header("Learn", `${left} new chunk${left===1?"":"s"} left`) + `
+  view.innerHTML = header("Learn", flow ? `Session · ${flowDone()+1} of ${flow.plan.total}`
+                                        : `${left} new chunk${left===1?"":"s"} left`) + flowBar() + `
     <div class="card">
       <div class="center" style="margin-bottom:10px">${tierBadge(c)}</div>
       <div class="chunk-hero">
@@ -2100,9 +2160,9 @@ function renderPractice(){
   const deck = Object.keys(srs).length;
   const heard = Object.keys(ears).length;
   const modes = [
-    ["listen",  "\u{1F442}", "Listen",      "Understand it with no text on screen", deck ? `${heard}/${deck} trained` : "Add chunks first"],
-    ["shadow",  "\u{1F3A7}", "Shadow",      "Repeat out loud, scored by the mic",   `${totals.shadowReps} said out loud`],
-    ["drill",   "\u{26A1}",  "Quick-fire",  "Say it in five seconds, from English", `${totals.drills || 0} drilled`],
+    ["listen",  "\u{1F442}", "Listen",      "Understand it with no text on screen", heard ? `${heard} trained` : "Open to start"],
+    ["shadow",  "\u{1F3A7}", "Shadow",      "Read it aloud, scored by the mic",     `${totals.shadowReps} said out loud`],
+    ["drill",   "\u{26A1}",  "Quick-fire",  "Produce it cold in five seconds",      `${totals.drills || 0} drilled`],
     ["dialogue","\u{1F5E3}\u{FE0F}", "Conversations", "Hold your end of a real exchange", `${Object.keys(dialogDone).length}/${DIALOGUES.length} done`],
   ];
   view.innerHTML = header("Practice", "Four ways to make it stick") + `
@@ -2156,7 +2216,8 @@ function renderListen(){
   const answered = earPick !== null;
   const right = answered && earPick === ex.en;
 
-  view.innerHTML = header("Listen", `No text · playing at ${EAR_LABELS[lvl]} speed`) + `
+  view.innerHTML = header("Listen", flow ? `Session · ${flowDone()+1} of ${flow.plan.total}`
+                                         : `No text · ${EAR_LABELS[lvl]} speed`) + flowBar() + `
     <div class="card center" style="padding:26px 16px">
       <button class="spk" style="width:76px;height:76px;font-size:30px" data-ear="play">\u{1F50A}</button>
       <div class="tiny muted" style="margin-top:12px">${answered ? "" : "Tap to hear it again"}</div>
@@ -2202,6 +2263,7 @@ function resetAttempt(){ listening = false; heard = ""; result = null; recNote =
 
 /* Tear down anything a mode left running before switching away from it. */
 function leaveMode(){
+  flow = null;          // tapping a tab mid-session abandons it
   stopListening();
   resetAttempt();
   shadowSpoken = null;
@@ -2262,11 +2324,13 @@ function renderShadow(){
       ${blocked ? `<div class="tiny muted center">${esc(blocked)}</div>`
         : listening
           ? `<button class="btn" data-shadow="stop">Stop listening</button>`
-          : `<button class="btn primary" data-shadow="listen">\u{1F3A4} ${result ? "Try again" : "Score my pronunciation"}</button>`}
+          : `<button class="btn primary" data-shadow="listen">\u{1F3A4} ${result ? "Say it again" : "Say it — I'll score you"}</button>`}
       ${!blocked && IS_FILE ? `<div class="tiny muted center" style="line-height:1.6">
         Opened from disk — the mic needs a served page.
         <button class="lnk" data-sheet="settings">How to fix</button></div>` : ""}
-      <button class="btn${blocked ? " primary" : ""}" data-shadow="rep">I said it out loud</button>
+      ${blocked
+        ? `<button class="btn primary" data-shadow="rep">I said it out loud</button>`
+        : `<button class="btn ghost tiny" data-shadow="rep">Count it without scoring</button>`}
       <button class="btn ghost" data-shadow="next">Next phrase</button>
     </div>`;
 
@@ -2307,6 +2371,9 @@ function beginListening(){
         scores[item.c.id] = r.score;
         saveScores();
       }
+      /* A scored attempt IS a rep — otherwise the mic is a side quest and only
+         the manual button moves the queue. */
+      if(r.score >= 60){ item.reps++; totals.shadowReps++; }
       saveTotals();
       markStudied();
       render();
@@ -2464,8 +2531,11 @@ function startDrill(){
         r.said = text;
         drillResult = r;
         totals.drills = (totals.drills || 0) + 1;
+        /* Kept apart from Shadow's scores: reading a sentence aloud and
+           producing it cold from English are different skills, and pooling
+           them would let the easier one mask the harder one. */
         const id = drillCard.c.id;
-        if(scores[id] == null || r.score > scores[id]){ scores[id] = r.score; saveScores(); }
+        if(drills[id] == null || r.score > drills[id]){ drills[id] = r.score; saveDrills(); }
         saveTotals(); markStudied();
       }else{
         drillResult = {blocked: "Didn't catch anything — try again."};
@@ -2515,9 +2585,11 @@ function renderStats(){
   const deck = Object.keys(srs);
   const mastered = deck.filter(id => statusOf(id) === "mastered").length;
   const learning = deck.filter(id => statusOf(id) === "learning").length;
-  const scored = Object.values(scores);
-  const avgScore = scored.length ? Math.round(scored.reduce((a,b) => a+b, 0) / scored.length) : 0;
-  const nailed = scored.filter(s => s >= 85).length;
+  const avg = a => a.length ? Math.round(a.reduce((x,y) => x+y, 0) / a.length) : 0;
+  const scored  = Object.values(scores),  avgScore = avg(scored);
+  const drilled = Object.values(drills),  avgDrill = avg(drilled);
+  const earTrained = Object.keys(ears).length;
+  const atFullSpeed = Object.values(ears).filter(l => l >= EAR_RATES.length - 1).length;
 
   const byCat = {};
   CHUNKS.forEach(c => {
@@ -2550,16 +2622,36 @@ function renderStats(){
       <div class="stat"><b>${totals.shadowReps}</b><span>Out loud</span></div>
     </div>
 
-    ${scored.length ? `
+    ${earTrained ? `
     <div class="card" style="margin-top:12px">
-      <p class="sec-label">Pronunciation</p>
-      <div class="row" style="align-items:center;gap:18px">
-        <div class="score" style="font-size:40px;color:${scoreColor(avgScore)}">${avgScore}<span>%</span></div>
-        <div class="tiny muted">
-          average of your best score on ${scored.length} phrase${scored.length===1?"":"s"}<br>
-          ${totals.attempts} attempt${totals.attempts===1?"":"s"} scored · ${nailed} above 85%
+      <p class="sec-label">Ear training</p>
+      ${EAR_RATES.map((r,i) => {
+        const n = Object.values(ears).filter(l => Math.min(EAR_RATES.length-1, l) === i).length;
+        return `<div class="bar-row">
+          <span class="nm" style="width:64px">${EAR_LABELS[i]} ${r}×</span>
+          <span class="track"><i style="width:${earTrained?(n/earTrained*100).toFixed(0):0}%;${i===EAR_RATES.length-1?"background:var(--green)":""}"></i></span>
+          <span class="v">${n}</span></div>`;
+      }).join("")}
+      <p class="tiny muted" style="margin:8px 0 0">
+        ${atFullSpeed} chunk${atFullSpeed===1?"":"s"} recognised at full speed, no text.</p>
+    </div>` : ""}
+
+    ${scored.length || drilled.length ? `
+    <div class="card" style="margin-top:12px">
+      <p class="sec-label">Speaking</p>
+      <div class="stat-row">
+        <div class="stat">
+          <b style="color:${scored.length?scoreColor(avgScore):"var(--faint)"}">${scored.length?avgScore+"%":"—"}</b>
+          <span>Reading aloud</span>
+        </div>
+        <div class="stat">
+          <b style="color:${drilled.length?scoreColor(avgDrill):"var(--faint)"}">${drilled.length?avgDrill+"%":"—"}</b>
+          <span>From memory</span>
         </div>
       </div>
+      <p class="tiny muted" style="margin:10px 0 0">
+        Shadow scores you reading a sentence you can see; Quick-fire scores you
+        producing it cold. ${totals.attempts + (totals.drills||0)} attempt${totals.attempts + (totals.drills||0) === 1 ? "" : "s"} scored.</p>
     </div>` : ""}
 
     <div class="card" style="margin-top:12px">
@@ -2637,7 +2729,8 @@ const TABS = [
   ["stats","\u{1F4CA}","Progress"],
 ];
 /* modes that live under Practice keep that tab lit */
-const NAV_OF = {listen:"practice", shadow:"practice", drill:"practice", dialogue:"practice", browse:"stats"};
+const NAV_OF = {listen:"practice", shadow:"practice", drill:"practice", dialogue:"practice",
+                browse:"home", sessionDone:"home"};
 function renderNav(){
   const due = dueCards().length;
   const active = NAV_OF[tab] || tab;
@@ -2761,11 +2854,13 @@ function openSettings(){
   wrap.querySelector("#testVoice").onclick = () => speak("¿Qué onda, güey? ¿Cómo has estado?");
   wrap.querySelector("#reset").onclick = () => {
     if(!confirm("Erase your deck, streak and all progress? This can't be undone.")) return;
-    srs = {}; streak = {count:0,last:null,days:{}}; scores = {}; ears = {}; dialogDone = {};
+    srs = {}; streak = {count:0,last:null,days:{}}; scores = {}; ears = {};
+    dialogDone = {}; drills = {}; skipped = {};
     totals = {reviews:0, shadowReps:0, attempts:0, drills:0};
-    saveSrs(); saveStreak(); saveScores(); saveEars(); saveDialogs(); saveTotals();
+    saveSrs(); saveStreak(); saveScores(); saveEars(); saveDialogs();
+    saveDrills(); saveSkipped(); saveTotals();
     leaveMode();
-    session = null; shadowQ = null; learnCard = null; earQ = null;
+    session = null; shadowQ = null; learnCard = null; earQ = null; flow = null;
     close(); go("home"); toast("Progress reset");
   };
 }
@@ -2791,7 +2886,11 @@ document.addEventListener("click", e => {
     const act = t.dataset.ear;
     if(act === "play")  speak(earCard.ex.es, EAR_RATES[earLevel(earCard.c.id)]);
     if(act === "slow")  speak(earCard.ex.es, 0.6);
-    if(act === "next"){ earCard = null; render(); }
+    if(act === "next"){
+      earCard = null;
+      if(flowTick("listen")) return;
+      render();
+    }
     return;
   }
   if(t.dataset.earPick !== undefined){
@@ -2844,14 +2943,17 @@ document.addEventListener("click", e => {
   if(t.dataset.learn){
     if(t.dataset.learn === "add"){
       srs[learnCard.id] = newState(); saveSrs();
+      delete skipped[learnCard.id]; saveSkipped();
+      markStudied();
       toast("Added — review it in a minute");
+      learnCard = null;
+      if(flowTick("learn")) return;
     }else{
-      const pool = newCards();
-      const i = pool.findIndex(c => c.id === learnCard.id);
-      learnCard = pool[i+1] || pool[0];
-      render(); return;
+      /* Persisted, so a skip actually sticks instead of resurfacing next visit. */
+      skipped[learnCard.id] = Date.now(); saveSkipped();
+      learnCard = null;
     }
-    learnCard = null; render(); return;
+    render(); return;
   }
 
   if(t.dataset.reveal){ session.shown = true; render(); return; }
@@ -2863,8 +2965,9 @@ document.addEventListener("click", e => {
     totals.reviews++; saveTotals();
     markStudied();
     if(GRADE[t.dataset.grade] === GRADE.again) session.queue.push(c.id);
-    else session.done++;
+    else { session.done++; flowTick("review"); }
     nextCard();
+    if(!session.card && flow) return flowNext();
     render(); return;
   }
 
