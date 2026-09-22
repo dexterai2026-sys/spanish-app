@@ -100,6 +100,14 @@ input{font:inherit}
 .badge.tier2{background:color-mix(in srgb,var(--blue) 18%,transparent);color:var(--blue)}
 .badge.tier3{background:color-mix(in srgb,var(--violet) 18%,transparent);color:var(--violet)}
 .badge.vulgar{background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red)}
+.badge.casual{background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal)}
+.badge.neutral{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}
+.whosay{margin-top:10px;padding:10px 13px;border-radius:12px;background:var(--surface-2);font-size:13px;line-height:1.45;color:var(--muted)}
+.whosay b{color:var(--text)}
+.culture{margin-top:10px;padding:11px 14px;border-radius:12px;font-size:13px;line-height:1.5;
+  background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--text)}
+.culture .clabel{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:3px}
 
 /* ---------- home ---------- */
 .streak{
@@ -1956,6 +1964,42 @@ const SOUNDS = {
 };
 CHUNKS.forEach(c => { if(SOUNDS[c.chunk]) c.sounds = SOUNDS[c.chunk]; });
 
+/* ---------- 1b2. WHAT NOBODY TELLS YOU ----------
+   A handful of chunks mean something the translation does not carry, and
+   getting them wrong is the difference between sounding foreign and sounding
+   rude. Only where the gap is big enough to cause a real misunderstanding. */
+const NOTES = {
+  "ahorita":
+    "The most misunderstood word in Mexican Spanish. It can mean right now, in five minutes, this afternoon, or never — the size is in the tone, not the word. <b>Ahorita vengo</b> from a shopkeeper might be two minutes or twenty. If you need a real time, ask for one.",
+  "¿mande?":
+    "The standard Mexican “sorry, what?”. Saying a bare <b>¿qué?</b> to someone older or serving you lands somewhere between blunt and rude, so this is the safe reflex. Very Mexican — it will mark you as having learned here rather than from a textbook.",
+  "provecho":
+    "Said to strangers who are eating as you pass their table or leave a restaurant. Not saying it is the marked choice, not saying it is what foreigners do. One word, no reply needed beyond <b>gracias</b>.",
+  "con permiso":
+    "Required, not optional, when you pass close to someone, squeeze through, leave a table or enter a room. Skipping it reads as rude in a way that surprises English speakers, who would just say nothing.",
+  "¿me regalas...?":
+    "Literally “will you gift me”, and it is the ordinary, polite way to ask for something you are about to pay for. Nobody thinks you are asking for a present. Softer than <b>dame</b>, which is fine with friends and abrupt with anyone else.",
+  "no manches":
+    "The clean one. Its crude twin swaps one letter and is far stronger — you will hear that version constantly among friends, but this is the one to actually use until you know the room.",
+  "güey":
+    "Punctuation among friends, roughly “dude”, and used several times a sentence. To an elder, a stranger, a boss or somebody's mother it is genuinely disrespectful. Hear it everywhere; say it only with people who said it first.",
+  "ni modo":
+    "The Mexican shrug, and a small piece of the worldview: it is what it is, nothing to be done, no point being upset. Closer to “oh well” than to “no way” — using it about something serious sounds callous.",
+  "¿pica?":
+    "Worth asking every time, because the local baseline is not yours. <b>No pica</b> from a taquero can still take the roof off. <b>Poquito</b> is not a small amount.",
+  "la neta":
+    "“The truth” — used to mark that you are dropping the polite version and saying what you actually think. Casual and very common, but it does carry weight: <b>la neta</b> before a compliment makes it sincere, before a criticism makes it blunt.",
+  "¡aguas!":
+    "“Watch out!” — from the days of throwing water out of upstairs windows. Shouted, not said. If someone yells it at you, move first and work out why afterwards.",
+  "mucho gusto":
+    "The reflex on being introduced. The reply when someone says it to you is <b>igualmente</b> or <b>el gusto es mío</b> — an English speaker's instinct to say nothing leaves an audible gap.",
+  "sale":
+    "Closes a plan: agreement plus “we're done discussing it”. Often doubled as <b>sale y vale</b>. Mexican enough that using it marks where you learned.",
+  "¿qué onda?":
+    "The default greeting among friends and the single most Mexican thing in this collection. Fine with anyone your own age, too casual for a job interview or your partner's grandmother.",
+};
+CHUNKS.forEach(c => { if(NOTES[c.chunk]) c.note = NOTES[c.chunk]; });
+
 /* ---------- 1c. A GENTLE WAY IN ----------
    Chunks a beginner meets first whose sentences all carried extra baggage.
    These are the bare, real utterances — what you'd actually hear on its own. */
@@ -2560,8 +2604,16 @@ const FILE_MSG = "Browsers won't give the microphone to a page opened from disk.
                + "Serve this folder and open it from there — see Settings.";
 const SERVE_CMD = "python3 -m http.server 8000";
 
+/* iOS has no Web Speech recognition in any browser, Safari included, and
+   every iOS browser is Safari underneath — so "try another browser" is advice
+   that cannot work there. Say what is actually true instead. */
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.platform || "") ||
+               (/Mac/.test(navigator.platform || "") && navigator.maxTouchPoints > 1);
+
 function recProblem(){
-  if(!SR) return "This browser can't listen — try Chrome, Edge or Safari.";
+  if(!SR) return IS_IOS
+    ? "iPhones and iPads can't do speech recognition in any browser yet, so the mic modes are unavailable here. Everything else works — Listen is the one that matters most anyway."
+    : "This browser can't listen — try Chrome or Edge on desktop.";
   if(!window.isSecureContext) return "Scoring needs https:// or localhost.";
   return null;
 }
@@ -2780,10 +2832,30 @@ function soundsHtml(c){
     <span class="sval">${esc(c.sounds)}</span>
   </div>`;
 }
+/* Who you can safely say it to. The collection has always carried a register
+   on every chunk and only ever surfaced the two vulgar ones, so a learner had
+   no way to tell that güey and mucho gusto belong in different rooms — which
+   is exactly the mistake that gets made in front of somebody's mother. */
+const REGISTER = {
+  casual:  {badge:"casual",  who:"<b>Friends, people your own age, anyone who started it.</b> Not a stranger, not your boss, not somebody's mother."},
+  neutral: {badge:"neutral", who:"<b>Safe with anyone.</b> Strangers, elders, work, friends — this one never lands wrong."},
+  vulgar:  {badge:"careful", who:"<b>Close friends only, and read the room first.</b> You'll hear it constantly, which is why it's here."},
+};
+
 function tierBadge(c){
-  const reg = c.register === "vulgar" ? `<span class="badge vulgar">careful</span>` : "";
+  const r = REGISTER[c.register];
+  const reg = r ? `<span class="badge ${c.register}">${r.badge}</span>` : "";
   return `<span class="badge tier${c.tier}">Tier ${c.tier}</span>
           <span class="badge">${CAT[c.category].label}</span> ${reg}`;
+}
+
+function whoSayHtml(c){
+  const r = REGISTER[c.register];
+  return r ? `<div class="whosay">${r.who}</div>` : "";
+}
+
+function cultureHtml(c){
+  return c.note ? `<div class="culture"><span class="clabel">worth knowing</span>${c.note}</div>` : "";
 }
 
 /* ---------- 6. VIEWS ---------- */
@@ -3142,6 +3214,8 @@ function renderLearn(){
         ${c.literal ? `<div class="lit">literally: ${esc(c.literal)}</div>` : ""}
       </div>
       ${soundsHtml(c)}
+      ${whoSayHtml(c)}
+      ${cultureHtml(c)}
     </div>
     <div class="card">
       <p class="sec-label">In real sentences · gentlest first</p>
