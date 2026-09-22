@@ -2382,6 +2382,72 @@ function rateChunk(c){
   return Math.min(4, level);
 }
 
+/* Some chunks do several unrelated jobs and two sentences cannot show that.
+   ya alone is "already", "right now", "not any more" and "enough" depending on
+   where it sits; órale is agreement, astonishment and "get a move on". Meeting
+   one sense and calling the chunk learned is how someone ends up unable to
+   parse the other three, so the busiest words get their range shown. */
+const EXTRA_EXAMPLES = {
+  "ya": [
+    ["Ya llegué.","I'm here now."],
+    ["¿Ya comiste?","Have you eaten yet?"],
+    ["Ya, déjalo así.","Enough, leave it like that."]
+  ],
+  "ya no": [
+    ["Ya no trabajo ahí.","I don't work there any more."],
+    ["Ya no hay.","There's none left."]
+  ],
+  "pues": [
+    ["Pues sí.","Well, yeah."],
+    ["¿Pues qué pasó?","So what happened?"],
+    ["Pues ni modo.","Well, nothing to be done."]
+  ],
+  "este...": [
+    ["Este... déjame pensar.","Um... let me think."],
+    ["Es este... ¿cómo se llama?","It's, um... what's it called?"]
+  ],
+  "o sea": [
+    ["O sea, no me gustó.","I mean, I didn't like it."],
+    ["¿O sea que no vienes?","So you're not coming, then?"]
+  ],
+  "bueno": [
+    ["Bueno, ya me voy.","Right, I'm off."],
+    ["¿Bueno?","Hello? (answering the phone)"],
+    ["Bueno, pero nada más uno.","Fine, but only one."]
+  ],
+  "órale": [
+    ["¡Órale, qué bonito!","Wow, how lovely!"],
+    ["Órale pues, nos vemos.","Alright then, see you."],
+    ["¡Órale, que ya nos vamos!","Come on, we're leaving!"]
+  ],
+  "ándale": [
+    ["Ándale, eso es.","That's it, exactly."],
+    ["Ándale pues.","Go on then."]
+  ],
+  "nada más": [
+    ["Nada más vine a saludar.","I just came to say hi."],
+    ["Uno nada más, porfa.","Just one, please."]
+  ],
+  "no sé": [
+    ["No sé, la verdad.","I don't know, honestly."],
+    ["No sé si pueda.","I don't know if I can."]
+  ],
+  "¿no?": [
+    ["Está lejos, ¿no?","It's far, isn't it?"],
+    ["Ya te dije, ¿no?","I already told you, right?"]
+  ],
+  "ahorita": [
+    ["Ahorita lo hago.","I'll do it in a bit."],
+    ["Ahorita no, gracias.","Not right now, thanks."]
+  ],
+};
+Object.keys(EXTRA_EXAMPLES).forEach(name => {
+  const c = CHUNKS.find(x => x.chunk === name);
+  if(c) EXTRA_EXAMPLES[name].forEach(e => {
+    if(!c.examples.some(x => x.es === e[0])) c.examples.push({es:e[0], en:e[1]});
+  });
+});
+
 CHUNKS.forEach(c => {
   c.learningLevel = rateChunk(c);
   c.prerequisites = PREREQUISITES[c.chunk] || [];
@@ -2569,6 +2635,65 @@ const DIALOGUES = [
     YOU("Te lo mando hoy sin falta. Quedo pendiente.", "I'll send it today without fail. I'll await your reply.",
         ["Déjame revisarlo la próxima semana.", "Ahí te lo mando cuando pueda."]),
   ]),
+
+  /* Faith and culture had one conversation each, so picking either goal paid
+     out less than picking friends. These even that up, and both lean on the
+     answers a learner now gets taught rather than only on their own turns. */
+  D("Someone asks what you believe", "A coworker has noticed you go to church and is curious, not hostile.", [
+    THEM("Oye, ¿tú sí vas a la iglesia, verdad?", "Hey, you do go to church, right?"),
+    YOU("Sí, voy los domingos. ¿Por qué preguntas?", "Yes, I go on Sundays. Why do you ask?",
+        ["Debes venir conmigo el domingo.", "No es por nada pero sí."]),
+    THEM("No, nada más curiosidad. Yo la verdad no soy muy creyente.", "No, just curious. Honestly I'm not much of a believer."),
+    YOU("Se vale. ¿Puedo compartir algo contigo? Sin presión.", "That's fair. Can I share something with you? No pressure.",
+        ["Deberías creer, te hace falta.", "Ni modo, tú te lo pierdes."]),
+    THEM("Va, échale.", "Go on, then."),
+    YOU("A mí me cambió la vida, la neta. Nada más eso.", "It changed my life, honestly. That's all.",
+        ["La Biblia dice que estás equivocado.", "Es que tienes que ir el domingo."]),
+    THEM("Qué bueno, se nota que te hace bien.", "That's good, you can tell it does you good."),
+    YOU("Gracias por escucharme. Si algún día quieres platicar, aquí ando.",
+        "Thanks for hearing me out. If you ever want to talk, I'm around.",
+        ["Entonces te espero el domingo temprano.", "Ya te dije, deberías pensarlo."]),
+  ]),
+
+  D("Talking about a tradition", "At a family party, someone explains what's going on.", [
+    THEM("¿Nunca habías venido a una posada?", "You'd never been to a posada before?"),
+    YOU("Nunca. ¿Cómo se celebra?", "Never. How is it celebrated?",
+        ["No, en mi país eso no existe.", "Más o menos sé de qué va."]),
+    THEM("Pues son nueve días antes de Navidad, se pide posada cantando.",
+         "Well, it's the nine days before Christmas, you sing asking for lodging."),
+    YOU("¡Órale! ¿Y desde cuándo se hace?", "Wow! And how long has it been done?",
+        ["Qué flojera, la verdad.", "Ah, o sea como en mi país."]),
+    THEM("Uf, de hace siglos. Mi abuela ya lo hacía de niña.", "Oof, centuries. My grandmother did it as a girl."),
+    YOU("Se parece a algo que hacemos allá, pero sin el canto.", "It's a bit like something we do back home, but without the singing.",
+        ["No entiendo nada de lo que dices.", "En mi país lo hacemos mejor."]),
+  ]),
+
+  D("The bus is late", "You're at a stop and nothing has come for twenty minutes.", [
+    THEM("¿También está esperando el de Centro?", "Are you waiting for the Centro one too?"),
+    YOU("Sí, ya tiene rato. ¿A qué hora pasa?", "Yes, it's been a while. What time does it come?",
+        ["No hablo español muy bien.", "Ahorita viene, no se preocupe."]),
+    THEM("Cada veinte minutos, pero hoy quién sabe.", "Every twenty minutes, but today who knows."),
+    YOU("Ni modo. ¿Está lejos caminando?", "Oh well. Is it far on foot?",
+        ["Qué mala onda este país.", "Entonces me voy en taxi ya."]),
+    THEM("Como quince minutos, todo derechito.", "About fifteen minutes, straight on."),
+    YOU("Ah, pues me lanzo caminando. ¡Gracias!", "Ah, I'll walk it then. Thanks!",
+        ["No le entendí nada, gracias.", "¿Me puede llevar usted?"]),
+  ]),
+
+  D("Paying at the market", "You've picked out fruit and it's time to settle up.", [
+    THEM("¿Le doy algo más, joven?", "Anything else for you?"),
+    YOU("Así está bien. ¿Cuánto es?", "That's all. How much is it?",
+        ["Quiero comprar más cosas ahora.", "¿A cómo está todo esto?"]),
+    THEM("Son ciento cuarenta.", "That's a hundred and forty."),
+    YOU("¿Tiene cambio de quinientos?", "Do you have change for five hundred?",
+        ["Solo tengo tarjeta, ni modo.", "Está muy caro, la verdad."]),
+    THEM("Uy, déjeme ver... sí, ahorita le doy.", "Ooh, let me see... yes, I'll get it for you."),
+    YOU("Gracias. ¿Y a cómo el kilo de mango?", "Thanks. And how much a kilo for mango?",
+        ["Ya no quiero nada más.", "¿Me regala uno gratis?"]),
+    THEM("A treinta el kilo, están buenísimos.", "Thirty a kilo, they're great."),
+    YOU("Deme medio kilo, porfa.", "Give me half a kilo, please.",
+        ["No me gustan los mangos.", "Mejor la próxima, gracias."]),
+  ]),
 ];
 DIALOGUES.forEach((d,i) => d.id = "d" + (i+1));
 
@@ -2580,6 +2705,8 @@ const DIALOGUE_GOALS = {
   "Making weekend plans":"friends", "Sharing your faith":"faith",
   "At the bus station":"travel", "Talking about music":"culture",
   "Setting up a meeting":"work",
+  "Someone asks what you believe":"faith", "Talking about a tradition":"culture",
+  "The bus is late":"travel", "Paying at the market":"food",
 };
 DIALOGUES.forEach(d => { d.goal = DIALOGUE_GOALS[d.title] || null; });
 
