@@ -1,7 +1,7 @@
 Calle — real-world Mexican Spanish
 A single-file PWA that teaches spoken Mexican Spanish through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses. An adaptive curriculum keeps the carrier sentence at the learner's level and uses their goals to choose relevant contexts.
 
-Everything lives in one index.html: 350 chunks, 765 example sentences, 16 dialogues, a spaced-repetition engine, a pronunciation scorer and seven study modes. No build step, no dependencies, no backend, no network calls.
+Everything lives in one index.html: 368 chunks, 802 example sentences, 16 dialogues, a building-block sentence generator, a spaced-repetition engine, a pronunciation scorer and eight study modes. No build step, no dependencies, no backend, no network calls.
 
 Calle is Spanish for "street" — the register this teaches.
 
@@ -32,15 +32,20 @@ o sea · este… · [travel] ¡aguas! · pues · la neta · [faith] no te preocu
 digo · ¿no? · [travel] ¿me repites? · ¿sí me explico? · tipo · [travel] no te entendí
 The glue still leads, goal vocabulary arrives from card three, and neither crowds the other out. With no goals set it falls back to plain frequency order.
 
+Core first
+Frequency alone put soy, estoy, hay and tengo on day nineteen — they were appended to the array late and inherited the back of their own category, while the queue filled with fillers and reactions. A learner who can greet everybody and state nothing has not had a good first week.
+
+Fifty chunks are flagged core: the spine, the question words, and the frames the Lab plugs together. They are held out of the frequency ordering and woven back one for one, so they all arrive inside week one without burying the glue. It is the same lesson the goal weighting taught — placing them first wholesale would mean thirty cards of bare scaffolding and nothing human to say.
+
 First run
-Three cards sell the method — chunks instead of grammar, the ear training, mic scoring — then a fourth asks what you're learning Spanish for. Shown once and remembered.
+Four cards sell the method — chunks instead of grammar, sentences as blocks, the ear training, mic scoring — then a fifth asks what you're learning Spanish for. Shown once and remembered.
 
 Feedback and reward
 Correct answers flash green and play a short rising tone; wrong ones flash red. Consecutive correct answers build a combo (🔥 4 in a row) shown in Review and Listen, and your best run is kept. Completing a session and unlocking a milestone each get their own sound, and a milestone unlock interrupts with a celebration — once, never twice for the same one.
 
 All tones are synthesised with the Web Audio API, so there are no audio files and it works with the network off. Toggle in Settings; on by default.
 
-The seven modes
+The eight modes
 Mode	What it trains	Needs
 Learn	Meeting a new chunk with its examples and audio	—
 Review	Recall, via cloze or translation prompt	—
@@ -48,6 +53,7 @@ Listen	Understanding with no text on screen	—
 Shadow	Saying it out loud, scored word by word	mic + net
 Quick-fire	Production against a 5-second clock	mic + net
 Build it	Filling a frame's slot — production without a mic	—
+Sentence Lab	Assembling a whole sentence from blocks	—
 Conversations	Turn-taking — holding your end of an exchange	—
 Rounds
 The three open-ended practice modes run in rounds rather than forever — Listen 10 items, Shadow 8 phrases, Quick-fire 8 prompts — each ending on a summary with an Another round button.
@@ -116,6 +122,28 @@ The bus is late	6
 Paying at the market	8
 Goal-matched conversations sort to the top and are badged for you. Finishing replays the whole exchange with per-line audio.
 
+Sentence Lab
+The plug-in method, made literal. Almost everything a beginner needs to say is three pieces in a fixed order:
+
+    ENGINE      + WHAT          + WHEN / WHERE
+    quiero        comer           ahorita
+    tengo que     trabajar        mañana
+    ¿puedes       ayudarme        un poquito
+
+The engine is the only part carrying grammar, and there are fourteen of them. The Lab shows the English, names the slot you are filling, and has you assemble the Spanish a block at a time — so what gets learned is the assembly rule rather than any one sentence. Fourteen engines, thirty-two verbs, seventeen nouns and sixteen tails generate about 1,500 distinct sentences, and the method carries to any goal: the same three presses build "can you help me tomorrow" and "I want to pray with you".
+
+This is why the app came up short for a beginner with a week and a purpose. The goal vocabulary arrived on day one and there was still no way to say "I am a Christian", because the pieces everything plugs into were landing three weeks in. Chunks you say whole and blocks you combine are different skills, and the collection only taught the first.
+
+Generating sentences means being able to generate wrong ones, so the banks carry constraints instead of hoping:
+
+Rule	Stops
+Nouns list the engines they take	hay la cuenta · quiero un problema
+Person-marked verbs pick a side	¿puedes verte? · me gusta acompañarme
+Motion verbs refuse place tails	necesito venir en el trabajo
+me gusta takes the article	me gusta comida
+
+It needs no microphone, and no network.
+
 Build it
 The frames are the best thing in the collection — voy a + verb really does replace the future tense — and they used to be taught as though they were sentences: a card to recognise, never a thing to build with. Build it shows the English and an empty slot, and asks which filler belongs in it.
 
@@ -147,21 +175,21 @@ The forms with no way round them — hay, soy, estoy, es, está, tengo, me gusta
 The little words that go before the verb — lo, me lo, le — which are what let everything else be aimed at someone other than yourself.
 
 The collection
-350 chunks · 765 example sentences — 196 universal, 154 tagged to one or more goals
+368 chunks · 802 example sentences — 204 universal, 164 tagged to one or more goals
 
 Key	Category	Count
+ask	Questions	61
 verb	Verb combos	55
-ask	Questions	52
 slang	Slang	44
 social	Social	35
 survive	Survival	31
 filler	Fillers	23
 time	Time	22
-connect	Connectors	19
-soften	Politeness	18
+opinion	Opinions	21
+connect	Connectors	20
+soften	Politeness	19
 reaction	Reactions	16
 agree	Agree / No	15
-opinion	Opinions	14
 number	Numbers	6
 Every chunk is tagged casual, neutral or vulgar. The two vulgar entries (al chile, ando en chinga) show a careful badge — they're included because you'll hear them constantly, but you should know before you use them.
 
@@ -263,6 +291,9 @@ Brisk (default)	12	40	8
 Intense	20	60	12
 
 Today shows where the chosen pace lands: at Brisk, all 350 in about a month. The projection uses what is left rather than the whole collection, so it shortens as you go.
+
+Backlog
+Reviews compound. At Brisk, day seven has fifty-three cards due against a cap of forty, and nothing used to say so — a silently growing backlog is the week-two quit point. Past what one session holds, Today says how many are waiting and offers a reviews-only catch-up that clears without adding to the pile.
 
 Daily session
 One button on Today runs three stages back to back — up to 20 due reviews, then a pace-sized batch of new chunks, then the listening quota — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
