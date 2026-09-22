@@ -436,6 +436,7 @@ const CAT = {
   slang:     {label:"Slang",       em:"\u{1F1F2}\u{1F1FD}"},
   verb:      {label:"Verb combos", em:"\u{2699}\u{FE0F}"},
   time:      {label:"Time",        em:"\u{23F1}\u{FE0F}"},
+  number:    {label:"Numbers",     em:"\u{1F522}"},
   social:    {label:"Social",      em:"\u{1F91D}"},
 };
 
@@ -1824,6 +1825,189 @@ const GOAL_TAGS = {
   faith:   ["con todo respeto","una disculpa","que te vaya bien","cuídate","no te preocupes"],
 };
 Object.entries(GOAL_TAGS).forEach(([g, names]) => {
+  names.forEach(n => {
+    const c = CHUNKS.find(x => x.chunk === n);
+    if(c) c.goals = (c.goals || []).concat(g);
+  });
+});
+
+/* ---------- 1a2. THE SPINE ----------
+   Chunks get you talking; these stop you hitting a ceiling two weeks in.
+   Everything here is either a form you cannot route around (there is no
+   paraphrase for "there is"), the past — which the collection could not
+   express at all, though half of conversation is recounting what happened —
+   or a slot that multiplies what the rest of the collection can do.
+
+   Taught the same way as everything else: as a frame with a gap, never as a
+   paradigm. "voy a + verb" already replaces the future tense here; "fui a"
+   does the same job for the past without anyone meeting a conjugation table. */
+const SPINE = [
+  /* ----- ser and estar, split by what they are actually for ----- */
+  C("soy + noun","\"I'm ...\" — who you are and stays true: where you're from, your work","verb",1,"neutral",[
+    ["Soy de Estados Unidos.","I'm from the United States."],
+    ["Soy maestro.","I'm a teacher."],
+    ["No soy de aquí, apenas llegué.","I'm not from here, I just arrived."]
+  ]),
+  C("estoy + adjective","\"I'm ...\" right now — tired, lost, ready. The one that passes","verb",1,"neutral",[
+    ["Estoy cansado.","I'm tired."],
+    ["Estoy perdido.","I'm lost."],
+    ["Ya estoy listo, vámonos.","I'm ready now, let's go."]
+  ]),
+  C("es + adjective","\"it's ...\" — what a thing is like in itself","verb",1,"neutral",[
+    ["Es muy caro.","It's very expensive."],
+    ["No es tan lejos.","It's not that far."]
+  ]),
+  C("está + adjective","\"it's ...\" right now — open, closed, hot, ready","verb",1,"neutral",[
+    ["Está cerrado.","It's closed."],
+    ["Está bien, no te preocupes.","It's fine, don't worry."]
+  ]),
+  C("hay","\"there is\" and \"there are\" — one word for both, and it never changes","verb",1,"neutral",[
+    ["¿Hay baño?","Is there a bathroom?"],
+    ["No hay.","There isn't any."],
+    ["¿Hay algo sin carne?","Is there anything without meat?"]
+  ],"\"it has\""),
+  C("tengo + noun","\"I have\" — and what English does with \"am\": hungry, cold, thirty years old","verb",1,"neutral",[
+    ["Tengo hambre.","I'm hungry."],
+    ["Tengo treinta años.","I'm thirty."],
+    ["Tengo una pregunta.","I have a question."]
+  ]),
+  C("me gusta + noun","\"I like ...\" — built backwards: the thing does the pleasing","verb",1,"neutral",[
+    ["Me gusta mucho.","I like it a lot."],
+    ["No me gusta el picante.","I don't like spicy food."]
+  ],"\"it pleases me\""),
+  C("¿dónde está...?","\"where is ...?\" — for one specific place or thing","ask",1,"neutral",[
+    ["¿Dónde está el baño?","Where's the bathroom?"],
+    ["¿Dónde está la parada?","Where's the stop?"]
+  ]),
+
+  /* ----- the past: half of conversation, and the collection had none ----- */
+  C("fui a","\"I went to\" — the first past you'll actually need","verb",1,"neutral",[
+    ["Fui al mercado.","I went to the market."],
+    ["Ayer fui con mi hermana.","Yesterday I went with my sister."]
+  ]),
+  C("fue","\"it was\" — and also \"he went\". Same word; context decides","verb",1,"neutral",[
+    ["Fue increíble.","It was incredible."],
+    ["¿Cómo fue?","How was it?"]
+  ]),
+  C("estuvo","\"it was\" — how something turned out","verb",1,"casual",[
+    ["Estuvo buenísimo.","It was great."],
+    ["Estuvo pesado el día.","It was a rough day."]
+  ]),
+  C("me dijo","\"he told me\" / \"she told me\" — the engine of every story","verb",1,"neutral",[
+    ["Me dijo que sí.","He told me yes."],
+    ["¿Y qué te dijo?","And what did she tell you?"]
+  ]),
+  C("ya lo hice","\"I already did it\" — hice is \"I did\", ya does the rest","verb",2,"neutral",[
+    ["Ya lo hice.","I already did it."],
+    ["No hice nada en todo el día.","I didn't do anything all day."]
+  ]),
+  C("tuve que + verb","\"I had to ...\" — the past of tengo que, same slot","verb",2,"neutral",[
+    ["Tuve que salir temprano.","I had to leave early."],
+    ["Tuve que cancelar, una disculpa.","I had to cancel, sorry."]
+  ]),
+  C("no pude","\"I couldn't\" — the honest excuse, and the common one","verb",2,"neutral",[
+    ["No pude llegar.","I couldn't make it."],
+    ["Perdón, no pude contestar.","Sorry, I couldn't pick up."]
+  ]),
+  C("estaba","\"it was\" / \"I was\" — the background of a story, not the event","verb",2,"neutral",[
+    ["Estaba lloviendo.","It was raining."],
+    ["Estaba cansadísimo.","I was exhausted."]
+  ]),
+
+  /* ----- the little words that go before the verb ----- */
+  C("lo / la","\"it\" — sits in front of the verb, not after. lo or la by gender","verb",1,"neutral",[
+    ["Ya lo vi.","I already saw it."],
+    ["No la encuentro.","I can't find it."]
+  ]),
+  C("me lo / te lo","\"it to me\" / \"it to you\" — both stack up, person first","verb",2,"neutral",[
+    ["¿Me lo pasas?","Can you pass it to me?"],
+    ["Te lo mando ahorita.","I'll send it to you right now."]
+  ]),
+  C("le","\"to him\", \"to her\", \"to you\" formal — one word covers all three","verb",2,"neutral",[
+    ["Le dije que sí.","I told him yes."],
+    ["¿Le preguntas tú?","Will you ask her?"]
+  ]),
+
+  /* ----- money ----- */
+  C("son + number + pesos","\"that'll be ... pesos\" — how a price comes back at you","number",1,"neutral",[
+    ["Son cincuenta pesos.","That's fifty pesos."],
+    ["Son ciento veinte.","That's a hundred and twenty."]
+  ]),
+  C("cien / mil","\"a hundred / a thousand\" — the two anchors every price hangs off","number",1,"neutral",[
+    ["Cien pesos.","A hundred pesos."],
+    ["Como mil doscientos.","Around twelve hundred."]
+  ]),
+  C("¿a cómo?","\"how much each?\" — at a market stall, per piece or per kilo","number",2,"casual",[
+    ["¿A cómo el kilo?","How much a kilo?"],
+    ["¿A cómo los tres?","How much for three?"]
+  ]),
+  C("un kilo / medio kilo","\"a kilo / half a kilo\" — how nearly everything is sold","number",1,"neutral",[
+    ["Un kilo de tortillas, porfa.","A kilo of tortillas, please."],
+    ["Medio kilo nada más.","Just half a kilo."]
+  ]),
+  C("dos de + noun","\"two of ...\" — how you actually order at a taco stand","number",1,"casual",[
+    ["Dos de pastor, porfa.","Two pastor, please."],
+    ["Tres de asada para llevar.","Three asada to go."]
+  ]),
+  C("¿tiene cambio?","\"do you have change?\" — the daily problem with a big note","number",2,"neutral",[
+    ["¿Tiene cambio de quinientos?","Do you have change for five hundred?"],
+    ["No traigo cambio.","I don't have change on me."]
+  ]),
+
+  /* ----- the clock ----- */
+  C("¿qué hora es?","\"what time is it?\"","time",1,"neutral",[
+    ["¿Qué hora es?","What time is it?"],
+    ["¿Qué hora tienes?","What time do you have?"]
+  ]),
+  C("son las + number","\"it's ... o'clock\" — plural for every hour except one","time",1,"neutral",[
+    ["Son las tres.","It's three o'clock."],
+    ["Ya son las diez.","It's ten already."]
+  ]),
+  C("a las + number","\"at ... o'clock\" — the slot every plan gets made in","time",1,"neutral",[
+    ["Nos vemos a las ocho.","We'll meet at eight."],
+    ["Sale a las seis y media.","It leaves at six thirty."]
+  ]),
+  C("y media / y cuarto","\"half past / quarter past\"","time",1,"neutral",[
+    ["A las dos y media.","At half past two."],
+    ["Son las nueve y cuarto.","It's quarter past nine."]
+  ]),
+  C("de la mañana / de la noche","\"in the morning / at night\" — Mexico says this, not a.m. and p.m.","time",1,"neutral",[
+    ["A las siete de la mañana.","At seven in the morning."],
+    ["Como a las diez de la noche.","Around ten at night."]
+  ]),
+
+  /* ----- the calendar ----- */
+  C("el lunes / el jueves","\"on Monday / on Thursday\" — el does the work of \"on\"","time",1,"neutral",[
+    ["El jueves te marco.","I'll call you Thursday."],
+    ["El lunes regreso.","I'm back on Monday."]
+  ]),
+  C("mañana / pasado mañana","\"tomorrow / the day after tomorrow\"","time",1,"neutral",[
+    ["Mañana nos vemos.","See you tomorrow."],
+    ["Pasado mañana salgo.","I leave the day after tomorrow."]
+  ]),
+  C("ayer / antier","\"yesterday / the day before yesterday\" — antier is one word here","time",1,"neutral",[
+    ["Ayer estuvo pesado.","Yesterday was rough."],
+    ["Antier fui al doctor.","I went to the doctor the day before yesterday."]
+  ]),
+  C("el fin de semana","\"the weekend\" — usually shortened to just el fin","time",1,"casual",[
+    ["¿Qué hiciste el fin?","What did you do on the weekend?"],
+    ["El fin de semana no trabajo.","I don't work weekends."]
+  ]),
+];
+SPINE.forEach(c => CHUNKS.push(c));
+
+/* The spine is universal, but a price or a clock time is the difference
+   between ordering and pointing, so the goals that live on them get these
+   woven in early rather than waiting for frequency order to reach them. */
+const SPINE_GOALS = {
+  food:    ["dos de + noun","un kilo / medio kilo","¿a cómo?","son + number + pesos","¿tiene cambio?","me gusta + noun","hay"],
+  travel:  ["¿dónde está...?","a las + number","son las + number","¿qué hora es?","son + number + pesos","de la mañana / de la noche","hay"],
+  work:    ["a las + number","el lunes / el jueves","tuve que + verb","no pude","el fin de semana","me dijo"],
+  friends: ["el fin de semana","mañana / pasado mañana","me gusta + noun","fui a","estuvo"],
+  culture: ["me gusta + noun","estuvo","fue"],
+  faith:   ["me dijo","fue","estaba"],
+};
+Object.entries(SPINE_GOALS).forEach(([g, names]) => {
   names.forEach(n => {
     const c = CHUNKS.find(x => x.chunk === n);
     if(c) c.goals = (c.goals || []).concat(g);
