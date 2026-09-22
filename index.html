@@ -2113,6 +2113,210 @@ const CORE_SET = new Set(SPINE.concat(ASKING).map(c => c.chunk)
            "no sé","es que","¿mande?","¿cómo se dice...?"]));
 CHUNKS.forEach(c => { if(CORE_SET.has(c.chunk)) c.core = true; });
 
+/* ---------- 1a5. VOCABULARY ----------
+   Words as first-class material, scheduled in their own right.
+
+   Until now the app taught chunks and words rode along inside the example
+   sentences — uncounted, unscheduled, and in 44% of cases appearing exactly
+   once in the whole collection. A word met once is decoration, not teaching,
+   so the real vocabulary was about 440 recurring items where conversational
+   fluency wants nearer two thousand. The discourse layer was excellent and
+   the referential layer — the words for things in the world — was a third of
+   what a learner needs.
+
+   Nouns carry their article, because "la mano" is how you learn the gender
+   and "mano, feminine" is how you forget it. Ids are positional like chunks:
+   append, never insert. */
+let _w = 0;
+function W(es, en, dom){ return {id:"w"+String(++_w).padStart(3,"0"), es, en, dom}; }
+
+const WORD_PACKS = {
+  family: [["la familia","family"],["el papá","dad"],["la mamá","mum"],["los papás","parents"],
+    ["el hermano","brother"],["la hermana","sister"],["el hijo","son"],["la hija","daughter"],
+    ["los hijos","children"],["el esposo","husband"],["la esposa","wife"],["el novio","boyfriend"],
+    ["la novia","girlfriend"],["el abuelo","grandfather"],["la abuela","grandmother"],
+    ["el tío","uncle"],["la tía","aunt"],["el primo","cousin"],["el sobrino","nephew"],
+    ["el nieto","grandson"],["el suegro","father-in-law"],["la suegra","mother-in-law"],
+    ["el cuñado","brother-in-law"],["el bebé","baby"],["el niño","boy"],["la niña","girl"],
+    ["el muchacho","young guy"],["la muchacha","young woman"],["el señor","man, sir"],
+    ["la señora","woman, ma'am"],["la gente","people"],["el amigo","friend"],["la amiga","friend"],
+    ["el vecino","neighbour"],["el compadre","close family friend"],["el padrino","godfather"],
+    ["la madrina","godmother"],["el pariente","relative"],["la boda","wedding"],
+    ["el cumpleaños","birthday"],["el apellido","surname"],["el nombre","name"]],
+
+  body: [["la cabeza","head"],["el pelo","hair"],["la cara","face"],["el ojo","eye"],
+    ["la nariz","nose"],["la boca","mouth"],["el diente","tooth"],["la oreja","ear"],
+    ["el cuello","neck"],["el hombro","shoulder"],["el brazo","arm"],["la mano","hand"],
+    ["el dedo","finger"],["el pecho","chest"],["la espalda","back"],["la panza","belly"],
+    ["la pierna","leg"],["la rodilla","knee"],["el pie","foot"],["el corazón","heart"],
+    ["la sangre","blood"],["el hueso","bone"],["la piel","skin"],["el dolor","pain"],
+    ["la fiebre","fever"],["la gripa","a cold, flu"],["la tos","cough"],["la herida","wound"],
+    ["la medicina","medicine"],["la pastilla","pill"],["el doctor","doctor"],
+    ["el hospital","hospital"],["la farmacia","pharmacy"],["la cita","appointment"],
+    ["la receta","prescription"],["la salud","health"],["el ejercicio","exercise"],
+    ["el descanso","rest"],["la cruda","hangover"],["el mareo","dizziness"],
+    ["la alergia","allergy"],["el seguro","insurance"],["la emergencia","emergency"],
+    ["el cansancio","tiredness"]],
+
+  house: [["la casa","house"],["el departamento","flat"],["el cuarto","room"],
+    ["la sala","living room"],["la cocina","kitchen"],["el baño","bathroom"],
+    ["la recámara","bedroom"],["el comedor","dining room"],["el patio","yard"],
+    ["el jardín","garden"],["la puerta","door"],["la ventana","window"],["el techo","roof"],
+    ["el piso","floor"],["la pared","wall"],["la escalera","stairs"],["la mesa","table"],
+    ["la silla","chair"],["el sillón","couch"],["la cama","bed"],["la almohada","pillow"],
+    ["la cobija","blanket"],["la toalla","towel"],["el espejo","mirror"],["el cajón","drawer"],
+    ["la llave","key"],["el foco","light bulb"],["la luz","light"],["la basura","rubbish"],
+    ["la escoba","broom"],["el jabón","soap"],["el refri","fridge"],["la estufa","stove"],
+    ["el horno","oven"],["el plato","plate"],["el vaso","glass"],["la taza","cup"],
+    ["el tenedor","fork"],["la cuchara","spoon"],["el cuchillo","knife"],["la olla","pot"],
+    ["la tele","TV"],["el cargador","charger"],["la lavadora","washing machine"],
+    ["el ropero","wardrobe"]],
+
+  food: [["la comida","food, lunch"],["el desayuno","breakfast"],["la cena","dinner"],
+    ["la tortilla","tortilla"],["el frijol","bean"],["el arroz","rice"],["el huevo","egg"],
+    ["el pollo","chicken"],["la carne","meat"],["el puerco","pork"],["el pescado","fish"],
+    ["el camarón","shrimp"],["el queso","cheese"],["la crema","cream"],["la leche","milk"],
+    ["el pan","bread"],["el bolillo","bread roll"],["la sopa","soup"],["la ensalada","salad"],
+    ["el aguacate","avocado"],["el jitomate","tomato"],["la cebolla","onion"],["el chile","chilli"],
+    ["el limón","lime"],["el ajo","garlic"],["la papa","potato"],["el elote","corn cob"],
+    ["el nopal","cactus paddle"],["la fruta","fruit"],["la manzana","apple"],["el plátano","banana"],
+    ["la naranja","orange"],["la sandía","watermelon"],["el mango","mango"],["la piña","pineapple"],
+    ["el azúcar","sugar"],["la sal","salt"],["el aceite","oil"],["la salsa","salsa"],
+    ["el postre","dessert"],["el pastel","cake"],["el helado","ice cream"],["el dulce","sweet"],
+    ["el café","coffee"],["el jugo","juice"],["el refresco","fizzy drink"],["la cerveza","beer"],
+    ["el agua fresca","fruit water"],["el mercado","market"],["la tienda","shop"],
+    ["la panadería","bakery"],["la taquería","taco place"],["el sabor","flavour"],
+    ["el hambre","hunger"],["la sed","thirst"]],
+
+  work: [["el trabajo","work"],["la oficina","office"],["la empresa","company"],
+    ["el jefe","boss"],["la jefa","boss"],["el compañero","colleague"],["el cliente","client"],
+    ["la junta","meeting"],["el reporte","report"],["el correo","email"],["el mensaje","message"],
+    ["la llamada","phone call"],["la computadora","computer"],["el celular","mobile"],
+    ["el escritorio","desk"],["el horario","schedule"],["el turno","shift"],["el sueldo","salary"],
+    ["el pago","payment"],["la factura","invoice"],["el contrato","contract"],
+    ["el proyecto","project"],["la fecha","date"],["el plazo","deadline"],["el equipo","team"],
+    ["el negocio","business"],["la venta","sale"],["la compra","purchase"],["el precio","price"],
+    ["el descuento","discount"],["la entrega","delivery"],["el pedido","order"],
+    ["el banco","bank"],["la cuenta","account, bill"],["la tarjeta","card"],
+    ["el efectivo","cash"],["el recibo","receipt"],["la firma","signature"],
+    ["el permiso","permission, leave"],["las vacaciones","holidays"],["el curso","course"],
+    ["la carrera","degree, career"],["el título","qualification"]],
+
+  nature: [["el clima","weather"],["el sol","sun"],["la lluvia","rain"],["la nube","cloud"],
+    ["el viento","wind"],["el frío","cold"],["el calor","heat"],["la tormenta","storm"],
+    ["el cielo","sky"],["la luna","moon"],["la estrella","star"],["la tierra","earth, ground"],
+    ["el mar","sea"],["la playa","beach"],["el río","river"],["el lago","lake"],
+    ["la montaña","mountain"],["el cerro","hill"],["el bosque","forest"],["el árbol","tree"],
+    ["la flor","flower"],["la planta","plant"],["el pasto","grass"],["la piedra","stone"],
+    ["el fuego","fire"],["el aire","air"],["el polvo","dust"],["el animal","animal"],
+    ["el perro","dog"],["el gato","cat"],["el pájaro","bird"],["el caballo","horse"],
+    ["la vaca","cow"],["el mosco","mosquito"],["la hormiga","ant"],["la abeja","bee"],
+    ["el campo","countryside"],["el pueblo","town"],["la ciudad","city"],["la colonia","neighbourhood"]],
+
+  feeling: [["feliz","happy"],["contento","pleased"],["triste","sad"],["enojado","angry"],
+    ["molesto","annoyed"],["preocupado","worried"],["nervioso","nervous"],["tranquilo","calm"],
+    ["cansado","tired"],["aburrido","bored"],["emocionado","excited"],["asustado","scared"],
+    ["apenado","embarrassed"],["orgulloso","proud"],["sorprendido","surprised"],
+    ["confundido","confused"],["agradecido","grateful"],["amable","kind"],
+    ["buena gente","a good person"],["grosero","rude"],["sangrón","stuck-up"],
+    ["chistoso","funny"],["serio","serious"],["callado","quiet"],["platicador","chatty"],
+    ["trabajador","hard-working"],["flojo","lazy"],["listo","clever, ready"],["tonto","silly"],
+    ["honesto","honest"],["mentiroso","a liar"],["valiente","brave"],["miedoso","fearful"],
+    ["generoso","generous"],["codo","stingy"],["paciente","patient"],["terco","stubborn"],
+    ["humilde","humble"],["presumido","show-off"],["el miedo","fear"],["la alegría","joy"],
+    ["la tristeza","sadness"],["el coraje","anger"],["la pena","embarrassment"],["el amor","love"],
+    ["el cariño","affection"],["la confianza","trust"],["la esperanza","hope"],["la fe","faith"],
+    ["el ánimo","spirit, encouragement"]],
+
+  clothes: [["la ropa","clothes"],["la camisa","shirt"],["la playera","t-shirt"],
+    ["la blusa","blouse"],["el pantalón","trousers"],["el short","shorts"],["la falda","skirt"],
+    ["el vestido","dress"],["el suéter","jumper"],["la chamarra","jacket"],["el abrigo","coat"],
+    ["la gorra","cap"],["el sombrero","hat"],["los zapatos","shoes"],["los tenis","trainers"],
+    ["las botas","boots"],["las sandalias","sandals"],["los calcetines","socks"],
+    ["el cinturón","belt"],["la bolsa","bag"],["la mochila","backpack"],["la cartera","wallet"],
+    ["los lentes","glasses"],["el reloj","watch"],["el anillo","ring"],["el arete","earring"],
+    ["la cadena","chain"],["la talla","size"],["el color","colour"],["la manga","sleeve"],
+    ["el botón","button"],["la bufanda","scarf"],["los guantes","gloves"],["el traje","suit"],
+    ["la corbata","tie"],["el uniforme","uniform"]],
+
+  place: [["el lugar","place"],["la calle","street"],["la avenida","avenue"],
+    ["la esquina","corner"],["la cuadra","block"],["el semáforo","traffic light"],
+    ["la banqueta","pavement"],["el puente","bridge"],["el camino","road, way"],
+    ["la carretera","highway"],["la parada","stop"],["la estación","station"],
+    ["el aeropuerto","airport"],["la terminal","terminal"],["el camión","bus"],
+    ["el metro","metro"],["el taxi","taxi"],["el carro","car"],["la moto","motorbike"],
+    ["la bici","bike"],["el avión","plane"],["el boleto","ticket"],["la maleta","suitcase"],
+    ["el equipaje","luggage"],["el asiento","seat"],["el chofer","driver"],
+    ["la gasolina","petrol"],["el estacionamiento","car park"],["el tráfico","traffic"],
+    ["el hotel","hotel"],["la recepción","reception"],["la iglesia","church"],
+    ["la escuela","school"],["la universidad","university"],["el parque","park"],
+    ["el cine","cinema"],["el restaurante","restaurant"],["la plaza","square"],
+    ["la salida","exit"],["la entrada","entrance"],["el norte","north"],["el sur","south"]],
+
+  money: [["el dinero","money"],["el peso","peso"],["el billete","note"],["la moneda","coin"],
+    ["el cambio","change"],["la propina","tip"],["la oferta","offer"],["el gasto","expense"],
+    ["el ahorro","saving"],["la deuda","debt"],["el cajero","ATM"],["la hora","hour, time"],
+    ["el minuto","minute"],["el día","day"],["la semana","week"],["el mes","month"],
+    ["el año","year"],["el lunes","Monday"],["el martes","Tuesday"],["el miércoles","Wednesday"],
+    ["el jueves","Thursday"],["el viernes","Friday"],["el sábado","Saturday"],
+    ["el domingo","Sunday"],["la mañana","morning"],["la tarde","afternoon"],["la noche","night"],
+    ["la madrugada","small hours"],["el rato","a while"],["el momento","moment"],
+    ["la vez","time, occasion"],["el tiempo","time, weather"],["el fin de semana","weekend"],
+    ["enero","January"],["febrero","February"],["marzo","March"],["abril","April"],
+    ["mayo","May"],["junio","June"],["julio","July"],["agosto","August"],
+    ["septiembre","September"],["octubre","October"],["noviembre","November"],
+    ["diciembre","December"]],
+
+  verb: [["ser","to be (permanent)"],["estar","to be (right now)"],["tener","to have"],
+    ["hacer","to do, make"],["ir","to go"],["venir","to come"],["decir","to say"],
+    ["ver","to see"],["dar","to give"],["saber","to know (a fact)"],["conocer","to know (a person)"],
+    ["poder","to be able to"],["querer","to want"],["deber","to owe, ought to"],
+    ["poner","to put"],["salir","to leave"],["llegar","to arrive"],["pasar","to happen, pass"],
+    ["quedar","to remain, arrange"],["llevar","to take, carry"],["traer","to bring"],
+    ["dejar","to leave, let"],["seguir","to keep on"],["empezar","to start"],
+    ["terminar","to finish"],["pensar","to think"],["creer","to believe"],
+    ["entender","to understand"],["aprender","to learn"],["enseñar","to teach, show"],
+    ["trabajar","to work"],["comer","to eat"],["tomar","to drink, take"],["dormir","to sleep"],
+    ["levantarse","to get up"],["bañarse","to shower"],["caminar","to walk"],
+    ["correr","to run"],["manejar","to drive"],["comprar","to buy"],["vender","to sell"],
+    ["pagar","to pay"],["buscar","to look for"],["encontrar","to find"],["perder","to lose"],
+    ["ganar","to win, earn"],["ayudar","to help"],["cuidar","to look after"],
+    ["esperar","to wait, hope"],["llamar","to call"],["hablar","to speak"],
+    ["escuchar","to listen"],["leer","to read"],["escribir","to write"],["abrir","to open"],
+    ["cerrar","to close"],["prender","to turn on"],["apagar","to turn off"],
+    ["limpiar","to clean"],["lavar","to wash"],["cocinar","to cook"],["probar","to try, taste"],
+    ["necesitar","to need"],["olvidar","to forget"],["recordar","to remember"],
+    ["sentir","to feel"],["vivir","to live"],["nacer","to be born"],["rezar","to pray"],
+    ["descansar","to rest"],["platicar","to chat"],["regresar","to go back"]],
+
+  adj: [["bueno","good"],["malo","bad"],["grande","big"],["chico","small"],["nuevo","new"],
+    ["viejo","old"],["joven","young"],["largo","long"],["corto","short"],["alto","tall"],
+    ["bajo","short (height)"],["gordo","fat"],["flaco","thin"],["bonito","pretty"],
+    ["feo","ugly"],["limpio","clean"],["sucio","dirty"],["caro","expensive"],
+    ["barato","cheap"],["rápido","fast"],["lento","slow"],["fácil","easy"],
+    ["difícil","hard"],["fuerte","strong"],["débil","weak"],["lleno","full"],
+    ["vacío","empty"],["abierto","open"],["cerrado","closed"],["caliente","hot"],
+    ["frío","cold"],["dulce","sweet"],["salado","salty"],["picante","spicy"],
+    ["rico","tasty, rich"],["sabroso","delicious"],["ocupado","busy"],["libre","free"],
+    ["seguro","safe, sure"],["peligroso","dangerous"],["cerca","near"],["lejos","far"],
+    ["temprano","early"],["tarde","late"],["mismo","same"],["otro","another"],
+    ["poco","little"],["mucho","a lot"],["todo","all"],["cada","each"]],
+};
+const DOMAIN = {
+  family:{label:"Family & people", em:"\u{1F46A}"}, body:{label:"Body & health", em:"\u{1FAC0}"},
+  house:{label:"Around the house", em:"\u{1F3E0}"}, food:{label:"Food & drink", em:"\u{1F32E}"},
+  work:{label:"Work & money", em:"\u{1F4BC}"},      nature:{label:"Weather & nature", em:"\u{1F326}\u{FE0F}"},
+  feeling:{label:"Feelings & people", em:"\u{1F642}"}, clothes:{label:"Clothes", em:"\u{1F455}"},
+  place:{label:"Places & getting around", em:"\u{1F5FA}\u{FE0F}"}, money:{label:"Time & money", em:"\u{1F551}"},
+  verb:{label:"Everyday verbs", em:"\u{26A1}"},    adj:{label:"Describing things", em:"\u{1F3A8}"},
+};
+const WORDS = [];
+Object.keys(WORD_PACKS).forEach(dom => {
+  WORD_PACKS[dom].forEach(x => WORDS.push(W(x[0], x[1], dom)));
+});
+const wordById = id => WORDS.find(w => w.id === id);
+
+
 /* The spine is universal, but a price or a clock time is the difference
    between ordering and pointing, so the goals that live on them get these
    woven in early rather than waiting for frequency order to reach them. */
@@ -2182,7 +2386,7 @@ const PATTERNS = [
     S("when", [["al rato","in a bit"],["mañana","tomorrow"],["el viernes","on Friday"]], true)]),
 
   P(null, ["no puedo","I can't"], [
-    S("what", [["ir","go"],["quedarme","stay"],["hablar ahorita","talk right now"],
+    S("what", [["ir","go"],["quedarme","stay"],["hablar","talk"],
                ["pagar con tarjeta","pay by card"]]),
     S("when", [["hoy","today"],["en la noche","tonight"]], true)]),
 
@@ -2209,6 +2413,62 @@ const PATTERNS = [
   P(null, ["¿me","would you"], [
     S("what", [["ayudas","give me a hand"],["repites eso","say that again"],
                ["explicas","explain"],["das un minuto","give me a minute"]])]),
+
+  /* ----- other people: the dimension the app did not have -----
+     Every pattern was yo or tú, so a learner could talk about themselves and
+     ask the other person things, and could not mention a third party at all —
+     no "my brother works there", no "she told me", no "we're going". Most of
+     any real conversation is about people who are not in the room. */
+  P(null, ["mi hermano","my brother"], [
+    S("what", [["trabaja aquí","works here"],["vive en el norte","lives up north"],
+               ["viene el domingo","is coming on Sunday"],["no pudo venir","couldn't come"]])]),
+
+  P(null, ["ella","she"], [
+    S("what", [["me dijo que sí","told me yes"],["no vino","didn't come"],
+               ["trabaja conmigo","works with me"],["ya se fue","already left"]])]),
+
+  P(null, ["ellos","they"], [
+    S("what", [["ya llegaron","already arrived"],["viven acá cerca","live near here"],
+               ["no saben","don't know"],["nos invitaron","invited us"]])]),
+
+  P(null, ["vamos a","we're going to"], [
+    S("what", [["comer","eat"],["salir","go out"],["esperarlo","wait for him"],
+               ["verlo mañana","look at it tomorrow"]]),
+    S("when", [["al rato","in a bit"],["el domingo","on Sunday"]], true)]),
+
+  P(null, ["¿tu familia","is your family"], [
+    S("what", [["vive aquí","from here"],["es de aquí","from around here"],
+               ["viene también","coming too"]])]),
+
+  /* ----- the four shapes that were missing -----
+     Negation past a bare "no", giving a reason, comparing two things, and
+     anchoring something in time. Without these a learner can name things and
+     cannot argue, explain, prefer or narrate — which is most of talking. */
+  P(null, ["no","I don't"], [
+    S("what", [["entiendo nada","understand anything"],["conozco a nadie","know anyone"],
+               ["he ido nunca","ever go"],["quiero nada","want anything"]])]),
+
+  P(null, ["porque","because"], [
+    S("reason", [["no tengo tiempo","I don't have time"],["está muy lejos","it's too far"],
+                 ["me da pena","I'm embarrassed"],["así lo hacen aquí","that's how it's done here"],
+                 ["me cambió la vida","it changed my life"]])]),
+
+  P(null, ["es","it's"], [
+    S("what", [["más barato que allá","cheaper than over there"],
+               ["más fácil de lo que parece","easier than it looks"],
+               ["más rico que el otro","tastier than the other one"],
+               ["mejor que nada","better than nothing"],
+               ["igual que en mi país","the same as back home"]])]),
+
+  P(null, ["cuando","when I"], [
+    S("what", [["tengo tiempo","have time"],["llegue","get there"],["pueda","can"]]),
+    S("then", [["te aviso","I'll let you know"],["platicamos","we'll talk"],
+               ["lo hago","I'll do it"]])]),
+
+  P(null, ["cuando era niño","when I was a kid"], [
+    S("then", [["todo era distinto","everything was different"],
+               ["vivía en el norte","I lived up north"],
+               ["no creía en nada","I didn't believe in anything"]])]),
 
   /* ----- faith ----- */
   P("faith", ["quiero","I want to"], [
@@ -3092,6 +3352,30 @@ function practicePool(){
   return {recent: shuffle(recent), rest, all: shuffle(recent).concat(rest)};
 }
 
+/* Vocabulary rides the same scheduler as chunks but keeps its own book, so a
+   word and a phrase can be at different stages of the same day. */
+let vsrs = LS.get("vsrs", {});
+const saveVsrs = () => LS.set("vsrs", vsrs);
+const WORD_IDS = new Set(WORDS.map(w => w.id));
+Object.keys(vsrs).forEach(id => { if(!WORD_IDS.has(id)) delete vsrs[id]; });
+
+function dueWords(){
+  const now = Date.now();
+  return Object.keys(vsrs).filter(id => vsrs[id].due <= now);
+}
+/* Dealt a domain at a time so a learner gets a usable spread rather than
+   sixty kitchen nouns before meeting a single feeling. */
+function newWords(){
+  const doms = Object.keys(WORD_PACKS);
+  const queues = doms.map(d => WORDS.filter(w => w.dom === d && !vsrs[w.id]));
+  const out = [];
+  for(let any = true; any; ){
+    any = false;
+    queues.forEach(q => { if(q.length){ out.push(q.shift()); any = true; } });
+  }
+  return out;
+}
+
 let dialogDone = LS.get("dialogDone", {}); // dialogue id -> best % of replies right
 /* Merged over defaults so decks saved by an earlier version pick up new keys. */
 let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0, drills:0}, LS.get("totals", {}));
@@ -3342,7 +3626,7 @@ function speak(text, rate){
    it in and out as a plain file. */
 const BACKUP_KEYS = ["srs","streak","scores","ears","dialogDone","drills",
                      "skipped","unlocked","totals","settings","seenIntro","goals",
-                     "learner","studied"];
+                     "learner","studied","vsrs"];
 
 function backupBlob(){
   const payload = {app:"calle", version:1, exported:new Date().toISOString(), data:{}};
@@ -3761,6 +4045,7 @@ const VIEWS = {
   drill:    () => renderDrill(),
   build:    () => renderBuild(),
   lab:      () => renderLab(),
+  words:    () => renderWords(),
   dialogue: () => renderDialogue(),
   stats:    () => renderStats(),
   browse:   () => renderBrowse(),
@@ -3949,9 +4234,12 @@ function renderHome(){
     </button>
     <p class="tiny muted center" style="margin:8px 0 0">
       ${plan.total ? [plan.review && `${plan.review} to review`, plan.fresh && `${plan.fresh} new`,
+                      plan.words && `${plan.words} words`,
                       plan.listen && `${plan.listen} listening`].filter(Boolean).join(", ")
                    : "Nothing due right now"}
     </p>
+    ${Object.keys(vsrs).length ? `<p class="tiny muted center" style="margin:4px 0 0">
+      ${Object.keys(vsrs).length} of ${WORDS.length} everyday words known</p>` : ""}
     ${daysToFinish() ? `<p class="tiny muted center" style="margin:4px 0 0">
       ${esc(pace().label)} pace · all ${CHUNKS.length} met in ~${daysToFinish()} days ·
       <button class="linkish" data-sheet="settings">change</button></p>` : ""}
@@ -4019,9 +4307,9 @@ function renderHome(){
    on its own intro screen. The learner sets the pace instead, and Today says
    where the one they picked actually lands them. */
 const PACES = {
-  steady:  {label:"Steady",  fresh:5,  listen:4,  review:20, mins:"5 min"},
-  brisk:   {label:"Brisk",   fresh:12, listen:8,  review:40, mins:"15 min"},
-  intense: {label:"Intense", fresh:20, listen:12, review:60, mins:"25 min"},
+  steady:  {label:"Steady",  fresh:5,  words:6,  listen:4,  review:20, mins:"7 min"},
+  brisk:   {label:"Brisk",   fresh:12, words:12, listen:8,  review:40, mins:"18 min"},
+  intense: {label:"Intense", fresh:20, words:20, listen:12, review:60, mins:"30 min"},
 };
 const pace = () => PACES[settings.pace] || PACES.brisk;
 let flow = null;
@@ -4030,8 +4318,9 @@ function sessionPlan(){
   const p = pace();
   const review = Math.min(dueCards().length, p.review);
   const fresh  = Math.min(newCards().length, p.fresh);
+  const words  = Math.min(dueWords().length + newWords().length, p.words);
   const listen = Object.keys(srs).length >= 4 ? p.listen : 0;
-  return {review, fresh, listen, total: review + fresh + listen};
+  return {review, fresh, words, listen, total: review + fresh + words + listen};
 }
 
 /* Days until every remaining chunk has at least been met, at the current
@@ -4047,13 +4336,15 @@ function startSessionFlow(reviewsOnly){
   const base = sessionPlan();
   /* Catch-up clears the backlog and adds nothing to it, so the bar has to
      count reviews alone or it reports a session that is not being run. */
-  const p = reviewsOnly ? {review:base.review, fresh:0, listen:0, total:base.review} : base;
+  const p = reviewsOnly ? {review:base.review, fresh:0, words:0, listen:0, total:base.review} : base;
   if(!p.total) return go("learn");
   const stages = [];
   if(p.review) stages.push("review");
   if(p.fresh)  stages.push("learn");
+  if(p.words)  stages.push("words");
   if(p.listen) stages.push("listen");
-  flow = {stages, i:0, left:{learn:p.fresh, listen:p.listen}, plan:p, did:{review:0, learn:0, listen:0}};
+  flow = {stages, i:0, left:{learn:p.fresh, words:p.words, listen:p.listen}, plan:p,
+          did:{review:0, learn:0, words:0, listen:0}};
   session = null; earCard = null; learnCard = null;
   go(stages[0]);
 }
@@ -4062,7 +4353,7 @@ function startSessionFlow(reviewsOnly){
 function flowNext(){
   if(!flow) return false;
   flow.i++;
-  session = null; earCard = null; learnCard = null;
+  session = null; earCard = null; learnCard = null; wordCard = null;
   go(flow.i >= flow.stages.length ? "sessionDone" : flow.stages[flow.i]);
   return true;
 }
@@ -4072,15 +4363,15 @@ function flowTick(stage){
   if(stage === "review") return false;          // review ends when its queue empties
   return --flow.left[stage] <= 0 ? flowNext() : false;
 }
-const flowDone = () => flow ? flow.did.review + flow.did.learn + flow.did.listen : 0;
+const flowDone = () => flow ? flow.did.review + flow.did.learn + (flow.did.words||0) + flow.did.listen : 0;
 function flowBar(){
   if(!flow) return "";
   return `<div class="progbar" style="margin-bottom:14px"><i style="width:${(flowDone()/flow.plan.total*100).toFixed(0)}%"></i></div>`;
 }
 
 function renderSessionDone(){
-  const d = flow ? flow.did : {review:0, learn:0, listen:0};
-  const total = d.review + d.learn + d.listen;
+  const d = flow ? flow.did : {review:0, learn:0, words:0, listen:0};
+  const total = d.review + d.learn + (d.words||0) + d.listen;
   const todayNames = studied.ids.map(id => { const c = byId(id); return c && c.chunk; })
                                 .filter(Boolean).slice(0, 14);
   flow = null;
@@ -4094,6 +4385,7 @@ function renderSessionDone(){
     <div class="card" style="margin-top:12px">
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F504} Reviewed</span><span class="v">${d.review}</span></div>
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{2728} Learned</span><span class="v">${d.learn}</span></div>
+      <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F4D6} Words</span><span class="v">${d.words || 0}</span></div>
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F442} Heard</span><span class="v">${d.listen}</span></div>
     </div>
     ${todayNames.length ? `<div class="card" style="margin-top:12px">
@@ -4229,6 +4521,7 @@ function renderPractice(){
   const deck = Object.keys(srs).length;
   const heard = Object.keys(ears).length;
   const modes = [
+    ["words",   "\u{1F4D6}", "Words",       "Everyday vocabulary, scheduled like chunks", `${Object.keys(vsrs).length}/${WORDS.length}`],
     ["lab",     "\u{1F9EA}", "Sentence Lab","Build a sentence from parts — the method", `${labPatternCount()} patterns`],
     ["listen",  "\u{1F442}", "Listen",      "Understand it with no text on screen", heard ? `${heard} trained` : "Open to start"],
     ["shadow",  "\u{1F3A7}", "Shadow",      "Read it aloud, scored by the mic",     `${totals.shadowReps} said out loud`],
@@ -4236,7 +4529,7 @@ function renderPractice(){
     ["build",   "\u{1F9F1}", "Build it",    "Fill the frame — no mic needed",       `${FRAMES.length} frames`],
     ["dialogue","\u{1F5E3}\u{FE0F}", "Conversations", "Hold your end of a real exchange", `${Object.keys(dialogDone).length}/${DIALOGUES.length} done`],
   ];
-  view.innerHTML = header("Practice", "Six ways to make it stick") + `
+  view.innerHTML = header("Practice", "Seven ways to make it stick") + `
     <div class="stack">
       ${modes.map(([k,em,title,sub,meta]) => `
         <button class="action" data-go="${k}">
@@ -4247,6 +4540,73 @@ function renderPractice(){
     </div>
     ${!deck ? `<p class="tiny muted center" style="margin-top:18px">
       These open up once you've added a few chunks in Learn.</p>` : ""}`;
+}
+
+/* ----- Words -----
+   Due words first, then new ones. A new word is shown with its article and
+   spoken; a due one asks for recall from the English before revealing, and is
+   graded on the same four buttons as a chunk, through the same scheduler. */
+let wordCard = null, wordShown = false;
+
+function nextWord(){
+  wordShown = false;
+  const due = dueWords();
+  if(due.length){
+    const id = shuffle(due)[0];
+    wordCard = {w: wordById(id), review: true};
+    return;
+  }
+  if(flow && flow.left.words <= 0){ wordCard = null; return; }
+  const fresh = newWords();
+  wordCard = fresh.length ? {w: fresh[0], review: false} : null;
+}
+
+function renderWords(){
+  if(!wordCard) nextWord();
+  if(!wordCard){
+    view.innerHTML = header("Words", "Vocabulary") + empty("\u{1F4D6}", "Nothing waiting",
+      "Every word is scheduled. Come back when some are due, or learn more chunks.");
+    return;
+  }
+  const {w, review} = wordCard;
+  const d = DOMAIN[w.dom];
+  const left = flow ? flow.left.words : null;
+
+  view.innerHTML = header("Words", flow ? `Session · ${flowDone()+1} of ${flow.plan.total}`
+                                        : (review ? `${dueWords().length} due` : "New word")) + flowBar() + `
+    <div class="card center">
+      <div class="center" style="margin-bottom:10px">
+        <span class="badge">${d.em} ${esc(d.label)}</span>
+        ${review ? `<span class="badge tier2">recall</span>` : `<span class="badge tier1">new</span>`}
+      </div>
+      ${review ? `
+        <div class="chunk-hero">
+          <div class="meaning" style="font-size:19px">${esc(w.en)}</div>
+          ${wordShown ? `<div class="es" style="margin-top:10px">${esc(w.es)} ${speakerBtn(w.es)}</div>`
+                      : `<div class="es" style="margin-top:10px;color:var(--faint)">— — —</div>`}
+        </div>`
+      : `
+        <div class="chunk-hero">
+          <div class="es">${esc(w.es)} ${speakerBtn(w.es)}</div>
+          <div class="meaning">${esc(w.en)}</div>
+        </div>`}
+    </div>
+
+    ${review && !wordShown ? `
+      <div class="stack" style="margin-top:16px">
+        <button class="btn primary" data-word="show">Show the word</button>
+      </div>`
+    : review ? `
+      <p class="sec-label" style="margin:18px 0 8px">How did that go?</p>
+      <div class="grades">
+        ${["again","hard","good","easy"].map(g => `
+          <button class="btn grade ${g}" data-wgrade="${g}">${g[0].toUpperCase()+g.slice(1)}</button>`).join("")}
+      </div>`
+    : `
+      <div class="stack" style="margin-top:16px">
+        <button class="btn primary" data-word="add">Got it — keep this one</button>
+      </div>`}
+    ${left != null ? `<p class="tiny muted center" style="margin-top:10px">${left} left in this session</p>` : ""}`;
 }
 
 /* ----- Sentence Lab: the plug-in method -----
@@ -4682,6 +5042,7 @@ function leaveMode(){
   drillCard = null; drillRound = null;
   buildCard = null; buildRound = null; buildPick = null;
   labCard = null; labRound = null;
+  wordCard = null; wordShown = false;
   earCard = null; earQ = null;
   shadowQ = null;
   dlg = null;
@@ -5494,7 +5855,7 @@ function openSettings(){
 
 /* ---------- 7. EVENTS ---------- */
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-fill],[data-build],[data-lab],[data-lab-pick]");
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-fill],[data-build],[data-lab],[data-lab-pick],[data-word],[data-wgrade]");
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
@@ -5516,6 +5877,24 @@ document.addEventListener("click", e => {
   }
 
   if(t.dataset.fill !== undefined){ answerBuild(t.dataset.fill); return; }
+  if(t.dataset.word){
+    if(t.dataset.word === "show"){ wordShown = true; render(); return; }
+    /* A new word enters the scheduler the same way a new chunk does. */
+    vsrs[wordCard.w.id] = newState(); saveVsrs();
+    markStudied();
+    wordCard = null;
+    if(flowTick("words")) return;
+    nextWord(); render(); return;
+  }
+  if(t.dataset.wgrade){
+    const id = wordCard.w.id;
+    vsrs[id] = schedule(vsrs[id], GRADE[t.dataset.wgrade]);
+    saveVsrs(); markStudied();
+    GRADE[t.dataset.wgrade] === GRADE.again ? gotItWrong() : gotItRight();
+    wordCard = null;
+    if(flowTick("words")) return;
+    nextWord(); render(); return;
+  }
   if(t.dataset.labPick !== undefined){ answerLab(t.dataset.labPick); return; }
   if(t.dataset.lab){
     if(t.dataset.lab === "again"){ startLabRound(); render(); }
