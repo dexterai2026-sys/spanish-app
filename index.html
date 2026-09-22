@@ -3006,6 +3006,48 @@ const SIMPLE = {
   "échale ganas":       ["¡Échale ganas!",       "Give it your all!"],
   "me cae bien":        ["Me cae bien.",         "I like him."],
   "me da igual":        ["Me da igual.",         "I don't mind."],
+
+  /* Added after a learner was asked to produce "Claro que sí, cuenta conmigo"
+     having met claro and nothing else. Every one of these is how the chunk is
+     most often actually said — on its own, or with nothing but grammar around
+     it — so they double as the sayable sentence a production drill needs and
+     as the truest example of the phrase. */
+  "no manches":         ["¡No manches!",         "No way!"],
+  "claro":              ["Claro.",               "Of course."],
+  "¿cómo ves?":         ["¿Cómo ves?",           "What do you reckon?"],
+  "no hay bronca":      ["No hay bronca.",       "No problem."],
+  "cien / mil":         ["Como cien.",           "About a hundred."],
+  "ahorita":            ["Ahorita.",             "In a moment."],
+  "mucho gusto":        ["Mucho gusto.",         "Nice to meet you."],
+  "¿cuándo?":           ["¿Cuándo?",             "When?"],
+  "¿sabes qué?":        ["¿Sabes qué?",          "You know what?"],
+  "¿cuánto?":           ["¿Cuánto?",             "How much?"],
+  "cuídate":            ["Cuídate.",             "Take care."],
+  "mañana / pasado mañana": ["Hasta mañana.",    "See you tomorrow."],
+  "¿cómo?":             ["¿Cómo?",               "How? / What was that?"],
+  "ayer / antier":      ["Ayer no.",             "Not yesterday."],
+  "¿dónde?":            ["¿Dónde?",              "Where?"],
+  "luego luego":        ["Luego luego.",         "Right away."],
+  "fui a":              ["Ya fui.",              "I already went."],
+  "híjole":             ["¡Híjole!",             "Yikes!"],
+  "lo / la":            ["Lo mismo.",            "Same here."],
+  "por eso":            ["Por eso.",             "That's why."],
+  "¿me regalas...?":    ["¿Me regalas uno?",     "Could I get one?"],
+  "hermano":            ["Gracias, hermano.",    "Thanks, brother."],
+  "Dios me ayudó":      ["Dios me ayudó.",       "God helped me."],
+  "resulta que":        ["Resulta que no.",      "Turns out, no."],
+  "porfa":              ["Porfa.",               "Please."],
+  "ya mero":            ["Ya mero.",             "Almost there."],
+  "digo":               ["Digo, no.",            "I mean, no."],
+  "estoy aprendiendo":  ["Estoy aprendiendo.",   "I'm learning."],
+  "¿qué?":              ["¿Qué?",                "What?"],
+  "total que":          ["Total que no.",        "So, no then."],
+  "para mí":            ["Para mí no.",          "Not for me."],
+  "de hecho":           ["De hecho, sí.",        "Actually, yes."],
+  "sale":               ["Sale.",                "Alright."],
+  "¿te parece?":        ["¿Te parece?",          "Sound good?"],
+  "más despacio, porfa":["Más despacio, porfa.", "Slower, please."],
+  "órale":              ["¡Órale!",              "Wow! / Go on!"],
 };
 CHUNKS.forEach(c => {
   const s = SIMPLE[c.chunk];
@@ -3062,6 +3104,8 @@ const PREREQUISITES = {
   "lo que pasa es que": ["es que"], "o sea que": ["o sea"],
   "¿qué tal si...?": ["¿va?"], "voy a + verb": ["quiero + verb"],
   "tuve que + verb": ["tengo que + verb"], "me lo / te lo": ["lo / la"],
+  /* A price frame is unsayable without a number, so it waits for one. */
+  "son + number + pesos": ["cien / mil"], "a las + number": ["son las + number"],
   "estaba": ["estoy + adjective"], "estuvo": ["está + adjective"],
 };
 function rateChunk(c){
@@ -3157,15 +3201,27 @@ CHUNKS.forEach(c => {
    which are never what makes a sentence impossible. Rebuilt only when the
    deck changes size, since it is consulted once per drill. */
 let _knownTok = null, _knownStamp = "";
+/* Grammar, not vocabulary. These are the words a learner absorbs from the
+   chunks themselves and never has to be taught separately, so counting them
+   as unknown would mark almost every sentence unsayable. Deliberately holds
+   no content words — anything with meaning has to be earned. */
 const FREE_TOKENS = ("de la que el en y a los del se las por un para con no una su al lo " +
   "como más pero sus le ya o este sí porque esta es son me te mi tu muy qué cómo dónde " +
-  "cuándo quién si ni tan ese esa eso aquí allá algo nada todo bien mal").split(" ");
+  "cuándo quién si ni tan ese esa eso esto aquí allá ahí algo nada todo todos bien mal " +
+  "así también tampoco siempre nunca todavía aún hasta desde sobre entre cada otro otra " +
+  "mismo tanto poco solo sólo nos les lo los un unos unas uno al yo gracias hola oye").split(" ");
+
+/* Tokens of a chunk itself, punctuation stripped the same way the sentence is
+   so that "más despacio, porfa" matches its own words rather than failing on
+   the comma — which was marking perfectly sayable sentences unsayable. */
+const chunkTokens = c => bareChunk(c.chunk)
+  .replace(/[,;:¿?¡!.…"“”\/]/g, " ").split(/\s+/).filter(Boolean);
 function knownTokens(){
   const stamp = Object.keys(srs).length + ":" + Object.keys(vsrs).length;
   if(_knownTok && _knownStamp === stamp) return _knownTok;
   const set = new Set(FREE_TOKENS);
   Object.keys(srs).forEach(id => { const c = byId(id);
-    if(c) bareChunk(c.chunk).split(/\s+/).forEach(t => set.add(t)); });
+    if(c) chunkTokens(c).forEach(t => set.add(t)); });
   Object.keys(vsrs).forEach(id => { const w = wordById(id);
     if(w) w.bare.toLowerCase().split(/\s+/).forEach(t => set.add(t)); });
   _knownTok = set; _knownStamp = stamp;
@@ -3176,11 +3232,15 @@ function knownTokens(){
    taught counts as known, since that is the thing being practised. */
 function exampleCoverage(e, owner){
   const known = knownTokens();
-  const own = new Set(bareChunk(owner.chunk).split(/\s+/));
+  const own = new Set(chunkTokens(owner));
   const toks = e.es.toLowerCase().replace(/[¿?¡!.,;:—"“”]/g, " ").split(/\s+/).filter(Boolean);
   if(!toks.length) return 1;
   let n = 0;
   toks.forEach(t => { if(own.has(t) || known.has(t)) n++; });
+  /* A frame's filler is the variable, not a debt: "quiero + verb" is being
+     practised as the frame, so one unknown word in the slot is the exercise
+     rather than a gap. Anything beyond that still counts against it. */
+  if(/\+/.test(owner.chunk)) n = Math.min(toks.length, n + 1);
   return n / toks.length;
 }
 

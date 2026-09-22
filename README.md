@@ -1,7 +1,7 @@
 Calle — real-world Mexican Spanish
 A single-file PWA that teaches spoken Mexican Spanish through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses. An adaptive curriculum keeps the carrier sentence at the learner's level and uses their goals to choose relevant contexts.
 
-Everything lives in one index.html: 368 chunks, 564 everyday words, 802 example sentences, 16 dialogues, 41 sentence patterns, a spaced-repetition engine, a pronunciation scorer and nine study modes. No build step, no dependencies, no backend, no network calls.
+Everything lives in one index.html: 368 chunks, 564 everyday words, 835 example sentences, 16 dialogues, 41 sentence patterns, a spaced-repetition engine, a pronunciation scorer and nine study modes. No build step, no dependencies, no backend, no network calls.
 
 Calle is Spanish for "street" — the register this teaches.
 
@@ -99,8 +99,12 @@ Reading a sentence and generating one are different asks, and the difficulty rat
 So the two production modes pick by coverage rather than by level — what fraction of the sentence this learner could actually produce, counting the chunks they have met, the vocabulary they have studied, the chunk being practised, and the function words, which are never what makes a sentence impossible. A chunk whose best sentence falls below 70% is skipped rather than set as the task.
 
 Deck	Median coverage	Worst	Prompts under 70%
-12 chunks	before 50% · now 75%	33% → 67%	43% → 12%
-84 chunks	before 62% · now 100%	33% → 67%	30% → 7%
+12 chunks	50% → 100%	33% → 67%	43% → 3%
+84 chunks	62% → 100%	33% → 67%	30% → 3%
+
+Most of that came from content rather than code. Forty of the first hundred and twenty chunks had no sayable sentence at all the moment you learned them — the collection taught claro and its gentlest example was "¿Me ayudas? — Claro." Each now carries the way the chunk is most often actually said: on its own, or with nothing but grammar around it. ¡No manches! · Claro. · ¿Cómo ves? · Mucho gusto. · Cuídate. · Por eso. · Ya mero. Thirty-six such sentences, which double as the truest example of the phrase and the one a production drill can fairly ask for.
+
+Two rules keep the measure honest. A frame's filler is the variable being practised, not a gap, so "quiero + verb" is not marked unsayable for the verb in its slot. And a price frame genuinely cannot be said without a number, so it waits for one — son + number + pesos now follows cien / mil.
 
 The session summary follows the same rule: Quick-fire is only offered once there is a deck worth drilling and a microphone that works, and leads with Sentence Lab otherwise. Sending somebody one session in — or on an iPhone, where no browser has speech recognition — to a mode that can only fail is worse than offering nothing.
 
@@ -227,7 +231,7 @@ Every pattern used to be yo or tú: a learner could talk about themselves and as
 Four shapes were missing alongside them — negation past a bare no, giving a reason with porque, comparing with más … que, and anchoring in time with cuando. Without those a learner can name things and cannot argue, explain, prefer or narrate, which is most of talking.
 
 The collection
-368 chunks · 564 words · 802 example sentences — 204 universal, 164 tagged to one or more goals
+368 chunks · 564 words · 835 example sentences — 204 universal, 164 tagged to one or more goals
 
 Key	Category	Count
 ask	Questions	61
