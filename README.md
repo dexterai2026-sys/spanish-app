@@ -326,10 +326,14 @@ A chunk counts toward its milestone once you've either recalled it (scheduler st
 Pace
 New chunks per day is a setting, not a constant. It was five, hardcoded, which put the whole collection sixty-three days out — a strange thing for an app whose first screen promises speed.
 
-Pace	Chunks/day	Words/day	Chunk reviews	Word reviews	Listening
-Steady	5	6	20	15	4
-Brisk (default)	12	12	40	30	8
-Intense	20	20	60	45	12
+Pace	Chunks/day	Words/day	Chunk reviews	Word reviews	Build	Listening
+Steady	5	6	20	15	4	4
+Brisk (default)	12	12	40	30	6	8
+Intense	20	20	60	45	8	12
+
+Intake yields to the backlog. Twelve chunks and twelve words a day generate more reviews than forty and thirty can absorb, so the arithmetic never closes: run it out and the overflow is silently dropped while the memory it belonged to decays. Simulated over three weeks, the untreated version ended 263 reviews behind and climbing linearly — which is the single commonest reason people quit an SRS in week three.
+
+New material is now halved when anything is past what a day clears, and paused entirely past forty, resuming on its own once the deck drains. Across twenty-eight days the backlog stays between zero and fourteen instead of running away, and the session settles at roughly ninety items rather than growing without bound. The cost is honesty: sustained intake is nearer six a day than twelve, and Today quotes the rate you are actually going rather than the one the pace nominally allows.
 
 Today states how long the session will take before you start it — two SRS books compound, and a Brisk learner is doing about a hundred items a day by the end of the first week. That is what twelve chunks and twelve words a day actually costs, and it is better said than discovered.
 
@@ -351,7 +355,19 @@ Backlog
 Reviews compound. At Brisk, day seven has fifty-three cards due against a cap of forty, and nothing used to say so — a silently growing backlog is the week-two quit point. Past what one session holds, Today says how many are waiting and offers a reviews-only catch-up that clears without adding to the pile.
 
 Daily session
-One button on Today runs three stages back to back — up to 20 due reviews, then a pace-sized batch of new chunks, then the listening quota — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
+One button on Today runs the whole loop — reviews, new chunks, vocabulary, building, listening, and a conversation to close.
+
+Stage	What it asks
+Review	recall a chunk from its cloze
+Learn	meet new chunks
+Words	recall or produce vocabulary
+Build	assemble sentences in Sentence Lab
+Listen	understand with no text
+Talk	hold your end of a conversation
+
+Building and talking used to live behind the Practice tab, which meant the daily loop — the thing the home screen tells you to do — was recognition from end to end and never once asked the learner to produce a sentence or hold an exchange. For an app whose whole point is conversational fluency, that was the loop teaching everything except the goal. The closing conversation is chosen rather than browsed: a goal-matched one you have not done, else your weakest.
+
+The older description, for reference: up to 20 due reviews, then a pace-sized batch of new chunks, then the listening quota — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
 
 Two speaking scores, kept apart
 Shadow and Quick-fire both score speech, but they measure different skills:

@@ -71,6 +71,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;pad
 .backlog{margin-top:12px;padding:13px 15px;border-radius:14px;font-size:13px;line-height:1.5;
   background:color-mix(in srgb,var(--red) 11%,transparent);color:var(--text)}
 .backlog b{color:var(--red)}
+.holding{margin-top:12px;padding:12px 15px;border-radius:14px;font-size:13px;line-height:1.5;
+  background:color-mix(in srgb,var(--blue) 12%,transparent);color:var(--text)}
+.holding b{color:var(--blue)}
 .more-ex{margin-top:6px}
 .more-ex summary{cursor:pointer;font-size:13px;color:var(--muted);padding:8px 2px;list-style:none}
 .more-ex summary::-webkit-details-marker{display:none}
@@ -4376,15 +4379,23 @@ function renderHome(){
     <p class="tiny muted center" style="margin:8px 0 0">
       ${plan.total ? [plan.review && `${plan.review} to review`, plan.fresh && `${plan.fresh} new`,
                       (plan.words + plan.wordRev) && `${plan.words + plan.wordRev} words`,
-                      plan.listen && `${plan.listen} listening`].filter(Boolean).join(", ")
+                      plan.build && `${plan.build} to build`,
+                      plan.listen && `${plan.listen} listening`,
+                      plan.talk && `a conversation`].filter(Boolean).join(", ")
                       + ` · about ${plan.mins} min`
                    : "Nothing due right now"}
     </p>
     ${Object.keys(vsrs).length ? `<p class="tiny muted center" style="margin:4px 0 0">
       ${Object.keys(vsrs).length} of ${WORDS.length} everyday words known</p>` : ""}
     ${daysToFinish() ? `<p class="tiny muted center" style="margin:4px 0 0">
-      ${esc(pace().label)} pace · all ${CHUNKS.length} met in ~${daysToFinish()} days ·
-      <button class="linkish" data-sheet="settings">change</button></p>` : ""}
+      ${esc(pace().label)} pace · all ${CHUNKS.length} met in ~${daysToFinish()} days at the
+      rate you're actually going · <button class="linkish" data-sheet="settings">change</button></p>` : ""}
+    ${plan.hold < 1 ? `
+      <div class="holding">
+        <b>${plan.hold === 0 ? "New material paused" : "New material halved"}</b> while you catch up —
+        ${backlogPressure()} reviews are past what a day at this pace clears. It resumes
+        on its own once the backlog drains, which is faster than it sounds.
+      </div>` : ""}
     ${(due > pace().review || dueWords().length > pace().wordRev) ? `
       <div class="backlog">
         <b>${due + dueWords().length} reviews are waiting</b> — more than one session holds.
@@ -4449,37 +4460,68 @@ function renderHome(){
    on its own intro screen. The learner sets the pace instead, and Today says
    where the one they picked actually lands them. */
 const PACES = {
-  steady:  {label:"Steady",  fresh:5,  words:6,  wordRev:15, listen:4,  review:20},
-  brisk:   {label:"Brisk",   fresh:12, words:12, wordRev:30, listen:8,  review:40},
-  intense: {label:"Intense", fresh:20, words:20, wordRev:45, listen:12, review:60},
+  steady:  {label:"Steady",  fresh:5,  words:6,  wordRev:15, build:4, listen:4,  review:20},
+  brisk:   {label:"Brisk",   fresh:12, words:12, wordRev:30, build:6, listen:8,  review:40},
+  intense: {label:"Intense", fresh:20, words:20, wordRev:45, build:8, listen:12, review:60},
 };
 const pace = () => PACES[settings.pace] || PACES.brisk;
 let flow = null;
 
+/* How far behind the schedule the learner is: everything due that a day at
+   this pace cannot clear. Left alone this grows without bound — twelve chunks
+   and twelve words a day generate more reviews than forty and thirty can
+   absorb, and the overflow is silently dropped while the memory decays. The
+   arithmetic never closes, so intake has to yield to it. */
+function backlogPressure(){
+  const p = pace();
+  return Math.max(0, dueCards().length - p.review) + Math.max(0, dueWords().length - p.wordRev);
+}
+/* Full intake while level, half while slipping, none while properly behind —
+   so the deck drains instead of rotting, and the learner is told why. */
+function intakeFactor(){
+  const over = backlogPressure();
+  return over > 40 ? 0 : over > 0 ? 0.5 : 1;
+}
+
 function sessionPlan(){
   const p = pace();
+  const hold = intakeFactor();
   const review = Math.min(dueCards().length, p.review);
-  const fresh  = Math.min(newCards().length, p.fresh);
+  const fresh  = Math.round(Math.min(newCards().length, p.fresh) * hold);
   /* New words and word reviews get separate allowances, exactly as chunks do.
      Pooling them meant that the moment a dozen words were due, reviews ate the
      whole quota and new vocabulary stopped arriving — permanently. A learner
      would have stalled around thirty words out of five hundred and sixty. */
   const wordRev = Math.min(dueWords().length, p.wordRev);
-  const words   = Math.min(newWords().length, p.words);
+  const words   = Math.round(Math.min(newWords().length, p.words) * hold);
   const listen  = Object.keys(srs).length >= 4 ? p.listen : 0;
-  const total   = review + fresh + words + wordRev + listen;
+  /* Building sentences is the point of the whole thing, so it belongs in the
+     daily session rather than behind a tab. Everything else in the loop is
+     recognition; this is the only place the learner produces. */
+  const build   = Object.keys(srs).length >= 6 ? p.build : 0;
+  /* And the session ends in an actual conversation once there is enough to
+     hold one, because holding your end of an exchange is the thing all of
+     this is for. */
+  const talk    = Object.keys(srs).length >= 20 ? 1 : 0;
+  const total   = review + fresh + words + wordRev + build + listen + talk;
   /* Roughly how long that is, so nobody is ambushed by a seventy-item day. */
-  const mins = Math.max(1, Math.round((review*8 + fresh*25 + words*12 + wordRev*7 + listen*14)/60));
-  return {review, fresh, words, wordRev, listen, total, mins};
+  const mins = Math.max(1, Math.round(
+    (review*8 + fresh*25 + words*12 + wordRev*7 + build*15 + listen*14 + talk*70)/60));
+  return {review, fresh, words, wordRev, build, listen, talk, total, mins, hold};
 }
 
 /* Days until every remaining chunk has at least been met, at the current
    pace. Shown because "63 days" is the kind of thing a learner should be
    told before they commit, not after. */
+/* At the rate intake is actually running, not the rate the pace nominally
+   allows. Throttling means the honest answer is usually slower than the pace
+   suggests, and quoting the nominal figure is how an app promises a month and
+   delivers three. */
 function daysToFinish(){
   const left = CHUNKS.length - Object.keys(srs).length;
   if(left <= 0) return 0;
-  return Math.ceil(left / pace().fresh);
+  const rate = pace().fresh * Math.max(intakeFactor(), 0.5);
+  return Math.ceil(left / rate);
 }
 
 function startSessionFlow(reviewsOnly){
@@ -4487,17 +4529,20 @@ function startSessionFlow(reviewsOnly){
   /* Catch-up clears the backlog and adds nothing to it, so the bar has to
      count reviews alone or it reports a session that is not being run. */
   const p = reviewsOnly
-    ? {review:base.review, fresh:0, words:0, wordRev:base.wordRev, listen:0,
-       total:base.review + base.wordRev, mins:base.mins}
+    ? {review:base.review, fresh:0, words:0, wordRev:base.wordRev, build:0, listen:0, talk:0,
+       total:base.review + base.wordRev, mins:base.mins, hold:base.hold}
     : base;
   if(!p.total) return go("learn");
   const stages = [];
   if(p.review) stages.push("review");
   if(p.fresh)  stages.push("learn");
   if(p.words || p.wordRev) stages.push("words");
+  if(p.build)  stages.push("lab");
   if(p.listen) stages.push("listen");
-  flow = {stages, i:0, left:{learn:p.fresh, words:p.words, wordRev:p.wordRev, listen:p.listen},
-          plan:p, did:{review:0, learn:0, words:0, listen:0}};
+  if(p.talk)   stages.push("dialogue");
+  flow = {stages, i:0,
+          left:{learn:p.fresh, words:p.words, wordRev:p.wordRev, lab:p.build, listen:p.listen},
+          plan:p, did:{review:0, learn:0, words:0, lab:0, listen:0, talk:0}};
   session = null; earCard = null; learnCard = null;
   go(stages[0]);
 }
@@ -4506,7 +4551,7 @@ function startSessionFlow(reviewsOnly){
 function flowNext(){
   if(!flow) return false;
   flow.i++;
-  session = null; earCard = null; learnCard = null; wordCard = null;
+  session = null; earCard = null; learnCard = null; wordCard = null; labCard = null;
   go(flow.i >= flow.stages.length ? "sessionDone" : flow.stages[flow.i]);
   return true;
 }
@@ -4516,15 +4561,17 @@ function flowTick(stage){
   if(stage === "review") return false;          // review ends when its queue empties
   return --flow.left[stage] <= 0 ? flowNext() : false;
 }
-const flowDone = () => flow ? flow.did.review + flow.did.learn + (flow.did.words||0) + flow.did.listen : 0;
+const flowDone = () => flow
+  ? flow.did.review + flow.did.learn + (flow.did.words||0) + (flow.did.lab||0) + flow.did.listen + (flow.did.talk||0)
+  : 0;
 function flowBar(){
   if(!flow) return "";
   return `<div class="progbar" style="margin-bottom:14px"><i style="width:${(flowDone()/flow.plan.total*100).toFixed(0)}%"></i></div>`;
 }
 
 function renderSessionDone(){
-  const d = flow ? flow.did : {review:0, learn:0, words:0, listen:0};
-  const total = d.review + d.learn + (d.words||0) + d.listen;
+  const d = flow ? flow.did : {review:0, learn:0, words:0, lab:0, listen:0, talk:0};
+  const total = d.review + d.learn + (d.words||0) + (d.lab||0) + d.listen + (d.talk||0);
   const todayNames = studied.ids.map(id => { const c = byId(id); return c && c.chunk; })
                                 .filter(Boolean).slice(0, 14);
   flow = null;
@@ -4539,7 +4586,9 @@ function renderSessionDone(){
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F504} Reviewed</span><span class="v">${d.review}</span></div>
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{2728} Learned</span><span class="v">${d.learn}</span></div>
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F4D6} Words</span><span class="v">${d.words || 0}</span></div>
+      <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F9EA} Built</span><span class="v">${d.lab || 0}</span></div>
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F442} Heard</span><span class="v">${d.listen}</span></div>
+      <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F5E3}\u{FE0F} Talked</span><span class="v">${d.talk || 0}</span></div>
     </div>
     ${todayNames.length ? `<div class="card" style="margin-top:12px">
       <p class="sec-label">Today's chunks</p>
@@ -4876,7 +4925,7 @@ function answerLab(es){
   }
   labCard.at++;
   if(labCard.at >= labCard.steps.length){
-    if(!labCard.wrong) labRound.clean++;
+    if(!labCard.wrong && labRound) labRound.clean++;
     gotItRight();
     recordSkill("vocabulary", !labCard.wrong, 1);
     speak(labCard.target.es);
@@ -4887,6 +4936,12 @@ function answerLab(es){
 }
 
 function nextLab(){
+  if(flow){
+    labCard = null;
+    if(flowTick("lab")) return;
+    buildLabCard();
+    render(); return;
+  }
   labRound.done++;
   if(labRound.done >= LAB_ROUND){ render(); return; }
   buildLabCard();
@@ -4894,6 +4949,10 @@ function nextLab(){
 }
 
 function renderLab(){
+  if(flow){
+    if(!labCard) buildLabCard();
+    return renderLabCard(true);
+  }
   if(!labRound) startLabRound();
 
   if(labRound.done >= LAB_ROUND){
@@ -4910,12 +4969,18 @@ function renderLab(){
     return;
   }
 
+  return renderLabCard(false);
+}
+
+function renderLabCard(inFlow){
   const c = labCard;
   const done = c.at >= c.steps.length;
   const soFar = [esc(c.pat.lead.es)].concat(c.picked.map(x => esc(x.es))).join(" ");
   const step = c.steps[c.at];
 
-  view.innerHTML = header("Sentence Lab", `${labRound.done + 1} of ${LAB_ROUND}`) + `
+  view.innerHTML = header("Sentence Lab", inFlow ? `Session · ${flowDone()+1} of ${flow.plan.total}`
+                                                 : `${labRound.done + 1} of ${LAB_ROUND}`)
+    + (inFlow ? flowBar() : "") + `
     <div class="card center">
       <p class="sec-label" style="margin:0 0 8px">Build this</p>
       <div style="font-size:18px;margin-bottom:12px">${esc(c.target.en)}</div>
@@ -5398,6 +5463,17 @@ function prepDialogueTurn(){
 }
 
 function renderDialogue(){
+  /* In a session this stage is one conversation, chosen rather than browsed:
+     a goal-matched one you have not done, else your weakest, else anything. */
+  if(flow && !dlg){
+    const mine = DIALOGUES.filter(d => myGoals.indexOf(d.goal) !== -1);
+    const pool = mine.length ? mine : DIALOGUES;
+    const unseen = pool.filter(d => dialogDone[d.id] == null);
+    const pick = unseen.length
+      ? unseen[0]
+      : pool.slice().sort((a,b) => (dialogDone[a.id]||0) - (dialogDone[b.id]||0))[0];
+    startDialogue(pick.id);
+  }
   if(!dlg){
     view.innerHTML = header("Conversations", "Hold your end of a real exchange") + `
       <div class="card">
@@ -5443,8 +5519,10 @@ function renderDialogue(){
           </div>`).join("")}
       </div>
       <div class="stack" style="margin-top:16px">
-        <button class="btn primary" data-dlg-act="replay">Run it again</button>
-        <button class="btn ghost" data-dlg-act="list">Back to conversations</button>
+        ${flow ? `<button class="btn primary" data-dlg-act="done">Finish the session</button>
+                  <button class="btn ghost" data-dlg-act="replay">Run it again</button>`
+               : `<button class="btn primary" data-dlg-act="replay">Run it again</button>
+                  <button class="btn ghost" data-dlg-act="list">Back to conversations</button>`}
       </div>`;
     return;
   }
@@ -6217,7 +6295,13 @@ document.addEventListener("click", e => {
       }
     }
     if(act === "replay") startDialogue(dlg.d.id);
-    if(act === "list")   dlg = null;
+    if(act === "list"){
+      dlg = null;
+      /* Leaving the closing conversation finishes the session rather than
+         dropping the learner into the conversation list mid-flow. */
+      if(flow){ flow.did.talk = 1; return flowNext() || render(); }
+    }
+    if(act === "done" && flow){ dlg = null; flow.did.talk = 1; return flowNext() || render(); }
     render(); return;
   }
 
