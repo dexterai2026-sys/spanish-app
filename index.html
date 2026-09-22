@@ -2316,6 +2316,19 @@ Object.keys(WORD_PACKS).forEach(dom => {
 });
 const wordById = id => WORDS.find(w => w.id === id);
 
+/* Three surfaces for the same word, so a pattern can ask for the one its
+   frame actually takes: "me gusta el café", "tengo un hermano", "estoy
+   cansado". Getting this wrong is how a generator teaches "necesito el
+   dinero", so patterns declare the form rather than guessing. */
+const ART = {"el":"un", "la":"una", "los":"unos", "las":"unas"};
+WORDS.forEach(w => {
+  const m = w.es.match(/^(el|la|los|las) (.+)$/);
+  w.bare = m ? m[2] : w.es;
+  w.def  = w.es;
+  w.indef = m ? ART[m[1]] + " " + m[2] : w.es;
+  w.isAdj = !m;                       // no article = adjective or verb
+});
+
 
 /* The spine is universal, but a price or a clock time is the difference
    between ordering and pointing, so the goals that live on them get these
@@ -2352,10 +2365,65 @@ Object.entries(SPINE_GOALS).forEach(([g, names]) => {
    Patterns carry a goal where the content belongs to one, so a learner who
    picked faith builds "quiero orar por ti" rather than "quiero comprar". */
 function P(goal, lead, slots){ return {goal, lead:{es:lead[0], en:lead[1]}, slots}; }
-function S(label, opts, optional){
+function S(label, opts, optional, vocab){
   /* A third element marks a tail that needs a comma in front of it:
-     "¿puedes ayudarme, porfa?" but "¿puedes ayudarme tantito?". */
-  return {label, optional: !!optional, opts: opts.map(o => ({es:o[0], en:o[1], comma: !!o[2]}))};
+     "¿puedes ayudarme, porfa?" but "¿puedes ayudarme tantito?".
+     `vocab` lets a slot be filled from the learner's own studied words:
+     which domains are safe here, and which surface the frame takes. */
+  return {label, optional: !!optional, vocab: vocab || null,
+          opts: opts.map(o => ({es:o[0], en:o[1], comma: !!o[2]}))};
+}
+
+/* Words this learner has actually studied, in the domains a slot allows and
+   in the surface it needs. Due ones come first, so building a sentence is
+   also a review. Falls back to the pattern's own options when they do not
+   know enough yet to make a choice meaningful. */
+/* Adjectives that describe a state you are in, which take estar. The rest of
+   the adjective and feeling packs are traits, which take ser: "estoy cansado"
+   but "es grosero". Mixing them is the classic learner error and there is no
+   excuse for the app making it. */
+/* Verbs that need an object or read oddly standing alone after a frame:
+   "quiero dar" and "tengo que hacer" are not sentences anyone finishes. */
+const BARE_VERB_NO = new Set(["ser","estar","tener","haber","poder","querer","deber",
+  "hacer","dar","poner","llevar","traer","dejar","buscar","encontrar","perder","ganar",
+  "conocer","saber","decir","ver","quedar","pasar","seguir","necesitar"]);
+
+const STATE_ADJ = new Set(["feliz","contento","triste","enojado","molesto","preocupado",
+  "nervioso","tranquilo","cansado","aburrido","emocionado","asustado","apenado",
+  "orgulloso","sorprendido","confundido","agradecido","ocupado","libre","listo",
+  "lleno","vacío","abierto","cerrado","caliente","frío","seguro"]);
+
+/* The English that belongs with the surface being used: "the kitchen" for a
+   definite noun, "a brother" for an indefinite one, and a bare verb for a
+   frame that already supplied the "to". */
+function glossFor(w, form, bareEn){
+  let en = String(w.en).replace(/\s*\([^)]*\)/g, "").trim();
+  if(w.dom === "verb") return en.replace(/^to /, "");
+  if(bareEn) return en;                       // the lead already supplied the article
+  if(/^(a |an |the )/i.test(en)) return en;
+  if(form === "def")   return "the " + en;
+  if(form === "indef") return (/^[aeiou]/i.test(en) ? "an " : "a ") + en;
+  return en;
+}
+
+function vocabOptions(spec){
+  if(!spec) return [];
+  const now = Date.now();
+  const pool = WORDS.filter(w => vsrs[w.id]
+    && spec.doms.indexOf(w.dom) !== -1
+    && (!spec.adjOnly || w.isAdj)
+    && (!spec.nounOnly || !w.isAdj)
+    && (!spec.stateOnly || STATE_ADJ.has(w.bare))
+    && (!spec.traitOnly || !STATE_ADJ.has(w.bare))
+    && (w.dom !== "verb" || !BARE_VERB_NO.has(w.bare))
+    /* "unos papás" is not how anyone says it, so plurals stay out of the
+       indefinite frames. */
+    && (spec.form !== "indef" || !/^(los|las) /.test(w.es)));
+  const surf = w => spec.form === "indef" ? w.indef : spec.form === "bare" ? w.bare : w.def;
+  const due = pool.filter(w => vsrs[w.id].due <= now);
+  const rest = pool.filter(w => vsrs[w.id].due > now);
+  return shuffle(due).concat(shuffle(rest))
+    .map(w => ({es: surf(w), en: glossFor(w, spec.form, spec.bareEn), wid: w.id}));
 }
 
 const PATTERNS = [
@@ -2413,6 +2481,66 @@ const PATTERNS = [
   P(null, ["¿me","would you"], [
     S("what", [["ayudas","give me a hand"],["repites eso","say that again"],
                ["explicas","explain"],["das un minuto","give me a minute"]])]),
+
+  /* ----- patterns that run on the learner's own vocabulary -----
+     Studying a word and never using it is the met-once problem in a new
+     costume: scheduled, so remembered, but never usable. These frames pull
+     their filler from words this learner has actually studied, preferring the
+     ones due for review, so building a sentence is also a review.
+
+     Each declares which domains are safe in the slot and which surface the
+     frame takes, because "me gusta el café" and "tengo un hermano" and "estoy
+     cansado" are three different shapes and guessing between them is how a
+     generator starts teaching "necesito el dinero". */
+  P(null, ["me gusta","I like"], [
+    S("what", [["el café","coffee"],["la música","the music"],["este lugar","this place"]],
+      false, {doms:["food","place","clothes"], form:"def", nounOnly:true})]),
+
+  P(null, ["¿dónde está","where is"], [
+    S("what", [["el baño","the bathroom"],["la parada","the bus stop"]],
+      false, {doms:["house","place"], form:"def", nounOnly:true})]),
+
+  P(null, ["estoy","I'm"], [
+    S("how", [["cansado","tired"],["listo","ready"],["ocupado","busy"]],
+      false, {doms:["feeling","adj"], form:"bare", adjOnly:true, stateOnly:true})]),
+
+  P(null, ["es muy","it's very"], [
+    S("how", [["caro","expensive"],["grande","big"],["bonito","pretty"]],
+      false, {doms:["adj"], form:"bare", adjOnly:true, traitOnly:true})]),
+
+  P(null, ["tengo","I have"], [
+    S("what", [["un hermano","a brother"],["una pregunta","a question"]],
+      false, {doms:["family"], form:"indef", nounOnly:true})]),
+
+  P(null, ["necesito","I need"], [
+    S("what", [["la llave","the key"],["el recibo","the receipt"]],
+      false, {doms:["work","clothes"], form:"def", nounOnly:true})]),
+
+  /* The seventy-two everyday verbs drop straight into the frames the app
+     already teaches, which is the cheapest way to make a whole domain usable
+     rather than merely remembered. */
+  P(null, ["quiero","I want to"], [
+    S("what", [["comer","eat"],["descansar","rest"],["aprender","learn"]],
+      false, {doms:["verb"], form:"bare"}),
+    S("when", [["ahorita","right now"],["al rato","in a bit"],["mañana","tomorrow"]], true)]),
+
+  P(null, ["voy a","I'm going to"], [
+    S("what", [["trabajar","work"],["regresar","go back"],["descansar","rest"]],
+      false, {doms:["verb"], form:"bare"}),
+    S("when", [["al rato","in a bit"],["mañana","tomorrow"]], true)]),
+
+  P(null, ["tengo que","I have to"], [
+    S("what", [["pagar","pay"],["trabajar","work"],["esperar","wait"]],
+      false, {doms:["verb"], form:"bare"})]),
+
+  P(null, ["¿puedes","can you"], [
+    S("what", [["esperar","wait"],["ayudar","help"],["manejar","drive"]],
+      false, {doms:["verb"], form:"bare"}),
+    S("softener", [["porfa","please",true],["tantito","for a sec"]], true)]),
+
+  P(null, ["me duele","I have a sore"], [
+    S("what", [["la cabeza","head"],["la espalda","back"],["el pie","foot"]],
+      false, {doms:["body"], form:"def", nounOnly:true, bareEn:true})]),
 
   /* ----- other people: the dimension the app did not have -----
      Every pattern was yo or tú, so a learner could talk about themselves and
@@ -3009,7 +3137,14 @@ Object.keys(EXTRA_EXAMPLES).forEach(name => {
 CHUNKS.forEach(c => {
   c.learningLevel = rateChunk(c);
   c.prerequisites = PREREQUISITES[c.chunk] || [];
-  c.examples.forEach(e => { e.level = rateSentence(e.es, c); e.goals = inferExampleGoals(e); });
+  c.examples.forEach(e => {
+    e.level = rateSentence(e.es, c);
+    e.goals = inferExampleGoals(e);
+    /* Which vocabulary this sentence happens to contain, so the picker can
+       favour sentences built from words the learner already owns. */
+    const low = " " + e.es.toLowerCase().replace(/[¿?¡!.,;:]/g, " ") + " ";
+    e.words = WORDS.filter(w => low.indexOf(" " + w.bare.toLowerCase() + " ") !== -1).map(w => w.id);
+  });
   c.examples.sort((a,b) => a.level - b.level);          // gentlest first
 });
 
@@ -3031,6 +3166,12 @@ function pickExample(c, st, skill="comprehension"){
   }
   const relevant = pool.filter(e => (e.goals || []).some(g => myGoals.includes(g)));
   if(relevant.length) pool = relevant;
+  /* Among equally suitable sentences, prefer one carrying a word this learner
+     has studied. Vocabulary met in one place and never seen again is the
+     met-once problem; recycling it through the example sentences is free
+     recognition practice and makes the sentence easier at the same time. */
+  const known = pool.filter(e => e.words && e.words.some(id => vsrs[id]));
+  if(known.length) pool = known;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -4566,7 +4707,16 @@ function nextWord(){
   const canRev = !flow || flow.left.wordRev > 0;
   const canNew = !flow || flow.left.words > 0;
   if(due.length && canRev){
-    wordCard = {w: wordById(shuffle(due)[0]), review: true};
+    const w = wordById(shuffle(due)[0]);
+    /* Half of reviews ask for production against three real alternatives from
+       the same domain, graded objectively. Self-grading alone lets "I sort of
+       knew that" pass as recall, which is how a deck stays green while the
+       learner stays unable to produce anything. */
+    const siblings = WORDS.filter(x => x.dom === w.dom && x.id !== w.id);
+    const produce = siblings.length >= 3 && Math.random() < 0.5;
+    wordCard = {w, review: true, produce,
+                options: produce ? shuffle([w, ...shuffle(siblings).slice(0,3)]) : null,
+                pick: null};
     return;
   }
   if(canNew){
@@ -4604,12 +4754,13 @@ function renderWords(){
     <div class="card center">
       <div class="center" style="margin-bottom:10px">
         <span class="badge">${d.em} ${esc(d.label)}</span>
-        ${review ? `<span class="badge tier2">recall</span>` : `<span class="badge tier1">new</span>`}
+        ${review ? `<span class="badge tier2">${wordCard.produce ? "produce" : "recall"}</span>`
+                 : `<span class="badge tier1">new</span>`}
       </div>
       ${review ? `
         <div class="chunk-hero">
           <div class="meaning" style="font-size:19px">${esc(w.en)}</div>
-          ${wordShown ? `<div class="es" style="margin-top:10px">${esc(w.es)} ${speakerBtn(w.es)}</div>`
+          ${(wordShown || wordCard.pick) ? `<div class="es" style="margin-top:10px">${esc(w.es)} ${speakerBtn(w.es)}</div>`
                       : `<div class="es" style="margin-top:10px;color:var(--faint)">— — —</div>`}
         </div>`
       : `
@@ -4619,7 +4770,22 @@ function renderWords(){
         </div>`}
     </div>
 
-    ${review && !wordShown ? `
+    ${review && wordCard.produce ? `
+      <p class="sec-label" style="margin:18px 0 8px">Which one is it?</p>
+      <div class="stack">
+        ${wordCard.options.map(o => {
+          let cls = "btn opt es-text";
+          if(wordCard.pick){
+            if(o.id === w.id) cls += " opt-right";
+            else if(o.id === wordCard.pick) cls += " opt-wrong";
+            else cls += " opt-dim";
+          }
+          return `<button class="${cls}" data-wpick="${o.id}">${esc(o.es)}</button>`;
+        }).join("")}
+      </div>
+      ${wordCard.pick ? `<div class="stack" style="margin-top:16px">
+        <button class="btn primary" data-word="next">Next</button></div>` : ""}`
+    : review && !wordShown ? `
       <div class="stack" style="margin-top:16px">
         <button class="btn primary" data-word="show">Show the word</button>
       </div>`
@@ -4658,7 +4824,13 @@ function buildLabCard(){
      needs them whatever it is about. */
   const mine = PATTERNS.filter(p => p.goal && myGoals.indexOf(p.goal) !== -1);
   const universal = PATTERNS.filter(p => !p.goal);
-  const bag = universal.concat(mine, mine, mine);
+  /* A pattern the learner can fill from their own vocabulary is worth seeing
+     twice as often, because that round doubles as vocabulary review and is
+     what turns a studied word into a usable one. Only counts once they know
+     enough words for the choice to be real. */
+  const usable = PATTERNS.filter(p =>
+    p.slots.some(sl => sl.vocab && vocabOptions(sl.vocab).length >= 3));
+  const bag = universal.concat(mine, mine, mine, usable);
   const pat = bag[Math.floor(Math.random()*bag.length)];
 
   const steps = [];
@@ -4667,9 +4839,13 @@ function buildLabCard(){
     /* An optional slot is skipped half the time, so the same pattern gives
        both the short sentence and the fuller one. */
     if(slot.optional && Math.random() < 0.5){ chosen.push(null); return; }
-    const right = slot.opts[Math.floor(Math.random()*slot.opts.length)];
+    /* Prefer the learner's own vocabulary when the slot allows it and they
+       know enough for the choice to be real; otherwise the pattern's own. */
+    const mine = vocabOptions(slot.vocab);
+    const bank = mine.length >= 3 ? mine : slot.opts;
+    const right = bank[Math.floor(Math.random()*bank.length)];
     chosen.push(right);
-    const others = shuffle(slot.opts.filter(o => o.es !== right.es)).slice(0, 2);
+    const others = shuffle(bank.filter(o => o.es !== right.es)).slice(0, 2);
     steps.push({label: slot.label, right, options: shuffle([right, ...others])});
   });
 
@@ -4692,6 +4868,12 @@ function answerLab(es){
   /* Show the surface the finished sentence will use, so the line being built
      never disagrees with the line that gets spoken. */
   labCard.picked.push({es: step.right.es});
+  /* Using a word you owed a review on is a review. Only credits a due one, so
+     a round cannot be farmed to keep the whole deck perpetually fresh. */
+  if(step.right.wid && vsrs[step.right.wid] && vsrs[step.right.wid].due <= Date.now()){
+    vsrs[step.right.wid] = schedule(vsrs[step.right.wid], GRADE.good);
+    saveVsrs();
+  }
   labCard.at++;
   if(labCard.at >= labCard.steps.length){
     if(!labCard.wrong) labRound.clean++;
@@ -5882,7 +6064,7 @@ function openSettings(){
 
 /* ---------- 7. EVENTS ---------- */
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-fill],[data-build],[data-lab],[data-lab-pick],[data-word],[data-wgrade]");
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-fill],[data-build],[data-lab],[data-lab-pick],[data-word],[data-wgrade],[data-wpick]");
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
@@ -5904,8 +6086,27 @@ document.addEventListener("click", e => {
   }
 
   if(t.dataset.fill !== undefined){ answerBuild(t.dataset.fill); return; }
+  if(t.dataset.wpick){
+    if(wordCard.pick) return;
+    wordCard.pick = t.dataset.wpick;
+    const right = wordCard.pick === wordCard.w.id;
+    /* Objectively graded, so the scheduler hears what happened rather than
+       what the learner felt about it. */
+    vsrs[wordCard.w.id] = schedule(vsrs[wordCard.w.id], right ? GRADE.good : GRADE.again);
+    saveVsrs(); markStudied();
+    right ? gotItRight() : gotItWrong();
+    speak(wordCard.w.bare);
+    render(); return;
+  }
   if(t.dataset.word){
     if(t.dataset.word === "show"){ wordShown = true; render(); return; }
+    if(t.dataset.word === "next"){
+      wordCard = null;
+      if(wordTick(true)) return;
+      nextWord();
+      if(!wordCard && flow) return flowNext();
+      render(); return;
+    }
     /* A new word enters the scheduler the same way a new chunk does. */
     vsrs[wordCard.w.id] = newState(); saveVsrs();
     markStudied();
