@@ -3152,6 +3152,71 @@ CHUNKS.forEach(c => {
 });
 
 /* Harder sentences unlock as the chunk itself gets more familiar. */
+/* Everything the learner could plausibly produce: the words inside chunks
+   they have met, the vocabulary they have studied, and the function words,
+   which are never what makes a sentence impossible. Rebuilt only when the
+   deck changes size, since it is consulted once per drill. */
+let _knownTok = null, _knownStamp = "";
+const FREE_TOKENS = ("de la que el en y a los del se las por un para con no una su al lo " +
+  "como más pero sus le ya o este sí porque esta es son me te mi tu muy qué cómo dónde " +
+  "cuándo quién si ni tan ese esa eso aquí allá algo nada todo bien mal").split(" ");
+function knownTokens(){
+  const stamp = Object.keys(srs).length + ":" + Object.keys(vsrs).length;
+  if(_knownTok && _knownStamp === stamp) return _knownTok;
+  const set = new Set(FREE_TOKENS);
+  Object.keys(srs).forEach(id => { const c = byId(id);
+    if(c) bareChunk(c.chunk).split(/\s+/).forEach(t => set.add(t)); });
+  Object.keys(vsrs).forEach(id => { const w = wordById(id);
+    if(w) w.bare.toLowerCase().split(/\s+/).forEach(t => set.add(t)); });
+  _knownTok = set; _knownStamp = stamp;
+  return set;
+}
+
+/* How much of a sentence this learner could actually produce. The chunk being
+   taught counts as known, since that is the thing being practised. */
+function exampleCoverage(e, owner){
+  const known = knownTokens();
+  const own = new Set(bareChunk(owner.chunk).split(/\s+/));
+  const toks = e.es.toLowerCase().replace(/[¿?¡!.,;:—"“”]/g, " ").split(/\s+/).filter(Boolean);
+  if(!toks.length) return 1;
+  let n = 0;
+  toks.forEach(t => { if(own.has(t) || known.has(t)) n++; });
+  return n / toks.length;
+}
+
+/* Reading a sentence and generating it are different asks. Level rating keeps
+   the carrier gentle, but gentle is not the same as producible: "Claro que
+   sí, cuenta conmigo" is a short, easy sentence and still impossible for
+   somebody who has met claro and nothing else. Production modes pick the
+   sentence this learner could actually say, not merely an easy one. */
+/* The floor below which a prompt stops being recall and becomes a guess. */
+const PRODUCIBLE = 0.7;
+
+/* Best coverage any of this chunk's eligible sentences reaches, so a chunk
+   with nothing sayable can be skipped rather than set as an impossible task. */
+function bestCoverage(c, st, skill){
+  const iv = st ? st.interval : 0;
+  const maturityMax = iv >= 21 ? 4 : iv >= 5 ? 2 : 1;
+  const max = Math.min(maturityMax, skillCeiling(skill || "speaking"));
+  let pool = c.examples.filter(e => e.level <= max);
+  if(!pool.length) pool = c.examples;
+  return Math.max.apply(null, pool.map(e => exampleCoverage(e, c)));
+}
+
+function pickProducible(c, st, skill){
+  const iv = st ? st.interval : 0;
+  const maturityMax = iv >= 21 ? 4 : iv >= 5 ? 2 : 1;
+  const max = Math.min(maturityMax, skillCeiling(skill || "speaking"));
+  let pool = c.examples.filter(e => e.level <= max);
+  if(!pool.length) pool = c.examples;
+  const scored = pool.map(e => ({e, cov: exampleCoverage(e, c)}));
+  const best = Math.max.apply(null, scored.map(x => x.cov));
+  /* Anything close to the best keeps some variety without dropping back to
+     sentences full of words they have never seen. */
+  const top = scored.filter(x => x.cov >= best - 0.12).map(x => x.e);
+  return top[Math.floor(Math.random()*top.length)];
+}
+
 /* Harder sentences unlock as the chunk itself gets familiar, but never past
    what the relevant skill can carry — so mastering o sea cannot be what hands
    an A1 learner a B1 carrier sentence. The effective cap is the lower of the
@@ -4574,6 +4639,10 @@ function renderSessionDone(){
   const total = d.review + d.learn + (d.words||0) + (d.lab||0) + d.listen + (d.talk||0);
   const todayNames = studied.ids.map(id => { const c = byId(id); return c && c.chunk; })
                                 .filter(Boolean).slice(0, 14);
+  /* Quick-fire needs a microphone and a deck worth drilling. Offering it to
+     somebody one session in, or on a phone that cannot hear them, sends them
+     to a mode that can only fail. */
+  const micReady = !recProblem();
   flow = null;
   SFX.done();
   view.innerHTML = header("Done for today", "Session complete") + `
@@ -4596,8 +4665,11 @@ function renderSessionDone(){
     </div>` : ""}
     <div class="stack" style="margin-top:16px">
       <p class="tiny muted center" style="margin:0 0 4px">Practice leads with what you just did</p>
-      <button class="btn primary" data-go="drill">\u{26A1} Say them cold</button>
-      <button class="btn sm" data-go="lab">\u{1F9EA} Build sentences with them</button>
+      ${micReady && Object.keys(srs).length >= 25
+        ? `<button class="btn primary" data-go="drill">\u{26A1} Say them cold</button>
+           <button class="btn sm" data-go="lab">\u{1F9EA} Build sentences with them</button>`
+        : `<button class="btn primary" data-go="lab">\u{1F9EA} Build sentences with them</button>
+           ${micReady ? `<button class="btn sm" data-go="drill">\u{26A1} Say them cold</button>` : ""}`}
       <button class="btn sm ghost" data-go="home">Back to Today</button>
     </div>`;
 }
@@ -5330,9 +5402,16 @@ function renderShadow(){
     return;
   }
   if(!shadowQ){
-    shadowQ = practicePool().all.slice(0, Math.min(SHADOW_ROUND, deck.length)).map(id => {
+    /* Same rule for Shadow: a phrase you cannot yet say is not shadowing
+       practice, it is reading aloud from a script you have never seen. */
+    const sayable = practicePool().all.filter(id => {
       const c = byId(id);
-      return {c, ex: pickExample(c, srs[id]), reps: 0};
+      return c && bestCoverage(c, srs[id], "speaking") >= PRODUCIBLE;
+    });
+    const source = sayable.length >= 3 ? sayable : practicePool().all;
+    shadowQ = source.slice(0, Math.min(SHADOW_ROUND, deck.length)).map(id => {
+      const c = byId(id);
+      return {c, ex: pickProducible(c, srs[id], "speaking"), reps: 0};
     });
     shadowDoneCount = 0;
   }
@@ -5591,8 +5670,21 @@ function buildDrill(){
   /* Lead with today's, but keep pulling older ones in — a round that only
      ever asks for what you just met is a memory test, not recall. */
   const pool = (recent.length && Math.random() < 0.65) ? recent : all;
-  const c = byId(pool[Math.floor(Math.random()*pool.length)]);
-  drillCard = {c, ex: pickExample(c, srs[c.id])};
+  /* Look for a chunk this learner could actually say a sentence with. Asking
+     somebody to produce "Claro que sí, cuenta conmigo" when they have met
+     claro and nothing else is not a recall test, it is a trick question —
+     and five seconds of failing one teaches nothing worth learning. */
+  let c = null, bestC = null, bestCov = -1;
+  for(let i = 0; i < 12 && pool.length; i++){
+    const cand = byId(pool[Math.floor(Math.random()*pool.length)]);
+    if(!cand) continue;
+    const cov = bestCoverage(cand, srs[cand.id], "speaking");
+    if(cov > bestCov){ bestCov = cov; bestC = cand; }
+    if(cov >= PRODUCIBLE){ c = cand; break; }
+  }
+  c = c || bestC;
+  if(!c){ drillCard = null; return; }
+  drillCard = {c, ex: pickProducible(c, srs[c.id], "speaking")};
   drillState = "ready"; drillResult = null; drillHeard = "";
 }
 function clearDrillTimer(){ if(drillTimer){ clearInterval(drillTimer); drillTimer = null; } }

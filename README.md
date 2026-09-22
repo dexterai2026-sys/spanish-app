@@ -93,6 +93,17 @@ Right answer moves you up, wrong moves you down. A turtle button gives a one-off
 Shadow
 Plays a sentence, you repeat it aloud, and the mic scores you. Three reps per phrase, eight phrases to a round. See Pronunciation scoring.
 
+Producible sentences
+Reading a sentence and generating one are different asks, and the difficulty rating only covers the first. A sentence can be short, free of hard chunks and rated gentle while still being impossible: "Claro que sí, cuenta conmigo" is an easy sentence and unsayable by somebody who has met claro and nothing else.
+
+So the two production modes pick by coverage rather than by level — what fraction of the sentence this learner could actually produce, counting the chunks they have met, the vocabulary they have studied, the chunk being practised, and the function words, which are never what makes a sentence impossible. A chunk whose best sentence falls below 70% is skipped rather than set as the task.
+
+Deck	Median coverage	Worst	Prompts under 70%
+12 chunks	before 50% · now 75%	33% → 67%	43% → 12%
+84 chunks	before 62% · now 100%	33% → 67%	30% → 7%
+
+The session summary follows the same rule: Quick-fire is only offered once there is a deck worth drilling and a microphone that works, and leads with Sentence Lab otherwise. Sending somebody one session in — or on an iPhone, where no browser has speech recognition — to a mode that can only fail is worse than offering nothing.
+
 Quick-fire
 English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer. Eight prompts to a round.
 
