@@ -190,7 +190,9 @@ Family & people · Places & getting around	42
 Weather & nature	40
 Clothes	36
 
-They are dealt a domain at a time, so a learner meets a spread rather than sixty kitchen nouns before a single feeling. The daily session carries a word quota alongside the chunk quota — six, twelve or twenty depending on pace.
+They are dealt a domain at a time, so a learner meets a spread rather than sixty kitchen nouns before a single feeling.
+
+New words and word reviews carry separate allowances, exactly as chunks do. The first version pooled them, and the effect was worse than it sounds: the moment a dozen words were due, reviews ate the whole quota and new vocabulary stopped arriving permanently. A learner would have stalled around thirty words out of five hundred and sixty, with nothing on screen to say why. Split, a week at Brisk reaches 84.
 
 Talking about other people
 Every pattern used to be yo or tú: a learner could talk about themselves and ask the other person things, and could not mention a third party at all. No "my brother works there", no "she told me", no "we're going". Most of any real conversation is about people who are not in the room, so mi hermano, ella, ellos, nosotros and ¿tu familia…? are now shapes you can build.
@@ -308,10 +310,12 @@ A chunk counts toward its milestone once you've either recalled it (scheduler st
 Pace
 New chunks per day is a setting, not a constant. It was five, hardcoded, which put the whole collection sixty-three days out — a strange thing for an app whose first screen promises speed.
 
-Pace	New/day	Reviews	Listening
-Steady	5	20	4
-Brisk (default)	12	40	8
-Intense	20	60	12
+Pace	Chunks/day	Words/day	Chunk reviews	Word reviews	Listening
+Steady	5	6	20	15	4
+Brisk (default)	12	12	40	30	8
+Intense	20	20	60	45	12
+
+Today states how long the session will take before you start it — two SRS books compound, and a Brisk learner is doing about a hundred items a day by the end of the first week. That is what twelve chunks and twelve words a day actually costs, and it is better said than discovered.
 
 Today shows where the chosen pace lands: at Brisk, all 350 in about a month. The projection uses what is left rather than the whole collection, so it shortens as you go.
 

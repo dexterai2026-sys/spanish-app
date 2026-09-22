@@ -4234,8 +4234,9 @@ function renderHome(){
     </button>
     <p class="tiny muted center" style="margin:8px 0 0">
       ${plan.total ? [plan.review && `${plan.review} to review`, plan.fresh && `${plan.fresh} new`,
-                      plan.words && `${plan.words} words`,
+                      (plan.words + plan.wordRev) && `${plan.words + plan.wordRev} words`,
                       plan.listen && `${plan.listen} listening`].filter(Boolean).join(", ")
+                      + ` · about ${plan.mins} min`
                    : "Nothing due right now"}
     </p>
     ${Object.keys(vsrs).length ? `<p class="tiny muted center" style="margin:4px 0 0">
@@ -4243,9 +4244,9 @@ function renderHome(){
     ${daysToFinish() ? `<p class="tiny muted center" style="margin:4px 0 0">
       ${esc(pace().label)} pace · all ${CHUNKS.length} met in ~${daysToFinish()} days ·
       <button class="linkish" data-sheet="settings">change</button></p>` : ""}
-    ${due > pace().review ? `
+    ${(due > pace().review || dueWords().length > pace().wordRev) ? `
       <div class="backlog">
-        <b>${due} cards are waiting</b> — more than one session holds.
+        <b>${due + dueWords().length} reviews are waiting</b> — more than one session holds.
         A backlog this size is what makes people quit in week two, so it is
         worth clearing before taking on more.
         <div class="row" style="gap:8px;margin-top:10px">
@@ -4307,9 +4308,9 @@ function renderHome(){
    on its own intro screen. The learner sets the pace instead, and Today says
    where the one they picked actually lands them. */
 const PACES = {
-  steady:  {label:"Steady",  fresh:5,  words:6,  listen:4,  review:20, mins:"7 min"},
-  brisk:   {label:"Brisk",   fresh:12, words:12, listen:8,  review:40, mins:"18 min"},
-  intense: {label:"Intense", fresh:20, words:20, listen:12, review:60, mins:"30 min"},
+  steady:  {label:"Steady",  fresh:5,  words:6,  wordRev:15, listen:4,  review:20},
+  brisk:   {label:"Brisk",   fresh:12, words:12, wordRev:30, listen:8,  review:40},
+  intense: {label:"Intense", fresh:20, words:20, wordRev:45, listen:12, review:60},
 };
 const pace = () => PACES[settings.pace] || PACES.brisk;
 let flow = null;
@@ -4318,9 +4319,17 @@ function sessionPlan(){
   const p = pace();
   const review = Math.min(dueCards().length, p.review);
   const fresh  = Math.min(newCards().length, p.fresh);
-  const words  = Math.min(dueWords().length + newWords().length, p.words);
-  const listen = Object.keys(srs).length >= 4 ? p.listen : 0;
-  return {review, fresh, words, listen, total: review + fresh + words + listen};
+  /* New words and word reviews get separate allowances, exactly as chunks do.
+     Pooling them meant that the moment a dozen words were due, reviews ate the
+     whole quota and new vocabulary stopped arriving — permanently. A learner
+     would have stalled around thirty words out of five hundred and sixty. */
+  const wordRev = Math.min(dueWords().length, p.wordRev);
+  const words   = Math.min(newWords().length, p.words);
+  const listen  = Object.keys(srs).length >= 4 ? p.listen : 0;
+  const total   = review + fresh + words + wordRev + listen;
+  /* Roughly how long that is, so nobody is ambushed by a seventy-item day. */
+  const mins = Math.max(1, Math.round((review*8 + fresh*25 + words*12 + wordRev*7 + listen*14)/60));
+  return {review, fresh, words, wordRev, listen, total, mins};
 }
 
 /* Days until every remaining chunk has at least been met, at the current
@@ -4336,15 +4345,18 @@ function startSessionFlow(reviewsOnly){
   const base = sessionPlan();
   /* Catch-up clears the backlog and adds nothing to it, so the bar has to
      count reviews alone or it reports a session that is not being run. */
-  const p = reviewsOnly ? {review:base.review, fresh:0, words:0, listen:0, total:base.review} : base;
+  const p = reviewsOnly
+    ? {review:base.review, fresh:0, words:0, wordRev:base.wordRev, listen:0,
+       total:base.review + base.wordRev, mins:base.mins}
+    : base;
   if(!p.total) return go("learn");
   const stages = [];
   if(p.review) stages.push("review");
   if(p.fresh)  stages.push("learn");
-  if(p.words)  stages.push("words");
+  if(p.words || p.wordRev) stages.push("words");
   if(p.listen) stages.push("listen");
-  flow = {stages, i:0, left:{learn:p.fresh, words:p.words, listen:p.listen}, plan:p,
-          did:{review:0, learn:0, words:0, listen:0}};
+  flow = {stages, i:0, left:{learn:p.fresh, words:p.words, wordRev:p.wordRev, listen:p.listen},
+          plan:p, did:{review:0, learn:0, words:0, listen:0}};
   session = null; earCard = null; learnCard = null;
   go(stages[0]);
 }
@@ -4551,18 +4563,33 @@ let wordCard = null, wordShown = false;
 function nextWord(){
   wordShown = false;
   const due = dueWords();
-  if(due.length){
-    const id = shuffle(due)[0];
-    wordCard = {w: wordById(id), review: true};
+  const canRev = !flow || flow.left.wordRev > 0;
+  const canNew = !flow || flow.left.words > 0;
+  if(due.length && canRev){
+    wordCard = {w: wordById(shuffle(due)[0]), review: true};
     return;
   }
-  if(flow && flow.left.words <= 0){ wordCard = null; return; }
-  const fresh = newWords();
-  wordCard = fresh.length ? {w: fresh[0], review: false} : null;
+  if(canNew){
+    const fresh = newWords();
+    if(fresh.length){ wordCard = {w: fresh[0], review: false}; return; }
+  }
+  /* Outside a session there is no quota to respect, so keep going on whatever
+     is left rather than stopping at an arbitrary line. */
+  if(!flow && due.length){ wordCard = {w: wordById(shuffle(due)[0]), review: true}; return; }
+  wordCard = null;
+}
+
+/* Words carry two counters, so the stage ends when both are spent. */
+function wordTick(isReview){
+  if(!flow) return false;
+  flow.did.words++;
+  if(isReview) flow.left.wordRev--; else flow.left.words--;
+  return (flow.left.wordRev <= 0 && flow.left.words <= 0) ? flowNext() : false;
 }
 
 function renderWords(){
   if(!wordCard) nextWord();
+  if(!wordCard && flow) return flowNext();
   if(!wordCard){
     view.innerHTML = header("Words", "Vocabulary") + empty("\u{1F4D6}", "Nothing waiting",
       "Every word is scheduled. Come back when some are due, or learn more chunks.");
@@ -5734,7 +5761,7 @@ function openSettings(){
       <div class="row" style="gap:8px">
         ${Object.keys(PACES).map(k => `
           <button class="btn sm${settings.pace === k ? " primary" : ""}" data-pace="${k}" style="flex:1">
-            ${esc(PACES[k].label)}<br><span class="tiny muted">${PACES[k].fresh}/day · ${esc(PACES[k].mins)}</span>
+            ${esc(PACES[k].label)}<br><span class="tiny muted">${PACES[k].fresh} chunks<br>${PACES[k].words} words</span>
           </button>`).join("")}
       </div>
 
@@ -5883,8 +5910,10 @@ document.addEventListener("click", e => {
     vsrs[wordCard.w.id] = newState(); saveVsrs();
     markStudied();
     wordCard = null;
-    if(flowTick("words")) return;
-    nextWord(); render(); return;
+    if(wordTick(false)) return;
+    nextWord();
+    if(!wordCard && flow) return flowNext();
+    render(); return;
   }
   if(t.dataset.wgrade){
     const id = wordCard.w.id;
@@ -5892,8 +5921,10 @@ document.addEventListener("click", e => {
     saveVsrs(); markStudied();
     GRADE[t.dataset.wgrade] === GRADE.again ? gotItWrong() : gotItRight();
     wordCard = null;
-    if(flowTick("words")) return;
-    nextWord(); render(); return;
+    if(wordTick(true)) return;
+    nextWord();
+    if(!wordCard && flow) return flowNext();
+    render(); return;
   }
   if(t.dataset.labPick !== undefined){ answerLab(t.dataset.labPick); return; }
   if(t.dataset.lab){
