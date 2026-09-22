@@ -375,44 +375,6 @@ nav .dot-n{position:absolute;top:6px;right:50%;margin-right:-20px;width:7px;heig
    Single-file PWA. No network, no backend. State in localStorage.
    ============================================================ */
 
-/* ---------- 0. FAILSAFE ----------
-   The whole interface is built by script into an empty <main>, so anything
-   thrown on the way to the first paint used to leave the page background and
-   nothing else — no message, no way back, and nothing to report. Show the
-   error instead, and offer the one recovery that fixes a bad saved state.
-   Deliberately self-contained: it runs before the helpers below exist. */
-function fatal(err){
-  var msg = (err && (err.stack || err.message)) || String(err);
-  var safe = String(msg).replace(/[&<>]/g, function(m){
-    return {"&":"&amp;","<":"&lt;",">":"&gt;"}[m];
-  });
-  document.body.innerHTML =
-    '<div style="font:15px/1.5 system-ui,sans-serif;padding:24px;max-width:720px;margin:0 auto">' +
-      '<h1 style="font-size:19px;margin:0 0 6px">Calle could not start</h1>' +
-      '<p style="margin:0 0 14px;opacity:.75">This is a bug, not something you did. The details below say what went wrong.</p>' +
-      '<pre style="white-space:pre-wrap;word-break:break-word;background:#0002;' +
-        'padding:12px;border-radius:10px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace">' + safe + '</pre>' +
-      '<button id="calle-reset" style="margin-top:16px;font:600 15px system-ui;' +
-        'border:0;border-radius:10px;padding:12px 16px;background:#b45309;color:#fff">' +
-        'Clear saved progress and reload</button>' +
-      '<p style="margin-top:10px;font-size:13px;opacity:.6">Only clears this app\'s data on this device.</p>' +
-    '</div>';
-  var b = document.getElementById("calle-reset");
-  if(b) b.onclick = function(){
-    try{
-      Object.keys(localStorage)
-        .filter(function(k){ return k.lastIndexOf("calle_", 0) === 0; })
-        .forEach(function(k){ localStorage.removeItem(k); });
-    }catch(e){}
-    location.reload();
-  };
-}
-/* Catches anything thrown while this script is still running, before the
-   first render() is even reached. Resource errors (a font that will not
-   load) carry no .error and must not trigger this. */
-window.addEventListener("error", function(e){ if(e && e.error) fatal(e.error); });
-window.addEventListener("unhandledrejection", function(e){ if(e && e.reason) fatal(e.reason); });
-
 /* ---------- 1. CONTENT ---------- */
 /* C(chunk, meaning, category, tier, register, examples[[es,en]...], literal?) */
 const CAT = {
@@ -1997,18 +1959,13 @@ CHUNKS.forEach(c => {
    A tier-1 chunk shown inside a sentence full of other slang is not a tier-1
    lesson. Rating each example separately lets the easy one teach the chunk and
    the hard one wait until the chunk is known. */
-const LEVEL_LABEL = ["", "A1 · simple", "A2 · connected", "B1 · natural", "B2 · nuanced"];
-const CEFR_LABEL = ["", "A1", "A2", "B1", "B2"];
+const LEVEL_LABEL = ["", "simple", "natural", "fast"];
 
 const bareChunk = s => s.replace(/\s*\+.*$/, "").replace(/[¿?¡!.…]/g, "").trim().toLowerCase();
 
 function rateSentence(es, ownerChunk){
   const words = es.split(/\s+/).filter(Boolean).length;
-  let load = words <= 4 ? 0 : words <= 7 ? 0.7 : words <= 10 ? 1.35 : 2.1;
-  const lower = es.toLowerCase();
-  if(/\b(no es que|para que|aunque|ojal[aá]|cuando .*\b(sea|est[eé]|tenga|pueda)|si .*\b(hubiera|fuera|tuviera|pudiera)|quisiera|hubiera|haya)\b/i.test(lower)) load += 1.45;
-  if(/\b(que|porque|pero|aunque|cuando|mientras|entonces)\b.*\b(que|porque|pero|aunque|cuando|mientras|entonces)\b/i.test(lower)) load += .7;
-  if(/[;:]|—/.test(es)) load += .35;
+  let load = words <= 4 ? 0 : words <= 6 ? 0.5 : words <= 9 ? 1.1 : 1.9;
   const owner = bareChunk(ownerChunk.chunk);
   for(const other of CHUNKS){
     if(other.id === ownerChunk.id) continue;
@@ -2017,51 +1974,23 @@ function rateSentence(es, ownerChunk){
     /* "la verdad es que" contains "es que" and "verdad"; charging for those
        would penalise the chunk for its own words. */
     if(owner.includes(core)) continue;
-    if(lower.includes(core))
+    if(es.toLowerCase().includes(core))
       load += other.tier === 1 ? 0.3 : other.tier === 2 ? 0.75 : 1.1;
   }
   /* Thresholds sit on the real spread of the collection (p55 / p90), not on
      round numbers — picked so each band actually holds sentences. */
-  return load <= 0.7 ? 1 : load <= 1.65 ? 2 : load <= 2.75 ? 3 : 4;
-}
-
-function inferExampleGoals(e){
-  const t = `${e.es} ${e.en}`.toLowerCase();
-  const rules = {
-    faith:/\b(dios|jes[uú]s|orar|oraci[oó]n|iglesia|fe|believe|pray|church|god)\b/,
-    travel:/\b(vuelo|boleto|hotel|camino|calle|autob[uú]s|airport|flight|ticket|lost|directions)\b/,
-    food:/\b(taco|comer|tomar|men[uú]|cuenta|cebolla|salsa|food|eat|drink|order)\b/,
-    work:/\b(trabaj|junta|reporte|cliente|correo|meeting|report|work|office)\b/,
-    friends:/\b(amig|familia|primo|juntos|contigo|friend|family|together)\b/,
-    culture:/\b(m[uú]sica|canci[oó]n|pel[ií]cula|costumbre|music|song|movie|custom)\b/
-  };
-  return Object.keys(rules).filter(g => rules[g].test(t));
-}
-
-const PREREQUISITES = {
-  "no es que": ["es que"], "tengo que + verb": ["quiero + verb"],
-  "lo que pasa es que": ["es que"], "o sea que": ["o sea"],
-  "¿qué tal si...?": ["¿va?"], "voy a + verb": ["quiero + verb"]
-};
-function rateChunk(c){
-  let level = c.tier === 1 ? 1 : c.tier === 2 ? 2 : 3;
-  if(/\b(subjunctive|conditional|hypothetical)\b/i.test(c.meaning) || /no es que|para que|ojal[aá]/i.test(c.chunk)) level = Math.max(level, 3);
-  if(c.category === "slang" && c.tier > 1) level = Math.max(level, 2);
-  return Math.min(4, level);
+  return load <= 0.55 ? 1 : load <= 1.15 ? 2 : 3;
 }
 
 CHUNKS.forEach(c => {
-  c.learningLevel = rateChunk(c);
-  c.prerequisites = PREREQUISITES[c.chunk] || [];
-  c.examples.forEach(e => { e.level = rateSentence(e.es, c); e.goals = inferExampleGoals(e); });
+  c.examples.forEach(e => { e.level = rateSentence(e.es, c); });
   c.examples.sort((a,b) => a.level - b.level);          // gentlest first
 });
 
 /* Harder sentences unlock as the chunk itself gets more familiar. */
-function pickExample(c, st, skill="comprehension"){
+function pickExample(c, st){
   const iv = st ? st.interval : 0;
-  const maturityMax = iv >= 21 ? 4 : iv >= 5 ? 2 : 1;
-  const max = Math.min(maturityMax, skillCeiling(skill));
+  const max = iv >= 21 ? 3 : iv >= 5 ? 2 : 1;
   let pool = c.examples.filter(e => e.level <= max);
   if(!pool.length){
     /* Nothing gentle enough exists for this chunk, so take the gentlest that
@@ -2069,8 +1998,6 @@ function pickExample(c, st, skill="comprehension"){
     const floor = Math.min(...c.examples.map(e => e.level));
     pool = c.examples.filter(e => e.level === floor);
   }
-  const relevant = pool.filter(e => e.goals.some(g => myGoals.includes(g)));
-  if(relevant.length) pool = relevant;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -2270,46 +2197,10 @@ let seenIntro = LS.get("seenIntro", false);
 let myGoals = LS.get("goals", []);         // which conversations you're training for
 const saveGoals = () => LS.set("goals", myGoals);
 const hasGoal = c => (c.goals || []).some(g => myGoals.includes(g));
-const defaultSkill = ability => ({ability, evidence:0, recent:[]});
-let learner = Object.assign({
-  startLevel:1,
-  target:"conversational fluency",
-  dialect:"Mexican Spanish",
-  register:"informal / natural",
-  skills:{
-    comprehension:defaultSkill(1.35), listening:defaultSkill(1.15),
-    speaking:defaultSkill(1.2), vocabulary:defaultSkill(1.4)
-  }
-}, LS.get("learner", {}));
-for(const k of ["comprehension","listening","speaking","vocabulary"])
-  learner.skills[k] = Object.assign(defaultSkill(k === "listening" ? 1.15 : 1.3), learner.skills && learner.skills[k]);
-const saveLearner = () => LS.set("learner", learner);
-const skillCeiling = skill => Math.max(1, Math.min(4, Math.floor((learner.skills[skill] || learner.skills.comprehension).ability)));
-function recordSkill(skill, success, challengeLevel=1){
-  const s = learner.skills[skill];
-  s.recent.push(success ? 1 : 0); if(s.recent.length > 24) s.recent.shift();
-  s.evidence++;
-  const accuracy = s.recent.reduce((a,b)=>a+b,0) / s.recent.length;
-  if(s.evidence >= 8 && s.recent.length >= 8){
-    if(accuracy >= .84 && challengeLevel >= Math.floor(s.ability)) s.ability = Math.min(4, s.ability + .08);
-    if(accuracy < .55) s.ability = Math.max(1, s.ability - .1);
-  }
-  saveLearner();
-}
 let dialogDone = LS.get("dialogDone", {}); // dialogue id -> best % of replies right
 /* Merged over defaults so decks saved by an earlier version pick up new keys. */
 let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0, drills:0}, LS.get("totals", {}));
 let settings = Object.assign({rate:0.92, voice:null, sound:true}, LS.get("settings", {}));
-
-/* Chunk ids are positional ("c" + index), so any build that inserts or drops
-   a chunk renumbers everything after it. Saved progress can therefore name an
-   id this build no longer has, and every practice mode looks its queue up with
-   byId() and walks straight into the undefined. Drop the unusable entries once,
-   here, instead of guarding each consumer. */
-const CHUNK_IDS = new Set(CHUNKS.map(c => c.id));
-[srs, scores, ears, drills, skipped].forEach(map => {
-  Object.keys(map).forEach(id => { if(!CHUNK_IDS.has(id)) delete map[id]; });
-});
 
 const saveSrs      = () => LS.set("srs", srs);
 const saveStreak   = () => LS.set("streak", streak);
@@ -2408,18 +2299,10 @@ function newCards(){
   const pool = CHUNKS.filter(c => !inDeck(c.id));
   const order = list => spreadByCategory(list.filter(c => !skipped[c.id]))
                  .concat(spreadByCategory(list.filter(c => skipped[c.id])));
-  const known = chunk => {
-    const found = CHUNKS.find(c => bareChunk(c.chunk) === bareChunk(chunk));
-    return !found || (srs[found.id] && srs[found.id].status !== "learning");
-  };
-  const ceiling = skillCeiling("vocabulary");
-  const ready = pool.filter(c => c.learningLevel <= ceiling && c.prerequisites.every(known));
-  const deferred = pool.filter(c => !ready.includes(c));
-  const sequenced = ready.length ? ready : deferred;
-  if(!myGoals.length) return order(sequenced);
+  if(!myGoals.length) return order(pool);
 
-  const mine = order(sequenced.filter(hasGoal));
-  const rest = order(sequenced.filter(c => !hasGoal(c)));
+  const mine = order(pool.filter(hasGoal));
+  const rest = order(pool.filter(c => !hasGoal(c)));
   const out = [];
   while(mine.length || rest.length){
     out.push(...rest.splice(0, GOAL_WEAVE), ...mine.splice(0, 1));
@@ -2523,7 +2406,7 @@ function speak(text, rate){
    Everything lives in localStorage, which one cleared cache wipes. These move
    it in and out as a plain file. */
 const BACKUP_KEYS = ["srs","streak","scores","ears","dialogDone","drills",
-                     "skipped","unlocked","totals","settings","seenIntro","goals","learner"];
+                     "skipped","unlocked","totals","settings","seenIntro","goals"];
 
 function backupBlob(){
   const payload = {app:"calle", version:1, exported:new Date().toISOString(), data:{}};
@@ -2827,11 +2710,11 @@ function speakerBtn(text, small){
 }
 function levelPips(n){
   return `<span class="lvl" title="${LEVEL_LABEL[n]}">${
-    [1,2,3,4].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")
+    [1,2,3].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")
   }<b>${LEVEL_LABEL[n]}</b></span>`;
 }
-function examplesHtml(c, examples=c.examples){
-  return examples.map(e => `
+function examplesHtml(c){
+  return c.examples.map(e => `
     <div class="ex">
       ${speakerBtn(e.es, true)}
       <div class="txt">
@@ -2876,16 +2759,12 @@ const VIEWS = {
 };
 
 function render(){
-  try{
-    (VIEWS[tab] || VIEWS.home)();
-    const nav = $("#nav");
-    nav.style.display = tab === "intro" ? "none" : "";
-    if(tab !== "intro") renderNav();
-    view.scrollTop = 0;
-    window.scrollTo(0,0);
-  }catch(err){
-    fatal(err);
-  }
+  (VIEWS[tab] || VIEWS.home)();
+  const nav = $("#nav");
+  nav.style.display = tab === "intro" ? "none" : "";
+  if(tab !== "intro") renderNav();
+  view.scrollTop = 0;
+  window.scrollTo(0,0);
 }
 
 function go(t){ tab = t; render(); }
@@ -3177,11 +3056,6 @@ function renderLearn(){
   if(!learnCard || inDeck(learnCard.id)) learnCard = pool[0];
   const c = learnCard;
   const left = pool.length;
-  const ceiling = skillCeiling("comprehension");
-  let safe = c.examples.filter(e => e.level <= ceiling);
-  if(!safe.length) safe = [c.examples[0]];
-  const primary = safe.slice(0, 2);
-  const later = c.examples.filter(e => !primary.includes(e));
 
   view.innerHTML = header("Learn", flow ? `Session · ${flowDone()+1} of ${flow.plan.total}`
                                         : `${left} new chunk${left===1?"":"s"} left`) + flowBar() + `
@@ -3195,9 +3069,8 @@ function renderLearn(){
       ${soundsHtml(c)}
     </div>
     <div class="card">
-      <p class="sec-label">At your level · ${CEFR_LABEL[ceiling]}</p>
-      ${examplesHtml(c, primary)}
-      ${later.length ? `<details style="margin-top:10px"><summary class="tiny muted">See ${later.length} later-stage example${later.length===1?"":"s"}</summary>${examplesHtml(c, later)}</details>` : ""}
+      <p class="sec-label">In real sentences · gentlest first</p>
+      ${examplesHtml(c)}
     </div>
     <div class="stack" style="margin-top:16px">
       <button class="btn primary" data-learn="add">Got it — keep this one</button>
@@ -3334,7 +3207,7 @@ function startEarRound(){
 function buildEarCard(){
   const id = earQ.shift();
   const c = byId(id);
-  const ex = pickExample(c, srs[c.id], "listening");
+  const ex = pickExample(c, srs[c.id]);
   const wrong = shuffle(CHUNKS.filter(o => o.id !== id && o.category === c.category))
     .slice(0, 3).map(o => o.examples[0].en);
   while(wrong.length < 3){
@@ -3459,7 +3332,7 @@ function renderShadow(){
   if(!shadowQ){
     shadowQ = shuffle(deck).slice(0, Math.min(SHADOW_ROUND, deck.length)).map(id => {
       const c = byId(id);
-      return {c, ex: pickExample(c, srs[id], "speaking"), reps: 0};
+      return {c, ex: pickExample(c, srs[id]), reps: 0};
     });
     shadowDoneCount = 0;
   }
@@ -3563,7 +3436,6 @@ function beginListening(){
         scores[item.c.id] = r.score;
         saveScores();
       }
-      recordSkill("speaking", r.score >= 75, item.ex.level);
       /* A scored attempt IS a rep — otherwise the mic is a side quest and only
          the manual button moves the queue. */
       if(r.score >= 60){ item.reps++; totals.shadowReps++; gotItRight(); } else gotItWrong();
@@ -3703,7 +3575,7 @@ let drillRound = null;   // {done, scores[]}
 function buildDrill(){
   const pool = Object.keys(srs);
   const c = byId(pool[Math.floor(Math.random()*pool.length)]);
-  drillCard = {c, ex: pickExample(c, srs[c.id], "speaking")};
+  drillCard = {c, ex: pickExample(c, srs[c.id])};
   drillState = "ready"; drillResult = null; drillHeard = "";
 }
 function clearDrillTimer(){ if(drillTimer){ clearInterval(drillTimer); drillTimer = null; } }
@@ -3736,7 +3608,6 @@ function startDrill(){
            them would let the easier one mask the harder one. */
         const id = drillCard.c.id;
         if(drills[id] == null || r.score > drills[id]){ drills[id] = r.score; saveDrills(); }
-        recordSkill("speaking", r.score >= 75, ex.level);
         saveTotals(); markStudied();
         r.score >= 60 ? gotItRight() : gotItWrong();
         checkMilestones();
@@ -3850,15 +3721,6 @@ function renderStats(){
       <div class="stat"><b>${deck.length}</b><span>In deck</span></div>
       <div class="stat"><b>${totals.reviews}</b><span>Reviews</span></div>
       <div class="stat"><b>${totals.shadowReps}</b><span>Out loud</span></div>
-    </div>
-
-    <div class="card" style="margin-top:12px">
-      <p class="sec-label">Your adaptive level</p>
-      ${[["vocabulary","Vocabulary"],["comprehension","Sentences"],["listening","Listening"],["speaking","Speaking"]].map(([k,label]) => {
-        const s = learner.skills[k], level = Math.max(1, Math.min(4, Math.floor(s.ability)));
-        return `<div class="bar-row"><span class="nm" style="flex:1;width:auto">${label}</span><span class="v">${CEFR_LABEL[level]}${s.evidence < 8 ? " · measuring" : ""}</span></div>`;
-      }).join("")}
-      <p class="tiny muted" style="margin:10px 0 0">Calle adjusts each skill separately from your reviews, listening and speaking results.</p>
     </div>
 
     ${earTrained ? `
@@ -4107,13 +3969,6 @@ function openSettings(){
         <input type="range" id="rate" min="0.6" max="1.2" step="0.02" value="${settings.rate}">
       </div>
       <div class="field">
-        <span>Starting level</span>
-        <select id="levelSel">
-          ${[[1,"A1 · beginner"],[2,"A2 · elementary"],[3,"B1 · intermediate"],[4,"B2 · upper intermediate"]].map(([n,label]) =>
-            `<option value="${n}"${learner.startLevel===n?" selected":""}>${label}</option>`).join("")}
-        </select>
-      </div>
-      <div class="field">
         <span>Sounds</span>
         <button class="btn sm" id="soundTog" style="width:auto;padding:8px 16px">
           ${settings.sound === false ? "Off" : "On"}</button>
@@ -4145,15 +4000,6 @@ function openSettings(){
     settings.rate = parseFloat(rate.value);
     wrap.querySelector("#rateVal").textContent = settings.rate.toFixed(2) + "×";
     saveSettings();
-  };
-  wrap.querySelector("#levelSel").onchange = e => {
-    const n = Number(e.target.value);
-    learner.startLevel = n;
-    for(const skill of Object.values(learner.skills)){
-      skill.ability = n; skill.evidence = 0; skill.recent = [];
-    }
-    saveLearner();
-    toast(`Teaching level set to ${CEFR_LABEL[n]}`);
   };
   const tog = wrap.querySelector("#soundTog");
   tog.onclick = () => {
@@ -4247,7 +4093,6 @@ document.addEventListener("click", e => {
     earPick = t.dataset.earPick;
     const lvl = earLevel(id), right = earPick === earCard.ex.en;
     ears[id] = right ? Math.min(EAR_RATES.length - 1, lvl + 1) : Math.max(0, lvl - 1);
-    recordSkill("listening", right, earCard.ex.level);
     saveEars(); markStudied();
     earScore.total++; if(right) earScore.right++;
     right ? gotItRight() : gotItWrong();
@@ -4316,8 +4161,6 @@ document.addEventListener("click", e => {
 
   if(t.dataset.grade){
     const c = session.card.chunk;
-    recordSkill("comprehension", GRADE[t.dataset.grade] >= GRADE.good, session.card.ex.level);
-    recordSkill("vocabulary", GRADE[t.dataset.grade] >= GRADE.good, c.learningLevel);
     srs[c.id] = schedule(srs[c.id], GRADE[t.dataset.grade]);
     saveSrs();
     totals.reviews++; saveTotals();
