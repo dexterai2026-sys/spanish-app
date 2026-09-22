@@ -1,7 +1,7 @@
 Calle — real-world Mexican Spanish
-A single-file, offline-capable PWA that teaches spoken Mexican Spanish through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses. An adaptive curriculum keeps the carrier sentence at the learner's level and uses their goals to choose relevant contexts.
+A single-file PWA that teaches spoken Mexican Spanish through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses. An adaptive curriculum keeps the carrier sentence at the learner's level and uses their goals to choose relevant contexts.
 
-Everything lives in one index.html: 316 chunks, 668 example sentences, 12 dialogues, a spaced-repetition engine, a pronunciation scorer and six study modes. No build step, no dependencies, no backend, no network calls.
+Everything lives in one index.html: 350 chunks, 765 example sentences, 16 dialogues, a spaced-repetition engine, a pronunciation scorer and seven study modes. No build step, no dependencies, no backend, no network calls.
 
 Calle is Spanish for "street" — the register this teaches.
 
@@ -40,13 +40,14 @@ Correct answers flash green and play a short rising tone; wrong ones flash red. 
 
 All tones are synthesised with the Web Audio API, so there are no audio files and it works with the network off. Toggle in Settings; on by default.
 
-The six modes
+The seven modes
 Mode	What it trains	Needs
 Learn	Meeting a new chunk with its examples and audio	—
 Review	Recall, via cloze or translation prompt	—
 Listen	Understanding with no text on screen	—
 Shadow	Saying it out loud, scored word by word	mic + net
 Quick-fire	Production against a 5-second clock	mic + net
+Build it	Filling a frame's slot — production without a mic	—
 Conversations	Turn-taking — holding your end of an exchange	—
 Rounds
 The three open-ended practice modes run in rounds rather than forever — Listen 10 items, Shadow 8 phrases, Quick-fire 8 prompts — each ending on a summary with an Another round button.
@@ -89,7 +90,7 @@ Quick-fire
 English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer. Eight prompts to a round.
 
 Conversations
-Twelve exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are plausible but off, usually in register rather than meaning:
+Sixteen exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are plausible but off, usually in register rather than meaning:
 
 Them: ¿Qué le damos, joven?
 
@@ -109,24 +110,59 @@ Sharing your faith	8
 At the bus station	7
 Talking about music	6
 Setting up a meeting	6
+Someone asks what you believe	8
+Talking about a tradition	6
+The bus is late	6
+Paying at the market	8
 Goal-matched conversations sort to the top and are badged for you. Finishing replays the whole exchange with per-line audio.
 
+Build it
+The frames are the best thing in the collection — voy a + verb really does replace the future tense — and they used to be taught as though they were sentences: a card to recognise, never a thing to build with. Build it shows the English and an empty slot, and asks which filler belongs in it.
+
+voy a ___        I'm going to rest
+                 → descansar · pasar · cancelar · invitarte
+
+Twelve frames, six fillers each, eight to a round. The wrong options come from other frames, so they are real Spanish that simply does not fit this slot; same-frame fillers would usually be just as correct, and the discrimination worth training is which frame takes what.
+
+It needs no microphone. Shadow and Quick-fire are the only other production modes and neither runs on an iPhone, where the Web Speech API has no recognition in any browser — so half the audience had recognition practice and nothing asking them to produce.
+
+What comes back
+The collection has fifty-two ways to ask something and used to teach nothing about the reply, which is the failure people actually have: you ask ¿por dónde queda? well enough to convince someone you speak Spanish, and they answer at full speed.
+
+Sixteen of the highest-value questions carry the three or four replies you will really get — directions that assume you know the street, a card machine that is down, the last bus having gone. They appear alongside the question in Learn, marked recognition-only, and Listen plays one instead of an example on about a third of that chunk's turns. The wrong options there are other real replies, so the round cannot be passed by picking the only thing that sounds like an answer.
+
+Register, and what nobody tells you
+Every chunk carries casual, neutral or vulgar, and the card says who it is for — friends and people your own age, or safe with anyone, or close friends and read the room. This is the difference between güey and mucho gusto, and it is not visible from a translation.
+
+Fourteen chunks also carry a culture note, for the cases where the words survive translation and the meaning does not. ahorita earns the longest: it can mean now, in twenty minutes, or never, and nothing shorter than a paragraph conveys that. Also mande, provecho, con permiso, ¿me regalas?, ni modo and güey — the ones where the mistake is social rather than grammatical.
+
+Salty language can be switched off in Settings, which keeps the two vulgar chunks out of the deck without pretending they are not said.
+
+The spine
+Chunks get you talking; a smaller set stops you hitting a ceiling two weeks in. Thirty-four of them cover what no paraphrase gets around:
+
+The past, which the collection could not express at all though half of conversation is recounting what happened — fui a, fue, estuvo, me dijo, tuve que, no pude, estaba, taught as frames the same way voy a + verb already replaces the future.
+Numbers and the clock, missing outright, which quietly broke the two goals that need them most: the app taught ¿cuánto es? and left you unable to understand the answer.
+The forms with no way round them — hay, soy, estoy, es, está, tengo, me gusta — with ser and estar split by what they are for rather than explained, so the distinction arrives as two chunks instead of a rule.
+The little words that go before the verb — lo, me lo, le — which are what let everything else be aimed at someone other than yourself.
+
 The collection
-316 chunks · 668 example sentences — 184 universal, 132 tagged to one or more goals
+350 chunks · 765 example sentences — 196 universal, 154 tagged to one or more goals
 
 Key	Category	Count
+verb	Verb combos	55
+ask	Questions	52
 slang	Slang	44
-verb	Verb combos	32
-social	Social	24
+social	Social	35
+survive	Survival	31
 filler	Fillers	23
-survive	Survival	20
-ask	Questions	18
+time	Time	22
+connect	Connectors	19
+soften	Politeness	18
+reaction	Reactions	16
 agree	Agree / No	15
-connect	Connectors	15
-soften	Politeness	15
-reaction	Reactions	13
-time	Time	13
-opinion	Opinions	10
+opinion	Opinions	14
+number	Numbers	6
 Every chunk is tagged casual, neutral or vulgar. The two vulgar entries (al chile, ando en chinga) show a careful badge — they're included because you'll hear them constantly, but you should know before you use them.
 
 Adding your own
@@ -142,7 +178,15 @@ C("no manches",                                   // the chunk
     ["No manches, otra vez se descompuso.",  "No way, it broke down again."]
   ],
   "\"don't stain\"")                              // optional literal gloss
-IDs are assigned automatically. Adding a chunk is enough — every mode, the search, the category bars and the milestones pick it up with no other changes.
+IDs are assigned automatically and positionally, so append rather than insert: adding a chunk in the middle renumbers every id after it and detaches saved progress from what it was attached to. New material goes at the end of the array for that reason.
+
+Adding a chunk is enough — every mode, the search, the category bars and the milestones pick it up with no other changes. Four side tables key off the chunk text and are optional:
+
+Table	Adds
+SOUNDS	how it actually sounds, when spelling hides it
+NOTES	a culture note, where translation loses the meaning
+ANSWERS	the replies you'll get, if the chunk is a question
+EXTRA_EXAMPLES	more sentences for a chunk that does several jobs
 
 How the engines work
 Spaced repetition
@@ -210,8 +254,18 @@ Progress reads as capabilities, not card counts — "Order without English 7/10"
 
 A chunk counts toward its milestone once you've either recalled it (scheduler status review or mastered) or said it well (85%+ in Shadow or Quick-fire). A milestone claims you can do something, so speaking it is evidence too — otherwise the practice modes would move nothing.
 
+Pace
+New chunks per day is a setting, not a constant. It was five, hardcoded, which put the whole collection sixty-three days out — a strange thing for an app whose first screen promises speed.
+
+Pace	New/day	Reviews	Listening
+Steady	5	20	4
+Brisk (default)	12	40	8
+Intense	20	60	12
+
+Today shows where the chosen pace lands: at Brisk, all 350 in about a month. The projection uses what is left rather than the whole collection, so it shortens as you go.
+
 Daily session
-One button on Today runs three stages back to back — up to 20 due reviews, then 5 new chunks, then 4 listening items — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
+One button on Today runs three stages back to back — up to 20 due reviews, then a pace-sized batch of new chunks, then the listening quota — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
 
 Two speaking scores, kept apart
 Shadow and Quick-fire both score speech, but they measure different skills:
