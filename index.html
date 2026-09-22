@@ -2184,6 +2184,106 @@ const NOTES = {
 };
 CHUNKS.forEach(c => { if(NOTES[c.chunk]) c.note = NOTES[c.chunk]; });
 
+/* ---------- 1b3. WHAT COMES BACK ----------
+   The collection is full of questions and taught nothing about the reply.
+   That is the failure everyone actually has: you ask ¿por dónde queda? with a
+   good accent, which convinces the other person you speak Spanish, and they
+   answer at full speed and you have nothing. Asking well makes comprehension
+   harder, not easier.
+
+   These are recognition only — never asked for production — because the job
+   is to survive the answer, not to give it. */
+const ANSWERS = {
+  "¿por dónde queda?": [
+    ["Derecho y luego a la derecha.","Straight on, then right."],
+    ["Está a dos cuadras.","It's two blocks away."],
+    ["En la esquina, junto a la farmacia.","On the corner, next to the pharmacy."],
+    ["Ya te pasaste, es para atrás.","You've gone past it, it's back that way."]
+  ],
+  "¿dónde está...?": [
+    ["Allá al fondo.","Down at the back."],
+    ["Subiendo las escaleras.","Up the stairs."],
+    ["Está cerrado ahorita.","It's closed right now."]
+  ],
+  "¿cuánto es?": [
+    ["Son ciento veinte.","That's a hundred and twenty."],
+    ["Cincuenta el kilo.","Fifty a kilo."],
+    ["Lo que guste dar.","Whatever you'd like to give."]
+  ],
+  "¿qué hora es?": [
+    ["Van a dar las tres.","It's nearly three."],
+    ["Las ocho y media.","Half past eight."],
+    ["Ya casi las diez.","Almost ten."]
+  ],
+  "¿a qué hora sale?": [
+    ["Cada veinte minutos.","Every twenty minutes."],
+    ["El próximo sale a las seis.","The next one leaves at six."],
+    ["Ya se fue el último.","The last one already left."]
+  ],
+  "¿qué onda?": [
+    ["Aquí nomás, ¿y tú?","Just here, and you?"],
+    ["Todo bien, chambeando.","All good, working."],
+    ["Ahí la llevo.","Getting by."]
+  ],
+  "¿cómo has estado?": [
+    ["Bien, bien, con harta chamba.","Good, good, loads of work."],
+    ["Ahí más o menos.","So-so."],
+    ["Muy bien, ¿y tú qué tal?","Very well, and how about you?"]
+  ],
+  "¿pica?": [
+    ["Poquito nada más.","Just a little."],
+    ["No pica nada.","It's not spicy at all."],
+    ["Esa sí está brava.","That one's really hot."]
+  ],
+  "¿qué me recomienda?": [
+    ["El de pastor está muy bueno.","The pastor is very good."],
+    ["Lo que guste, todo está fresco.","Whatever you like, it's all fresh."],
+    ["La especialidad es el mole.","The specialty is the mole."]
+  ],
+  "¿me puede ayudar?": [
+    ["Claro que sí, dígame.","Of course, tell me."],
+    ["Ahorita le atiendo.","I'll be with you in a moment."],
+    ["Pregúntele a mi compañero.","Ask my colleague."]
+  ],
+  "¿de dónde eres?": [
+    ["Soy de aquí, de Guadalajara.","I'm from here, from Guadalajara."],
+    ["De un pueblito de Oaxaca.","From a little town in Oaxaca."],
+    ["Nací aquí pero crecí en el norte.","I was born here but grew up in the north."]
+  ],
+  "¿está lejos?": [
+    ["No, aquí cerquita.","No, really close."],
+    ["Como diez minutos caminando.","About ten minutes walking."],
+    ["Uf, sí. Mejor toma un taxi.","Oof, yes. Better take a taxi."]
+  ],
+  "¿puedo pagar con tarjeta?": [
+    ["Solo efectivo, joven.","Cash only."],
+    ["Sí, pásele por acá.","Yes, come over here."],
+    ["La terminal no sirve ahorita.","The card machine isn't working right now."]
+  ],
+  "¿hay wifi?": [
+    ["Sí, la contraseña está en el ticket.","Yes, the password's on the receipt."],
+    ["Sí, se llama igual que el negocio.","Yes, it's named the same as the shop."],
+    ["No tenemos, una disculpa.","We don't have any, sorry."]
+  ],
+  "¿me regalas...?": [
+    ["Claro, ahorita se lo traigo.","Sure, I'll bring it right now."],
+    ["¿Algo más?","Anything else?"],
+    ["Se me acabó, joven.","I've run out."]
+  ],
+  "¿tienes planes?": [
+    ["No, nada. ¿Por?","No, nothing. Why?"],
+    ["Sí, quedé con unos amigos.","Yes, I've got plans with friends."],
+    ["Depende, ¿qué tienes en mente?","Depends, what do you have in mind?"]
+  ],
+};
+CHUNKS.forEach(c => {
+  const a = ANSWERS[c.chunk];
+  if(a) c.answers = a.map(x => ({es:x[0], en:x[1]}));
+});
+/* Every reply in one list, so Listen can offer plausible wrong meanings that
+   are other real answers rather than sentences from somewhere else. */
+const ALL_ANSWERS = [].concat.apply([], Object.values(ANSWERS)).map(x => ({es:x[0], en:x[1]}));
+
 /* ---------- 1c. A GENTLE WAY IN ----------
    Chunks a beginner meets first whose sentences all carried extra baggage.
    These are the bare, real utterances — what you'd actually hear on its own. */
@@ -3042,6 +3142,23 @@ function cultureHtml(c){
   return c.note ? `<div class="culture"><span class="clabel">worth knowing</span>${c.note}</div>` : "";
 }
 
+/* Shown with the question, because meeting the two apart is what produces
+   someone who can ask and cannot listen. */
+function answersHtml(c){
+  if(!c.answers) return "";
+  return `<div class="card">
+    <p class="sec-label">What comes back · you only need to recognise these</p>
+    ${c.answers.map(a => `
+      <div class="ex">
+        ${speakerBtn(a.es, true)}
+        <div class="txt">
+          <div class="es">${esc(a.es)}</div>
+          <div class="en">${esc(a.en)}</div>
+        </div>
+      </div>`).join("")}
+  </div>`;
+}
+
 /* ---------- 6. VIEWS ---------- */
 const view = $("#view");
 let tab = seenIntro ? "home" : "intro";
@@ -3405,6 +3522,7 @@ function renderLearn(){
       <p class="sec-label">In real sentences · gentlest first</p>
       ${examplesHtml(c)}
     </div>
+    ${answersHtml(c)}
     <div class="stack" style="margin-top:16px">
       <button class="btn primary" data-learn="add">Got it — keep this one</button>
       <div class="center"><button class="lnk tiny" data-learn="skip">Not this one</button></div>
@@ -3540,6 +3658,20 @@ function startEarRound(){
 function buildEarCard(){
   const id = earQ.shift();
   const c = byId(id);
+
+  /* Where a chunk is a question we know the replies to, a third of its turns
+     play one of those instead. Understanding the answer is the harder half
+     and the half this app never trained, and the wrong options are other real
+     replies, so it cannot be passed by picking the only plausible sentence. */
+  if(c.answers && Math.random() < 0.34){
+    const ans = c.answers[Math.floor(Math.random()*c.answers.length)];
+    const wrongA = shuffle(ALL_ANSWERS.filter(a => a.en !== ans.en)).slice(0, 3).map(a => a.en);
+    earCard = {c, ex: ans, reply: true, options: shuffle([ans.en, ...wrongA])};
+    earPick = null;
+    earPlayed = null;
+    return;
+  }
+
   const ex = pickExample(c, srs[c.id]);
   const wrong = shuffle(CHUNKS.filter(o => o.id !== id && o.category === c.category))
     .slice(0, 3).map(o => o.examples[0].en);
@@ -3589,6 +3721,8 @@ function renderListen(){
       : `<button class="btn ghost sm" style="margin-top:14px;width:auto;display:inline-flex" data-ear="slow">\u{1F422} Slower</button>`}
     </div>
 
+    ${earCard.reply ? `<p class="tiny center" style="margin:14px 0 0;color:var(--teal)">
+       You asked <b>${esc(earCard.c.chunk)}</b> — this is the answer</p>` : ""}
     <p class="sec-label" style="margin:18px 0 8px">What did you hear?</p>
     <div class="stack">
       ${options.map(o => {
