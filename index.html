@@ -60,6 +60,17 @@ body{
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
 .linkish{color:var(--accent);text-decoration:underline;font:inherit}
 .slot{display:inline-block;min-width:2.2em;padding:0 .35em;border-bottom:3px solid var(--accent);color:var(--accent)}
+.lab-line{font-family:var(--es);font-size:23px;line-height:1.4;min-height:1.5em}
+.lab-built{color:var(--text)}
+.lab-formula{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;flex-wrap:wrap}
+.lab-formula span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 10px;border-radius:999px;background:var(--surface-2);color:var(--faint)}
+.lab-formula span.on{background:color-mix(in srgb,var(--accent) 20%,transparent);color:var(--accent)}
+.lab-formula span.did{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.lab-formula i{color:var(--faint);font-style:normal}
+.backlog{margin-top:12px;padding:13px 15px;border-radius:14px;font-size:13px;line-height:1.5;
+  background:color-mix(in srgb,var(--red) 11%,transparent);color:var(--text)}
+.backlog b{color:var(--red)}
 .more-ex{margin-top:6px}
 .more-ex summary{cursor:pointer;font-size:13px;color:var(--muted);padding:8px 2px;list-style:none}
 .more-ex summary::-webkit-details-marker{display:none}
@@ -2000,7 +2011,107 @@ const SPINE = [
     ["El fin de semana no trabajo.","I don't work weekends."]
   ]),
 ];
+/* The question words. Their absence was the single strangest gap in a
+   conversation collection: ¿por qué? appeared nowhere in 350 chunks, and one
+   of the dialogues has the learner say "¿Por qué preguntas?" — a phrase the
+   app never taught. You cannot hold up your end of anything without these. */
+const ASKING = [
+  C("¿por qué?","\"why?\" — and \"porque\" without the accent is \"because\", the answer to it","ask",1,"neutral",[
+    ["¿Por qué preguntas?","Why do you ask?"],
+    ["¿Por qué no?","Why not?"],
+    ["Porque sí.","Just because."]
+  ]),
+  C("¿qué?","\"what?\" — on its own it can sound blunt, which is why ¿mande? exists","ask",1,"neutral",[
+    ["¿Qué es esto?","What is this?"],
+    ["¿Qué quieres hacer?","What do you want to do?"]
+  ]),
+  C("¿quién?","\"who?\"","ask",1,"neutral",[
+    ["¿Quién es?","Who is it?"],
+    ["¿Con quién vas?","Who are you going with?"]
+  ]),
+  C("¿cuándo?","\"when?\"","ask",1,"neutral",[
+    ["¿Cuándo llegas?","When do you arrive?"],
+    ["¿Cuándo nos vemos?","When shall we meet?"]
+  ]),
+  C("¿cuál?","\"which one?\" — where English often says \"what\": ¿cuál prefieres?","ask",1,"neutral",[
+    ["¿Cuál prefieres?","Which one do you prefer?"],
+    ["¿Cuál es tu nombre?","What's your name?"]
+  ]),
+  C("¿cuánto?","\"how much?\" / \"how many?\"","ask",1,"neutral",[
+    ["¿Cuánto tiempo llevas aquí?","How long have you been here?"],
+    ["¿Cuántos años tienes?","How old are you?"]
+  ]),
+  C("¿cómo?","\"how?\" — and on its own, \"what did you say?\"","ask",1,"neutral",[
+    ["¿Cómo se hace?","How is it done?"],
+    ["¿Cómo llego allá?","How do I get there?"]
+  ]),
+  C("¿dónde?","\"where?\" — ¿a dónde? for where to, ¿de dónde? for where from","ask",1,"neutral",[
+    ["¿Dónde vives?","Where do you live?"],
+    ["¿A dónde vas?","Where are you going?"]
+  ]),
+];
+
+/* Saying why. The faith pack was all doorway — permission to speak, and a
+   polite way out — with one line of substance in the middle. These are the
+   middle: what you actually answer when someone asks why you believe. Kept
+   personal rather than doctrinal, because a testimony is the one thing a
+   beginner can say truthfully in a language they barely have. */
+const TESTIMONY = [
+  C("creo en Dios","\"I believe in God\" — the plain statement, and the one most likely to be asked about","opinion",1,"neutral",[
+    ["Sí, creo en Dios.","Yes, I believe in God."],
+    ["Creo en Dios desde niño.","I've believed in God since I was a kid."]
+  ]),
+  C("soy cristiano","\"I'm a Christian\" — cristiana if you're a woman","opinion",1,"neutral",[
+    ["Soy cristiano.","I'm a Christian."],
+    ["Soy cristiana, pero respeto a todos.","I'm a Christian, but I respect everyone."]
+  ]),
+  C("me dio paz","\"it gave me peace\" — the most common honest answer to why","opinion",1,"neutral",[
+    ["Me dio paz que no tenía.","It gave me a peace I didn't have."],
+    ["La verdad, me dio mucha paz.","Honestly, it gave me a lot of peace."]
+  ]),
+  C("antes yo...","\"I used to ...\" — how a testimony starts: before and after","opinion",2,"neutral",[
+    ["Antes yo no creía nada.","I used to not believe anything."],
+    ["Antes yo estaba bien perdido.","I used to be really lost."]
+  ]),
+  C("me sentía vacío","\"I felt empty\" — vacía if you're a woman","opinion",2,"neutral",[
+    ["Me sentía vacío por dentro.","I felt empty inside."],
+    ["Tenía todo pero me sentía vacío.","I had everything but I felt empty."]
+  ]),
+  C("desde entonces","\"ever since then\" — the hinge of the story","connect",1,"neutral",[
+    ["Desde entonces todo cambió.","Everything changed from then on."],
+    ["Desde entonces voy cada domingo.","I've gone every Sunday since then."]
+  ]),
+  C("no es religión, es relación","\"it's not religion, it's a relationship\" — the distinction people ask about","opinion",2,"neutral",[
+    ["Para mí no es religión, es relación.","For me it's not religion, it's a relationship."],
+    ["No es religión, es una relación con Dios.","It's not religion, it's a relationship with God."]
+  ]),
+  C("Dios me ayudó","\"God helped me\" — concrete beats abstract every time","opinion",1,"neutral",[
+    ["Dios me ayudó cuando nadie más pudo.","God helped me when no one else could."],
+    ["Siento que Dios me ayudó mucho.","I feel like God helped me a lot."]
+  ]),
+  C("¿tú qué piensas?","\"what do you think?\" — hands the conversation back, which is the whole skill","ask",1,"neutral",[
+    ["¿Y tú qué piensas?","And what do you think?"],
+    ["No sé, ¿tú qué piensas?","I don't know, what do you think?"]
+  ]),
+  C("te entiendo","\"I understand you\" — what to say when they disagree","soften",1,"neutral",[
+    ["Te entiendo, en serio.","I understand you, really."],
+    ["Te entiendo, yo pensaba igual.","I get it, I used to think the same."]
+  ]),
+];
+
 SPINE.forEach(c => CHUNKS.push(c));
+ASKING.forEach(c => CHUNKS.push(c));
+TESTIMONY.forEach(c => { c.goals = ["faith"]; CHUNKS.push(c); });
+
+/* What the queue must reach in week one. The spine and the question words are
+   what everything else plugs into, and appending them to the array put them
+   at the back of their own categories — soy and tengo were landing on day
+   nineteen. Flagged rather than reordered, so the ordering stays one rule:
+   core first, then frequency. */
+const CORE_SET = new Set(SPINE.concat(ASKING).map(c => c.chunk)
+  .concat(["voy a + verb","tengo que + verb","quiero + verb","puedo + verb",
+           "no sé","es que","¿mande?","¿cómo se dice...?"]));
+CHUNKS.forEach(c => { if(CORE_SET.has(c.chunk)) c.core = true; });
 
 /* The spine is universal, but a price or a clock time is the difference
    between ordering and pointing, so the goals that live on them get these
@@ -2019,6 +2130,144 @@ Object.entries(SPINE_GOALS).forEach(([g, names]) => {
     if(c) c.goals = (c.goals || []).concat(g);
   });
 });
+
+/* ---------- 1a4. BUILDING BLOCKS ----------
+   The plug-in method, made literal. A Spanish sentence a beginner needs is
+   almost always three pieces in a fixed order:
+
+       ENGINE        + WHAT              + WHEN / WHERE
+       quiero          comer               ahorita
+       tengo que       trabajar            mañana
+       ¿puedes         ayudarme            un poquito
+
+   The engine is the only part that carries grammar, and there are about a
+   dozen of them. Swap the middle and you have a different sentence; swap the
+   engine and you have a different meaning. Learn twelve engines and forty
+   fillers and you can say hundreds of things — which is a different promise
+   from learning hundreds of phrases, and the one that survives contact with a
+   conversation nobody scripted.
+
+   Deliberately separate from CHUNKS: chunks are things you say whole, blocks
+   are things you combine. Both are needed and they are not the same skill. */
+const BLOCKS = {
+  /* {v} takes the plain verb, {ving} the -ing form, {ved} the past, {n} a thing */
+  engine: [
+    {es:"quiero",      label:"I want to…",    en:"I want to {v}",     takes:"both",   nEn:"I want {n}", p:"1"},
+    {es:"necesito",    label:"I need to…",    en:"I need to {v}",     takes:"both",   nEn:"I need {n}", p:"1"},
+    {es:"tengo que",   label:"I have to…",    en:"I have to {v}",     takes:"action", p:"1"},
+    {es:"voy a",       label:"I'm going to…", en:"I'm going to {v}",  takes:"action", p:"1"},
+    {es:"puedo",       label:"I can…",        en:"I can {v}",         takes:"action", p:"1"},
+    {es:"no puedo",    label:"I can't…",      en:"I can't {v}",       takes:"action", p:"1"},
+    {es:"me gusta",    label:"I like…",       en:"I like {ving}",     takes:"both",   nEn:"I like {n}", p:"1"},
+    {es:"acabo de",    label:"I've just…",    en:"I've just {ved}",   takes:"action", p:"1"},
+    {es:"hay que",     label:"we should…",    en:"we should {v}",     takes:"action", p:"0"},
+    {es:"tengo",       label:"I have…",       en:"I have {n}",        takes:"thing", p:"1"},
+    {es:"hay",         label:"there is…",     en:"there is {n}",      takes:"thing", p:"0"},
+    /* Second person, because a conversation is not a monologue and the
+       collection had almost no way to ask someone else to do anything. */
+    {es:"¿quieres",    label:"do you want to…?", en:"do you want to {v}?", takes:"action", q:true, p:"2"},
+    {es:"¿puedes",     label:"can you…?",        en:"can you {v}?",        takes:"action", q:true, p:"2"},
+    {es:"¿tienes",     label:"do you have…?",    en:"do you have {n}?",    takes:"thing",  q:true, p:"2"},
+  ],
+  action: [
+    {es:"comer",      v:"eat",        ving:"eating",       ved:"eaten"},
+    {es:"tomar",      v:"drink",      ving:"drinking",     ved:"drunk"},
+    {es:"ir",         v:"go",         ving:"going",        ved:"gone", motion:true},
+    {es:"venir",      v:"come",       ving:"coming",       ved:"come", motion:true},
+    {es:"hablar",     v:"talk",       ving:"talking",      ved:"talked"},
+    {es:"decirte algo", v:"tell you something", ving:"telling you something", ved:"told you something", who:"you"},
+    {es:"verte",      v:"see you",    ving:"seeing you",   ved:"seen you", who:"you"},
+    {es:"hacer la chamba", v:"do the work", ving:"doing the work", ved:"done the work"},
+    {es:"trabajar",   v:"work",       ving:"working",      ved:"worked"},
+    {es:"descansar",  v:"rest",       ving:"resting",      ved:"rested"},
+    {es:"ayudar",     v:"help",       ving:"helping",      ved:"helped"},
+    {es:"orar",       v:"pray",       ving:"praying",      ved:"prayed"},
+    {es:"aprender",   v:"learn",      ving:"learning",     ved:"learned"},
+    {es:"entender",   v:"understand", ving:"understanding",ved:"understood"},
+    {es:"comprar",    v:"buy",        ving:"buying",       ved:"bought"},
+    {es:"pagar",      v:"pay",        ving:"paying",       ved:"paid"},
+    {es:"salir",      v:"go out",     ving:"going out",    ved:"gone out", motion:true},
+    {es:"llegar",     v:"arrive",     ving:"arriving",     ved:"arrived", motion:true},
+    {es:"esperar",    v:"wait",       ving:"waiting",      ved:"waited"},
+    {es:"preguntar",  v:"ask",        ving:"asking",       ved:"asked"},
+    {es:"empezar",    v:"start",      ving:"starting",     ved:"started"},
+    {es:"terminar",   v:"finish",     ving:"finishing",    ved:"finished"},
+    {es:"vivir",      v:"live",       ving:"living",       ved:"lived"},
+    {es:"creer",      v:"believe",    ving:"believing",    ved:"believed"},
+    {es:"leer",       v:"read",       ving:"reading",      ved:"read"},
+    {es:"escuchar",   v:"listen",     ving:"listening",    ved:"listened"},
+    {es:"platicar",   v:"chat",       ving:"chatting",     ved:"chatted"},
+    {es:"invitarte",  v:"invite you", ving:"inviting you", ved:"invited you", who:"you"},
+    {es:"buscar trabajo", v:"look for work", ving:"looking for work", ved:"looked for work"},
+    {es:"regresar",   v:"go back",    ving:"going back",   ved:"gone back", motion:true},
+    {es:"ayudarme",   v:"help me",    ving:"helping me",   ved:"helped me", who:"me"},
+    {es:"acompañarme",v:"come with me",ving:"coming with me",ved:"come with me", who:"me"},
+  ],
+  /* ok lists the engines a noun genuinely combines with. Without it the
+     generator produces "hay la cuenta", which is not Spanish, and "quiero un
+     problema", which is not a thing anyone wants — and a language app that
+     invents its own errors is worse than one that teaches fewer sentences. */
+  thing: [
+    {es:"agua",          en:"water",      ok:["quiero","necesito","hay","tengo","¿tienes"]},
+    {es:"un café",       en:"a coffee",   ok:["quiero","necesito","hay","tengo","¿tienes"]},
+    {es:"comida",        en:"food",       ok:["quiero","necesito","hay","tengo","me gusta","¿tienes"], defEs:"la comida", defEn:"food"},
+    {es:"dinero",        en:"money",      ok:["necesito","hay","tengo","¿tienes"]},
+    {es:"tiempo",        en:"time",       ok:["necesito","hay","tengo","¿tienes"]},
+    {es:"hambre",        en:"hunger",     ok:["tengo"], enHave:"I'm hungry"},
+    {es:"prisa",         en:"a hurry",    ok:["tengo"], enHave:"I'm in a hurry"},
+    {es:"una pregunta",  en:"a question", ok:["tengo","¿tienes"]},
+    {es:"chamba",        en:"work",       ok:["necesito","hay","tengo","me gusta","¿tienes"], defEs:"la chamba", defEn:"work"},
+    {es:"familia",       en:"family",     ok:["tengo","¿tienes"]},
+    {es:"un amigo",      en:"a friend",   ok:["tengo","hay","¿tienes"]},
+    {es:"la cuenta",     en:"the bill",   ok:["quiero","necesito"]},
+    {es:"ayuda",         en:"help",       ok:["quiero","necesito","hay","¿tienes"]},
+    {es:"paz",           en:"peace",      ok:["quiero","necesito","hay"]},
+    {es:"un rato",       en:"a while",    ok:["necesito","tengo","hay"]},
+    {es:"una iglesia",   en:"a church",   ok:["hay"]},
+    {es:"un problema",   en:"a problem",  ok:["tengo","hay","¿tienes"]},
+  ],
+  tail: [
+    {es:"ahorita",          en:"right now"},
+    {es:"mañana",           en:"tomorrow"},
+    {es:"hoy",              en:"today"},
+    {es:"al rato",          en:"in a bit"},
+    {es:"más tarde",        en:"later"},
+    {es:"el domingo",       en:"on Sunday"},
+    {es:"aquí",             en:"here"},
+    {es:"allá",             en:"over there"},
+    {es:"en la casa",       en:"at home",     place:true},
+    {es:"en el trabajo",    en:"at work",     place:true},
+    {es:"con mi familia",   en:"with my family"},
+    {es:"contigo",          en:"with you"},
+    {es:"un poquito",       en:"a little"},
+    {es:"otra vez",         en:"again"},
+    {es:"todos los días",   en:"every day"},
+    {es:"después",          en:"afterwards"},
+  ],
+};
+const BLOCK_LABEL = {engine:"Engine", action:"What", thing:"What", tail:"When / where"};
+
+/* Compose both halves of a sentence from the pieces, so the English is
+   generated rather than authored and can never drift from the Spanish. */
+function buildSentence(engine, filler, tail, kind){
+  /* me gusta takes the definite article where English drops it: "me gusta la
+     comida", never "me gusta comida". */
+  const useDef = kind === "thing" && engine.es === "me gusta" && filler.defEs;
+  let es = engine.es + " " + (useDef ? filler.defEs : filler.es);
+  let en;
+  if(kind === "thing"){
+    en = (engine.nEn || engine.en).replace("{n}", useDef ? filler.defEn : filler.en);
+    if(engine.es === "tengo" && filler.enHave) en = filler.enHave;
+  }else{
+    en = engine.en.replace("{v}", filler.v).replace("{ving}", filler.ving).replace("{ved}", filler.ved);
+  }
+  if(tail){ es += " " + tail.es; en += " " + tail.en; }
+  if(engine.q){ es += "?"; en = en.replace("?", "") + "?"; }
+  /* The opening ¿ must not eat the capital that belongs to the first word. */
+  const upEs = es.charAt(0) === "¿" ? "¿" + es.charAt(1).toUpperCase() + es.slice(2)
+                                    : es.charAt(0).toUpperCase() + es.slice(1);
+  return {es: upEs, en: en.charAt(0).toUpperCase() + en.slice(1)};
+}
 
 /* ---------- 1b. HOW IT ACTUALLY SOUNDS ----------
    The gap between spelling and speech is what makes fast Mexican Spanish
@@ -2905,13 +3154,29 @@ function newCards(){
   if(!pool.length) pool = all;
   const order = list => spreadByCategory(list.filter(c => !skipped[c.id]))
                  .concat(spreadByCategory(list.filter(c => skipped[c.id])));
-  if(!myGoals.length) return order(pool);
 
-  const mine = order(pool.filter(hasGoal));
-  const rest = order(pool.filter(c => !hasGoal(c)));
+  /* Core is held out of the frequency ordering and woven back one for one, so
+     the pieces everything plugs into arrive in the first week instead of the
+     third. Not simply placed first: thirty-odd cards of bare scaffolding with
+     no glue is the same mistake the goal weighting made, and a learner who
+     can conjugate nothing and greet nobody has not had a good first week. */
+  const core = order(pool.filter(c => c.core));
+  const plain = pool.filter(c => !c.core);
+
+  let stream;
+  if(!myGoals.length) stream = order(plain);
+  else {
+    const mine = order(plain.filter(hasGoal));
+    const rest = order(plain.filter(c => !hasGoal(c)));
+    stream = [];
+    while(mine.length || rest.length){
+      stream.push(...rest.splice(0, GOAL_WEAVE), ...mine.splice(0, 1));
+    }
+  }
+
   const out = [];
-  while(mine.length || rest.length){
-    out.push(...rest.splice(0, GOAL_WEAVE), ...mine.splice(0, 1));
+  while(core.length || stream.length){
+    out.push(...core.splice(0, 1), ...stream.splice(0, 1));
   }
   return out;
 }
@@ -3431,6 +3696,7 @@ const VIEWS = {
   shadow:   () => renderShadow(),
   drill:    () => renderDrill(),
   build:    () => renderBuild(),
+  lab:      () => renderLab(),
   dialogue: () => renderDialogue(),
   stats:    () => renderStats(),
   browse:   () => renderBrowse(),
@@ -3458,6 +3724,9 @@ const INTRO = [
   ["\u{1F5FA}\u{FE0F}", "Forget the grammar",
    "No conjugation tables, no subjunctive. You'll learn the chunks Mexicans actually reuse — <b>o sea</b>, <b>la neta</b>, <b>ni modo</b> — always inside a real sentence.",
    "¿Qué onda? ¿Cómo has estado?"],
+  ["\u{1F9F1}", "Sentences are blocks",
+   "Almost everything you'll want to say is three pieces in a row: an <b>engine</b>, a <b>what</b>, and a <b>when</b>. Swap one piece and you have a new sentence. Learn a dozen engines and you can say hundreds of things — Sentence Lab drills exactly that.",
+   "Quiero platicar contigo."],
   ["\u{1F442}", "Train your ear",
    "Real street Spanish is fast and runs together. Listening mode hides the text completely and speeds up as you improve, so it stops sounding like one long word.",
    "Ahí nomás, chambeando."],
@@ -3526,7 +3795,11 @@ const MILESTONES = [
 
 /* One capability per goal, shown only to people training for it. */
 const GOAL_MILESTONES = {
-  faith:   ["✝️", "Share why you believe", ["¿puedo compartir algo contigo?","¿crees en Dios?","¿puedo orar por ti?","la Biblia dice","cambió mi vida","no quiero incomodarte","te invito a","Dios te bendiga","si algún día quieres platicar","gracias por escucharme"]],
+  /* Ten phrases that between them hold the actual conversation: ask permission,
+     say what you are, say why, hand it back, hear the answer, offer to pray,
+     close well. The old list was ten ways to open and close and one line of
+     substance, so it could read 10/10 for someone with nothing to say. */
+  faith:   ["✝️", "Share why you believe", ["¿puedo compartir algo contigo?","soy cristiano","creo en Dios","me dio paz","Dios me ayudó","cambió mi vida","¿tú qué piensas?","te entiendo","¿puedo orar por ti?","gracias por escucharme"]],
   travel:  ["\u{1F9ED}", "Get anywhere alone",   ["¿a qué hora sale?","¿cuánto cuesta el boleto?","me perdí","¿me puede llevar a...?","¿está lejos?","voy para","¿me puede ayudar?","¿es seguro por aquí?","¿por dónde queda?","derechito"]],
   food:    ["\u{1F32E}", "Eat exactly what you want", ["soy vegetariano","sin carne","¿qué lleva?","no como puerco","¿tiene algo sin picante?","¿me recomienda algo típico?","¿me trae la salsa?","está delicioso","para llevar","con todo"]],
   culture: ["\u{1F3AD}", "Keep a real conversation going", ["¿qué música te gusta?","¿me cuentas más?","qué interesante","no sabía eso","me encanta","en mi país","¿cómo se celebra?","¿desde cuándo?","se parece a","¿has escuchado a...?"]],
@@ -3618,6 +3891,16 @@ function renderHome(){
     ${daysToFinish() ? `<p class="tiny muted center" style="margin:4px 0 0">
       ${esc(pace().label)} pace · all ${CHUNKS.length} met in ~${daysToFinish()} days ·
       <button class="linkish" data-sheet="settings">change</button></p>` : ""}
+    ${due > pace().review ? `
+      <div class="backlog">
+        <b>${due} cards are waiting</b> — more than one session holds.
+        A backlog this size is what makes people quit in week two, so it is
+        worth clearing before taking on more.
+        <div class="row" style="gap:8px;margin-top:10px">
+          <button class="btn sm" data-session="catchup" style="flex:1">Reviews only, no new</button>
+          <button class="btn sm ghost" data-sheet="settings" style="flex:1">Ease the pace</button>
+        </div>
+      </div>` : ""}
 
     <p class="sec-label" style="margin:22px 0 8px">What you can do</p>
     <div class="card">
@@ -3696,8 +3979,11 @@ function daysToFinish(){
   return Math.ceil(left / pace().fresh);
 }
 
-function startSessionFlow(){
-  const p = sessionPlan();
+function startSessionFlow(reviewsOnly){
+  const base = sessionPlan();
+  /* Catch-up clears the backlog and adds nothing to it, so the bar has to
+     count reviews alone or it reports a session that is not being run. */
+  const p = reviewsOnly ? {review:base.review, fresh:0, listen:0, total:base.review} : base;
   if(!p.total) return go("learn");
   const stages = [];
   if(p.review) stages.push("review");
@@ -3871,13 +4157,14 @@ function renderPractice(){
   const deck = Object.keys(srs).length;
   const heard = Object.keys(ears).length;
   const modes = [
+    ["lab",     "\u{1F9EA}", "Sentence Lab","Build a sentence from parts — the method", `${BLOCKS.engine.length} engines`],
     ["listen",  "\u{1F442}", "Listen",      "Understand it with no text on screen", heard ? `${heard} trained` : "Open to start"],
     ["shadow",  "\u{1F3A7}", "Shadow",      "Read it aloud, scored by the mic",     `${totals.shadowReps} said out loud`],
     ["drill",   "\u{26A1}",  "Quick-fire",  "Produce it cold in five seconds",      `${totals.drills || 0} drilled`],
     ["build",   "\u{1F9F1}", "Build it",    "Fill the frame — no mic needed",       `${FRAMES.length} frames`],
     ["dialogue","\u{1F5E3}\u{FE0F}", "Conversations", "Hold your end of a real exchange", `${Object.keys(dialogDone).length}/${DIALOGUES.length} done`],
   ];
-  view.innerHTML = header("Practice", "Five ways to make it stick") + `
+  view.innerHTML = header("Practice", "Six ways to make it stick") + `
     <div class="stack">
       ${modes.map(([k,em,title,sub,meta]) => `
         <button class="action" data-go="${k}">
@@ -3888,6 +4175,130 @@ function renderPractice(){
     </div>
     ${!deck ? `<p class="tiny muted center" style="margin-top:18px">
       These open up once you've added a few chunks in Learn.</p>` : ""}`;
+}
+
+/* ----- Sentence Lab: the plug-in method -----
+   Build it drills one frame at a time. This builds a whole sentence from
+   parts, in order, with the slots named on screen — so what gets learned is
+   the assembly rule rather than any particular sentence. The same three
+   presses produce "I want to eat right now" and "can you help me tomorrow",
+   which is the point: it is one method, not a list. */
+const LAB_ROUND = 6;
+let labCard = null, labRound = null;
+
+function pickFrom(list, notEs){
+  const pool = notEs ? list.filter(x => x.es !== notEs) : list;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function buildLabCard(){
+  const engine = pickFrom(BLOCKS.engine);
+  const kind = engine.takes === "both" ? (Math.random() < 0.65 ? "action" : "thing") : engine.takes;
+  /* A verb that points at someone only fits one side of the conversation:
+     "quiero verte" and "¿puedes ayudarme?" are right, "¿puedes verte?" and
+     "me gusta acompañarme" are the same words pointed at the wrong person. */
+  const bank = kind === "thing"
+    ? BLOCKS.thing.filter(t => t.ok.indexOf(engine.es) !== -1)
+    : BLOCKS.action.filter(a => !a.who
+        || (a.who === "you" && engine.p === "1")
+        || (a.who === "me"  && engine.p === "2"));
+  const filler = pickFrom(bank);
+  /* Tails ride on actions only. "Tengo un amigo todos los días" and "Hay paz
+     un poquito" are what free combination produces on a noun, and a place
+     tail on a motion verb needs a/al rather than en — so those are excluded
+     rather than patched up afterwards. */
+  const tailPool = BLOCKS.tail.filter(t => !(filler.motion && t.place));
+  const tail = (kind === "action" && Math.random() < 0.6) ? pickFrom(tailPool) : null;
+
+  const steps = [
+    {slot:"engine", right:engine,
+     options:shuffle([engine, ...shuffle(BLOCKS.engine.filter(x => x.es !== engine.es)).slice(0,2)])},
+    {slot:kind, right:filler, useDef: kind === "thing" && engine.es === "me gusta",
+     options:shuffle([filler, ...shuffle(bank.filter(x => x.es !== filler.es)).slice(0,2)])},
+  ];
+  if(tail) steps.push({slot:"tail", right:tail,
+     options:shuffle([tail, ...shuffle(BLOCKS.tail.filter(x => x.es !== tail.es)).slice(0,2)])});
+
+  labCard = {engine, filler, tail, kind, steps, at:0, picked:[], wrong:0,
+             target: buildSentence(engine, filler, tail, kind)};
+}
+
+function startLabRound(){ labRound = {done:0, clean:0}; buildLabCard(); }
+
+function answerLab(es){
+  const step = labCard.steps[labCard.at];
+  if(!step) return;
+  if(es !== step.right.es){ labCard.wrong++; gotItWrong(); render(); return; }
+  /* Show the surface the finished sentence will use, so the line being built
+     never disagrees with the line that gets spoken. */
+  labCard.picked.push({es: step.useDef && step.right.defEs ? step.right.defEs : step.right.es});
+  labCard.at++;
+  if(labCard.at >= labCard.steps.length){
+    if(!labCard.wrong) labRound.clean++;
+    gotItRight();
+    recordSkill("vocabulary", !labCard.wrong, 1);
+    speak(labCard.target.es);
+  }else{
+    SFX.right();
+  }
+  render();
+}
+
+function nextLab(){
+  labRound.done++;
+  if(labRound.done >= LAB_ROUND){ render(); return; }
+  buildLabCard();
+  render();
+}
+
+function renderLab(){
+  if(!labRound) startLabRound();
+
+  if(labRound.done >= LAB_ROUND){
+    view.innerHTML = header("Sentence Lab", "Round done") + `
+      <div class="card center">
+        <div style="font-size:42px">${labRound.clean >= 5 ? "\u{1F389}" : labRound.clean >= 3 ? "\u{1F44D}" : "\u{1F4AA}"}</div>
+        <h2 style="margin:6px 0 2px">${labRound.clean} of ${LAB_ROUND} clean</h2>
+        <p class="muted tiny">built from parts, first try</p>
+      </div>
+      <div class="stack" style="margin-top:16px">
+        <button class="btn primary" data-lab="again">Another round</button>
+        <button class="btn sm ghost" data-go="practice">Back to practice</button>
+      </div>`;
+    return;
+  }
+
+  const c = labCard;
+  const done = c.at >= c.steps.length;
+  const soFar = c.picked.map(x => esc(x.es)).join(" ");
+  const step = c.steps[c.at];
+
+  view.innerHTML = header("Sentence Lab", `${labRound.done + 1} of ${LAB_ROUND}`) + `
+    <div class="card center">
+      <p class="sec-label" style="margin:0 0 8px">Build this</p>
+      <div style="font-size:18px;margin-bottom:12px">${esc(c.target.en)}</div>
+      <div class="lab-line">
+        ${soFar ? `<span class="lab-built">${soFar}</span>` : ""}
+        ${!done ? `<span class="slot">${esc(BLOCK_LABEL[step.slot].toLowerCase())}</span>` : ""}
+        ${done && c.engine.q ? "?" : ""}
+      </div>
+      ${done ? `<p class="muted tiny" style="margin:10px 0 0">${esc(c.target.es)}</p>` : ""}
+    </div>
+
+    <div class="lab-formula">
+      ${c.steps.map((s,i) => `<span class="${i === c.at ? "on" : i < c.at ? "did" : ""}">${esc(BLOCK_LABEL[s.slot])}</span>`).join("<i>+</i>")}
+    </div>
+
+    ${!done ? `
+      <p class="sec-label" style="margin:16px 0 8px">Pick the ${esc(BLOCK_LABEL[step.slot].toLowerCase())}</p>
+      <div class="stack">
+        ${step.options.map(o => `<button class="btn opt es-text" data-lab-pick="${esc(o.es)}">${esc(o.es)}
+          <span class="tiny muted"> — ${esc(o.label || o.v || o.en || "")}</span></button>`).join("")}
+      </div>`
+    : `<div class="stack" style="margin-top:16px">
+        ${speakerBtn(c.target.es)}
+        <button class="btn primary" data-lab="next">Next</button>
+       </div>`}`;
 }
 
 /* ----- Build it: the slot drill -----
@@ -4183,6 +4594,7 @@ function leaveMode(){
   clearDrillTimer();
   drillCard = null; drillRound = null;
   buildCard = null; buildRound = null; buildPick = null;
+  labCard = null; labRound = null;
   earCard = null; earQ = null;
   shadowQ = null;
   dlg = null;
@@ -4992,7 +5404,7 @@ function openSettings(){
 
 /* ---------- 7. EVENTS ---------- */
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-fill],[data-build]");
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-fill],[data-build],[data-lab],[data-lab-pick]");
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
@@ -5007,9 +5419,19 @@ document.addEventListener("click", e => {
     else openSettings();
     return;
   }
-  if(t.dataset.session){ leaveMode(); startSessionFlow(); return; }
+  if(t.dataset.session){
+    leaveMode();
+    if(t.dataset.session === "catchup"){ startSessionFlow(true); return; }
+    startSessionFlow(); return;
+  }
 
   if(t.dataset.fill !== undefined){ answerBuild(t.dataset.fill); return; }
+  if(t.dataset.labPick !== undefined){ answerLab(t.dataset.labPick); return; }
+  if(t.dataset.lab){
+    if(t.dataset.lab === "again"){ startLabRound(); render(); }
+    else nextLab();
+    return;
+  }
   if(t.dataset.build){
     if(t.dataset.build === "again"){ startBuildRound(); render(); }
     else nextBuild();
