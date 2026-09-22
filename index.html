@@ -58,6 +58,7 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+.linkish{color:var(--accent);text-decoration:underline;font:inherit}
 input{font:inherit}
 #app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
 #view{flex:1;padding:16px 16px calc(84px + var(--safe-b));animation:fade .18s ease}
@@ -374,6 +375,44 @@ nav .dot-n{position:absolute;top:6px;right:50%;margin-right:-20px;width:7px;heig
    CALLE — real-world Mexican Spanish, chunk-first.
    Single-file PWA. No network, no backend. State in localStorage.
    ============================================================ */
+
+/* ---------- 0. FAILSAFE ----------
+   The whole interface is built by script into an empty <main>, so anything
+   thrown on the way to the first paint used to leave the page background and
+   nothing else — no message, no way back, and nothing to report. Show the
+   error instead, and offer the one recovery that fixes a bad saved state.
+   Deliberately self-contained: it runs before the helpers below exist. */
+function fatal(err){
+  var msg = (err && (err.stack || err.message)) || String(err);
+  var safe = String(msg).replace(/[&<>]/g, function(m){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;"}[m];
+  });
+  document.body.innerHTML =
+    '<div style="font:15px/1.5 system-ui,sans-serif;padding:24px;max-width:720px;margin:0 auto">' +
+      '<h1 style="font-size:19px;margin:0 0 6px">Calle could not start</h1>' +
+      '<p style="margin:0 0 14px;opacity:.75">This is a bug, not something you did. The details below say what went wrong.</p>' +
+      '<pre style="white-space:pre-wrap;word-break:break-word;background:#0002;' +
+        'padding:12px;border-radius:10px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace">' + safe + '</pre>' +
+      '<button id="calle-reset" style="margin-top:16px;font:600 15px system-ui;' +
+        'border:0;border-radius:10px;padding:12px 16px;background:#b45309;color:#fff">' +
+        'Clear saved progress and reload</button>' +
+      '<p style="margin-top:10px;font-size:13px;opacity:.6">Only clears this app\'s data on this device.</p>' +
+    '</div>';
+  var b = document.getElementById("calle-reset");
+  if(b) b.onclick = function(){
+    try{
+      Object.keys(localStorage)
+        .filter(function(k){ return k.lastIndexOf("calle_", 0) === 0; })
+        .forEach(function(k){ localStorage.removeItem(k); });
+    }catch(e){}
+    location.reload();
+  };
+}
+/* Catches anything thrown while this script is still running, before the
+   first render() is even reached. Resource errors (a font that will not
+   load) carry no .error and must not trigger this. */
+window.addEventListener("error", function(e){ if(e && e.error) fatal(e.error); });
+window.addEventListener("unhandledrejection", function(e){ if(e && e.reason) fatal(e.reason); });
 
 /* ---------- 1. CONTENT ---------- */
 /* C(chunk, meaning, category, tier, register, examples[[es,en]...], literal?) */
@@ -2200,7 +2239,17 @@ const hasGoal = c => (c.goals || []).some(g => myGoals.includes(g));
 let dialogDone = LS.get("dialogDone", {}); // dialogue id -> best % of replies right
 /* Merged over defaults so decks saved by an earlier version pick up new keys. */
 let totals   = Object.assign({reviews:0, shadowReps:0, attempts:0, drills:0}, LS.get("totals", {}));
-let settings = Object.assign({rate:0.92, voice:null, sound:true}, LS.get("settings", {}));
+let settings = Object.assign({rate:0.92, voice:null, sound:true, pace:"brisk", salty:true}, LS.get("settings", {}));
+
+/* Chunk ids are positional ("c" + index), so any build that inserts or drops
+   a chunk renumbers everything after it. Saved progress can therefore name an
+   id this build no longer has, and every practice mode looks its queue up with
+   byId() and walks straight into the undefined. Drop the unusable entries once,
+   here, instead of guarding each consumer. */
+const CHUNK_IDS = new Set(CHUNKS.map(c => c.id));
+[srs, scores, ears, drills, skipped].forEach(map => {
+  Object.keys(map).forEach(id => { if(!CHUNK_IDS.has(id)) delete map[id]; });
+});
 
 const saveSrs      = () => LS.set("srs", srs);
 const saveStreak   = () => LS.set("streak", streak);
@@ -2296,7 +2345,7 @@ function spreadByCategory(list){
    arrives steadily alongside it. */
 const GOAL_WEAVE = 2;
 function newCards(){
-  const pool = CHUNKS.filter(c => !inDeck(c.id));
+  const pool = CHUNKS.filter(c => !inDeck(c.id) && !(settings.salty === false && c.register === "vulgar"));
   const order = list => spreadByCategory(list.filter(c => !skipped[c.id]))
                  .concat(spreadByCategory(list.filter(c => skipped[c.id])));
   if(!myGoals.length) return order(pool);
@@ -2759,12 +2808,16 @@ const VIEWS = {
 };
 
 function render(){
-  (VIEWS[tab] || VIEWS.home)();
-  const nav = $("#nav");
-  nav.style.display = tab === "intro" ? "none" : "";
-  if(tab !== "intro") renderNav();
-  view.scrollTop = 0;
-  window.scrollTo(0,0);
+  try{
+    (VIEWS[tab] || VIEWS.home)();
+    const nav = $("#nav");
+    nav.style.display = tab === "intro" ? "none" : "";
+    if(tab !== "intro") renderNav();
+    view.scrollTop = 0;
+    window.scrollTo(0,0);
+  }catch(err){
+    fatal(err);
+  }
 }
 
 function go(t){ tab = t; render(); }
@@ -2931,6 +2984,9 @@ function renderHome(){
                       plan.listen && `${plan.listen} listening`].filter(Boolean).join(", ")
                    : "Nothing due right now"}
     </p>
+    ${daysToFinish() ? `<p class="tiny muted center" style="margin:4px 0 0">
+      ${esc(pace().label)} pace · all ${CHUNKS.length} met in ~${daysToFinish()} days ·
+      <button class="linkish" data-sheet="settings">change</button></p>` : ""}
 
     <p class="sec-label" style="margin:22px 0 8px">What you can do</p>
     <div class="card">
@@ -2980,14 +3036,33 @@ function renderHome(){
 /* ----- Daily session -----
    One queue that actually runs all three stages back to back. The modes stay
    the same; the flow just decides what comes next and counts what got done. */
-const NEW_PER_DAY = 5, LISTEN_PER_DAY = 4, REVIEW_CAP = 20;
+/* How much new material a day. This was five, hardcoded, which puts the whole
+   collection two months out and quietly contradicts the promise the app makes
+   on its own intro screen. The learner sets the pace instead, and Today says
+   where the one they picked actually lands them. */
+const PACES = {
+  steady:  {label:"Steady",  fresh:5,  listen:4,  review:20, mins:"5 min"},
+  brisk:   {label:"Brisk",   fresh:12, listen:8,  review:40, mins:"15 min"},
+  intense: {label:"Intense", fresh:20, listen:12, review:60, mins:"25 min"},
+};
+const pace = () => PACES[settings.pace] || PACES.brisk;
 let flow = null;
 
 function sessionPlan(){
-  const review = Math.min(dueCards().length, REVIEW_CAP);
-  const fresh  = Math.min(newCards().length, NEW_PER_DAY);
-  const listen = Object.keys(srs).length >= 4 ? LISTEN_PER_DAY : 0;
+  const p = pace();
+  const review = Math.min(dueCards().length, p.review);
+  const fresh  = Math.min(newCards().length, p.fresh);
+  const listen = Object.keys(srs).length >= 4 ? p.listen : 0;
   return {review, fresh, listen, total: review + fresh + listen};
+}
+
+/* Days until every remaining chunk has at least been met, at the current
+   pace. Shown because "63 days" is the kind of thing a learner should be
+   told before they commit, not after. */
+function daysToFinish(){
+  const left = CHUNKS.length - Object.keys(srs).length;
+  if(left <= 0) return 0;
+  return Math.ceil(left / pace().fresh);
 }
 
 function startSessionFlow(){
@@ -3964,6 +4039,26 @@ function openSettings(){
             <div style="margin-top:6px">then open <b>http://localhost:8000</b> and use it there.</div>
           </div>
         </div>` : ""}
+      <p class="sec-label" style="margin:20px 0 6px">Pace</p>
+      <p class="muted tiny" style="margin:0 0 10px">
+        New chunks per day. At <b>${esc(pace().label)}</b> you'd meet all
+        ${CHUNKS.length} in about ${daysToFinish()} more ${daysToFinish() === 1 ? "day" : "days"}.</p>
+      <div class="row" style="gap:8px">
+        ${Object.keys(PACES).map(k => `
+          <button class="btn sm${settings.pace === k ? " primary" : ""}" data-pace="${k}" style="flex:1">
+            ${esc(PACES[k].label)}<br><span class="tiny muted">${PACES[k].fresh}/day · ${esc(PACES[k].mins)}</span>
+          </button>`).join("")}
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <span>Salty language <b class="muted tiny">${settings.salty === false ? "hidden" : "shown"}</b></span>
+        <button class="btn sm" id="saltyTog" style="width:auto;padding:8px 16px">
+          ${settings.salty === false ? "Off" : "On"}</button>
+      </div>
+      <p class="muted tiny" style="margin:6px 0 0">
+        Off keeps the two vulgar chunks out of your deck. You'll still hear
+        them in the wild, so they're only hidden, never unlearned.</p>
+
       <div class="field">
         <span>Speed <b id="rateVal" class="muted tiny">${settings.rate.toFixed(2)}×</b></span>
         <input type="range" id="rate" min="0.6" max="1.2" step="0.02" value="${settings.rate}">
@@ -4000,6 +4095,21 @@ function openSettings(){
     settings.rate = parseFloat(rate.value);
     wrap.querySelector("#rateVal").textContent = settings.rate.toFixed(2) + "×";
     saveSettings();
+  };
+  wrap.querySelectorAll("[data-pace]").forEach(b => {
+    b.onclick = () => {
+      settings.pace = b.dataset.pace;
+      saveSettings();
+      close();
+      openSettings();
+    };
+  });
+  const salty = wrap.querySelector("#saltyTog");
+  salty.onclick = () => {
+    settings.salty = settings.salty === false;
+    saveSettings();
+    close();
+    openSettings();
   };
   const tog = wrap.querySelector("#soundTog");
   tog.onclick = () => {
