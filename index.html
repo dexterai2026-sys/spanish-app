@@ -5835,7 +5835,11 @@ function leaveMode(){
   resetAttempt();
   shadowSpoken = null;
   clearDrillTimer();
+  /* State as well as the card: leaving mid-attempt used to strand drillState
+     on "go", and a run still marked as running is what renderDrill now treats
+     as an attempt needing to be resolved. */
   drillCard = null; drillRound = null;
+  drillState = "ready"; drillHeard = ""; drillResult = null;
   labCard = null; labRound = null;
   wordCard = null; wordShown = false; wordSpoke = null;
   earCard = null; earQ = null;
@@ -6156,43 +6160,65 @@ function buildDrill(){
 }
 function clearDrillTimer(){ if(drillTimer){ clearInterval(drillTimer); drillTimer = null; } }
 
-function startDrill(){
+/* The single place an attempt is resolved. Everything that can end one now
+   comes through here, because that used not to be true: when the clock ran
+   out the timer called stopListening(), which detaches every handler before
+   aborting, so done() could never fire afterwards. The state stayed "go" with
+   the countdown on zero and one button, "I'm done", which called those same
+   two functions and so did nothing at all. Running out of time is a designed
+   path in a five-second drill, and it was a dead end with no way to retry. */
+function settleDrill(text){
+  clearDrillTimer();
+  if(drillState !== "go") return;      // the recognizer already resolved it
+  /* Nothing to score against if the card went away underneath us — a late
+     callback after leaving the mode. Fall back to a clean start. */
+  if(!drillCard){ drillState = "ready"; return render(); }
+  drillState = "done";
   const {ex} = drillCard;
+  if(text){
+    const r = scoreAttempt(ex.es, text);
+    r.said = text;
+    drillResult = r;
+    totals.drills = (totals.drills || 0) + 1;
+    /* Kept apart from Shadow's scores: reading a sentence aloud and
+       producing it cold from English are different skills, and pooling
+       them would let the easier one mask the harder one. */
+    const id = drillCard.c.id;
+    if(drills[id] == null || r.score > drills[id]){ drills[id] = r.score; saveDrills(); }
+    recordSkill("speaking", r.score >= 75, ex.level || 1);
+    saveTotals(); markStudied();
+    r.score >= 60 ? gotItRight() : gotItWrong();
+    checkMilestones();
+  }else{
+    drillResult = {blocked: "Didn't catch that — try again."};
+  }
+  render();
+}
+
+function startDrill(){
   drillState = "go"; drillHeard = ""; drillResult = null;
   drillLeft = DRILL_SECONDS;
-  render();
+  /* The clock is armed before the first paint, not after: renderDrill treats
+     "running with no timer" as an attempt to resolve, and this function's own
+     opening render would otherwise trip it. */
   clearDrillTimer();
   drillTimer = setInterval(() => {
     drillLeft--;
-    if(drillLeft <= 0){ clearDrillTimer(); stopListening(); }
+    if(drillLeft <= 0){
+      stopListening();
+      /* What was heard before the clock stopped still counts. Throwing away a
+         nearly-finished attempt because the recognizer had not flushed it yet
+         is the difference between a score and nothing. */
+      return settleDrill(drillHeard.trim() || null);
+    }
     if(drillState === "go") render();
   }, 1000);
+  render();
 
   startListening({
     partial(t){ drillHeard = t; if(drillState === "go") render(); },
     fail(msg){ clearDrillTimer(); drillState = "done"; drillResult = {blocked: msg}; render(); },
-    done(text){
-      clearDrillTimer();
-      drillState = "done";
-      if(text){
-        const r = scoreAttempt(ex.es, text);
-        r.said = text;
-        drillResult = r;
-        totals.drills = (totals.drills || 0) + 1;
-        /* Kept apart from Shadow's scores: reading a sentence aloud and
-           producing it cold from English are different skills, and pooling
-           them would let the easier one mask the harder one. */
-        const id = drillCard.c.id;
-        if(drills[id] == null || r.score > drills[id]){ drills[id] = r.score; saveDrills(); }
-        recordSkill("speaking", r.score >= 75, ex.level || 1);
-        saveTotals(); markStudied();
-        r.score >= 60 ? gotItRight() : gotItWrong();
-        checkMilestones();
-      }else{
-        drillResult = {blocked: "Didn't catch anything — try again."};
-      }
-      render();
-    }
+    done(text){ settleDrill(text); }
   });
 }
 
@@ -6206,6 +6232,13 @@ function renderDrill(){
   }
   if(!drillRound) drillRound = {done:0, scores:[]};
   if(drillRound.done >= DRILL_ROUND) return renderDrillDone();
+  /* Leaving the tab mid-attempt and coming back leaves the state running with
+     no timer behind it. Resolve it rather than draw a countdown that cannot
+     count down. */
+  if(drillState === "go" && !drillTimer && drillCard){
+    stopListening();
+    return settleDrill(drillHeard.trim() || null);
+  }
   if(!drillCard) buildDrill();
   const {c, ex} = drillCard;
   const blocked = recProblem();
@@ -6837,7 +6870,7 @@ document.addEventListener("click", e => {
   if(t.dataset.drill){
     const act = t.dataset.drill;
     if(act === "start" || act === "retry"){ startDrill(); return; }
-    if(act === "stop"){ clearDrillTimer(); stopListening(); return; }
+    if(act === "stop"){ stopListening(); settleDrill(drillHeard.trim() || null); return; }
     if(act === "reveal"){ drillState = "done"; drillResult = {blocked:"Mic unavailable — check it yourself."}; render(); return; }
     if(act === "again"){ clearDrillTimer(); stopListening(); drillRound = null; drillCard = null; render(); return; }
     if(act === "next"){
@@ -6882,6 +6915,11 @@ document.addEventListener("click", e => {
   }
 
   if(t.dataset.learn){
+    /* A pass now ends the stage, so the view can change under a tap that was
+       already on its way — and the old card's buttons are still in the DOM
+       for that instant. Without this a second tap dereferenced a null card
+       and took the whole app down to the failsafe. */
+    if(!learnCard) return render();
     if(t.dataset.learn === "add"){
       srs[learnCard.id] = newState(); saveSrs();
       noteStudied(learnCard.id);

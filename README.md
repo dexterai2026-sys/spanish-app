@@ -144,6 +144,22 @@ The session summary follows the same rule: Quick-fire is only offered once there
 Quick-fire
 English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer. Eight prompts to a round.
 
+An attempt always ends, and every way it can end goes through one function.
+That is worth stating because it used not to: when the clock ran out the timer
+called stopListening(), which detaches the recognizer's handlers before
+aborting it, so the callback that would have scored the attempt could never
+fire. The drill sat at zero seconds offering one button, "I'm done", which
+called those same two functions and therefore did nothing. Running out of time
+is a designed path in a five-second drill, and it was a dead end — reported
+from real use as being stuck with no way to try again.
+
+Whatever the recognizer heard before the clock stopped is still scored rather
+than thrown away, so a nearly-finished attempt gets a number instead of
+nothing. If it heard nothing at all the card says so and offers Next phrase
+and Try this one again, which is what the timeout should always have done.
+Leaving the mode mid-attempt stops the microphone, drops the clock and resets
+to Start, rather than stranding a run that is still marked as going.
+
 Conversations
 Twenty exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are plausible but off, usually in register rather than meaning:
 
