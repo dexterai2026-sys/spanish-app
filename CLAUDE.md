@@ -60,3 +60,18 @@ There is no test suite. Before pushing, load the app in a browser and drive
 the change — fresh state and returning state, and every view. The saved-state
 scenarios worth re-running are: empty, a deck of 120, ids that no longer
 resolve, and a legacy `learner` shape.
+
+## The auditor agent
+
+`.claude/agents/eddie.md` is a checked-in reviewer: an EdTech product auditor
+and applied linguist that drives the app in a real browser as a new learner and
+reports on pedagogy and UI/UX. Invoke it when you want an outside read rather
+than a diff review.
+
+It carries this installation's specifics — how to serve and drive the app,
+which globals to measure against, and the fact that headless Chromium has
+neither speech synthesis nor speech recognition, so silence in the mic modes is
+the harness and not a bug. It is told to separate what it observed in the UI
+from what it inferred by simulation, because six months of daily use cannot
+honestly be driven by hand and an audit that overstates its method is worth
+nothing.
