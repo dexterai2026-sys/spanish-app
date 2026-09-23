@@ -1,7 +1,7 @@
 Calle — real-world Mexican Spanish
-A single-file PWA that teaches spoken Mexican Spanish through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses. An adaptive curriculum keeps the carrier sentence at the learner's level and uses their goals to choose relevant contexts.
+A PWA — one page plus a service worker — that teaches spoken Mexican Spanish through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses. An adaptive curriculum keeps the carrier sentence at the learner's level and uses their goals to choose relevant contexts.
 
-Everything lives in one index.html: 368 chunks, 564 everyday words, 835 example sentences, 20 dialogues, 52 sentence patterns, a spaced-repetition engine, a pronunciation scorer and eight study modes. No build step, no dependencies, no backend, no network calls.
+Everything the app is lives in one index.html: 368 chunks, 564 everyday words, 835 example sentences, 20 dialogues, 52 sentence patterns, a spaced-repetition engine, a pronunciation scorer and eight study modes. The only other file is sw.js, which exists so an installed copy can replace itself — see When the page won't load. No build step, no dependencies, no backend, no network calls.
 
 Calle is Spanish for "street" — the register this teaches.
 
@@ -417,11 +417,14 @@ This is still fully offline — localhost never touches the internet.
 One genuine caveat: Chrome and Edge don't do speech recognition on-device; they stream audio to Google's servers. So the scoring in Shadow and Quick-fire needs a connection even when served locally. Everything else works with the network off. The app detects all of this and says which case you're in — check Settings (⚙).
 
 Installing on a phone
-Serve it over HTTPS (GitHub Pages works) and use Add to Home Screen. The web app manifest is generated at runtime with a canvas-drawn icon, so it installs standalone with no extra files.
+Serve it over HTTPS (GitHub Pages works) and use Add to Home Screen. The web app manifest is generated at runtime with a canvas-drawn icon.
+
+An installed copy on iOS gets its own cache, separate from Safari's, and no address bar. That combination is worth understanding before it bites: if the installed copy is holding a bad page, there is no URL to type to get past it, and the bad page is the thing that would otherwise offer a way out. The service worker and the watchdog below exist for that case. If an installed copy is stuck, deleting the icon and re-adding it from Safari always works, because it discards that separate store.
 
 Architecture
-One file, no dependencies, no build:
+Two files, no dependencies, no build:
 
+sw.js                      network-first worker; cache is the offline fallback
 index.html
 ├── <script>               boot watchdog — a separate block, in <head>
 ├── <style>                inline CSS, dark + light via prefers-color-scheme
@@ -437,7 +440,8 @@ index.html
     ├── 5.  HELPERS        escaping, cloze building, toasts
     ├── 6.  VIEWS          one render function per mode
     ├── 7.  EVENTS         single delegated click handler
-    └── 8.  PWA            runtime-generated manifest + icon
+    ├── 8.  PWA            runtime-generated manifest + icon
+    └── 10. WORKER         registers sw.js, but only after a real first paint
 Rendering is deliberately dumb: every view rebuilds its own innerHTML from state, and one delegated listener on document routes every data-* action. No framework, no virtual DOM, no reconciliation to reason about.
 
 Stored state
@@ -514,6 +518,27 @@ failsafe. None of the four is blank.
 
 If you hit a blank page: load the URL with ?fresh=1 on the end. That bypasses
 the cached copy, and your progress is stored separately and survives it.
+
+The service worker is the third layer, and the only one that helps an installed
+copy. Both layers above live inside the page, so neither can do anything about
+a browser that will not fetch a new page in the first place — which is the
+position an iOS home-screen app is in, with its own cache and no address bar.
+sw.js is network-first: every launch fetches the page, and the cache is
+consulted only when the network fails or takes more than 8 seconds. A cached
+copy that is merely old is a bug here, not a feature.
+
+It also refuses to cache a broken copy. A cut-off transfer still arrives as a
+200, which is how this started, so a response is only stored if it carries the
+boot marker near the top and its closing tag at the very bottom. If the network
+returns a truncated page and a whole one is already cached, the whole one is
+served instead. Checked by serving a deliberately truncated page to a browser
+with the worker installed: the app boots anyway.
+
+It is registered only after the app has painted, so a copy that cannot start
+can never install the thing that would go on serving it. ?nosw on the URL
+unregisters it and empties the cache. Both watchdog buttons do the same before
+reloading, which is what makes them work inside an installed app rather than
+only in a tab.
 
 Browser support
 Playback	Mic scoring

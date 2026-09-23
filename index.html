@@ -25,6 +25,29 @@
     if(e && e.target && e.target !== window) return;   /* a font that won't load */
     seen = (e && (e.message || (e.error && e.error.message))) || "script error";
   });
+  /* An app launched from a home screen has no address bar, so these buttons
+     are the only way out of a bad copy — and the service worker's cache is
+     one of the places a bad copy can be sitting. Take it with us. Guarded and
+     time-limited: this must never be the thing that hangs. */
+  function purge(done){
+    var left = 2, fired = false;
+    function step(){ if(--left <= 0 && !fired){ fired = true; done(); } }
+    setTimeout(function(){ if(!fired){ fired = true; done(); } }, 2000);
+    try{
+      if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+        navigator.serviceWorker.getRegistrations().then(function(rs){
+          return Promise.all(rs.map(function(r){ return r.unregister(); }));
+        }).then(step, step);
+      } else { step(); }
+    }catch(e){ step(); }
+    try{
+      if(window.caches && caches.keys){
+        caches.keys().then(function(ks){
+          return Promise.all(ks.map(function(k){ return caches.delete(k); }));
+        }).then(step, step);
+      } else { step(); }
+    }catch(e){ step(); }
+  }
   function stuck(why){
     if(window.__calleUp) return;                          /* app painted, stand down */
     if(document.getElementById("calle-reset")) return;    /* in-app failsafe got there */
@@ -48,7 +71,9 @@
         '<p style="margin-top:18px;font-size:12px;opacity:.5;word-break:break-word">' +
           'Build ' + BUILD + ' \u00b7 ' + line + '</p>' +
       '</div>';
-    var fresh = function(){ location.replace(location.pathname + "?fresh=" + Date.now()); };
+    var fresh = function(){
+      purge(function(){ location.replace(location.pathname + "?fresh=" + Date.now()); });
+    };
     document.getElementById("calle-fresh").onclick = fresh;
     document.getElementById("calle-wipe").onclick = function(){
       try{
@@ -6933,6 +6958,22 @@ render();
 /* Tells the boot watchdog in the page head that we reached a first paint, so it
    stands down. Checked against real content: a blank <main> is not a boot. */
 if(view && view.innerHTML.trim()) window.__calleUp = true;
+
+/* ---------- 10. SERVICE WORKER ----------
+   Registered only once the app has actually painted, so a broken copy can
+   never install the thing that would go on serving it. The worker is
+   network-first: the cache is there for being offline and is never a source
+   of stale code. ?nosw on the URL tears it all out again. */
+if("serviceWorker" in navigator && window.isSecureContext){
+  if(location.search.indexOf("nosw") !== -1){
+    navigator.serviceWorker.getRegistrations()
+      .then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+    if(window.caches) caches.keys()
+      .then(ks => ks.forEach(k => caches.delete(k))).catch(() => {});
+  } else if(window.__calleUp){
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+}
 </script>
 </body>
 </html>
