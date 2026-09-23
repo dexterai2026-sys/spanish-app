@@ -8,6 +8,64 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Calle">
 <title>Calle — Real Mexican Spanish</title>
+
+<!-- ---------- BOOT WATCHDOG ----------
+     A separate block on purpose. The app is one ~350KB block, and the failsafe
+     that reports a thrown error lives inside it. So the one failure neither can
+     report is the block never running at all — truncated in transit, or held
+     half-written in a cache. That is what a bare white page actually is, and it
+     has now happened twice. This block is small enough to always arrive whole,
+     and turns that case into something readable with a way out. -->
+<script>
+(function(){
+  var BUILD = "2026-09-23";
+  window.CALLE_BUILD = BUILD;
+  var seen = null;
+  window.addEventListener("error", function(e){
+    if(e && e.target && e.target !== window) return;   /* a font that won't load */
+    seen = (e && (e.message || (e.error && e.error.message))) || "script error";
+  });
+  function stuck(why){
+    if(window.__calleUp) return;                          /* app painted, stand down */
+    if(document.getElementById("calle-reset")) return;    /* in-app failsafe got there */
+    if(!document.body) return;
+    var line = seen ? ("Last error: " + seen) : ("Stopped after " + why + ".");
+    document.body.innerHTML =
+      '<div style="font:15px/1.55 system-ui,-apple-system,sans-serif;padding:26px;' +
+        'max-width:640px;margin:0 auto;color:#e8e3dc;background:#12100e;' +
+        'min-height:100vh;box-sizing:border-box">' +
+        '<div style="font-size:30px">\uD83D\uDDFA\uFE0F</div>' +
+        '<h1 style="font-size:20px;margin:10px 0 6px">Calle didn\'t finish loading</h1>' +
+        '<p style="margin:0 0 16px;opacity:.75">Almost always a half-downloaded copy ' +
+          'kept by the browser. Fetching a fresh one fixes it \u2014 your progress is ' +
+          'stored separately and is not touched.</p>' +
+        '<button id="calle-fresh" style="width:100%;font:600 16px system-ui;border:0;' +
+          'border-radius:12px;padding:14px;background:#e0a34a;color:#20180c">' +
+          'Reload a fresh copy</button>' +
+        '<button id="calle-wipe" style="width:100%;margin-top:10px;font:600 15px system-ui;' +
+          'background:none;color:#e8e3dc;border:1px solid #ffffff33;border-radius:12px;' +
+          'padding:12px">Clear saved data and reload</button>' +
+        '<p style="margin-top:18px;font-size:12px;opacity:.5;word-break:break-word">' +
+          'Build ' + BUILD + ' \u00b7 ' + line + '</p>' +
+      '</div>';
+    var fresh = function(){ location.replace(location.pathname + "?fresh=" + Date.now()); };
+    document.getElementById("calle-fresh").onclick = fresh;
+    document.getElementById("calle-wipe").onclick = function(){
+      try{
+        Object.keys(localStorage).forEach(function(k){
+          if(k.lastIndexOf("calle_", 0) === 0) localStorage.removeItem(k);
+        });
+      }catch(err){}
+      fresh();
+    };
+  }
+  /* The document arrived but the app never signalled: it parsed and died. */
+  window.addEventListener("load", function(){ setTimeout(function(){ stuck("loading"); }, 2500); });
+  /* The document never finished arriving, so "load" never fires: a cut-off
+     transfer, which leaves the script unterminated and unparseable. */
+  setTimeout(function(){ stuck("15 seconds"); }, 15000);
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Loaded without blocking first paint: a stylesheet link would hold the whole
@@ -6509,6 +6567,9 @@ function openSettings(){
       <p class="tiny muted center" style="margin:8px 0 0" id="backupNote">
         ${Object.keys(srs).length} chunks · ${liveStreak()} day streak · ${totals.reviews} reviews</p>
       <button class="btn sm ghost" id="reset" style="margin-top:10px;color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)">Reset all progress</button>
+
+      <p class="tiny muted center" style="margin:18px 0 0;opacity:.55">
+        Build ${window.CALLE_BUILD || "unknown"}</p>
     </div>`;
   document.body.appendChild(wrap);
 
@@ -6869,6 +6930,9 @@ document.addEventListener("input", e => {
 
 /* ---------- 9. GO ---------- */
 render();
+/* Tells the boot watchdog in the page head that we reached a first paint, so it
+   stands down. Checked against real content: a blank <main> is not a boot. */
+if(view && view.innerHTML.trim()) window.__calleUp = true;
 </script>
 </body>
 </html>

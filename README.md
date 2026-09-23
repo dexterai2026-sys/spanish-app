@@ -423,10 +423,12 @@ Architecture
 One file, no dependencies, no build:
 
 index.html
+├── <script>               boot watchdog — a separate block, in <head>
 ├── <style>                inline CSS, dark + light via prefers-color-scheme
 └── <script>
-    ├── 1.  CHUNKS         the 242-chunk collection + category table
-    ├── 1b. DIALOGUES      8 scripted exchanges
+    ├── 0.  FAILSAFE       catches anything thrown before the first paint
+    ├── 1.  CHUNKS         the 368-chunk collection + category table
+    ├── 1b. DIALOGUES      20 scripted exchanges
     ├── 2.  STORAGE        localStorage wrapper, defaults merged on load
     ├── 3.  SRS            SM-2 scheduling
     ├── 4.  SPEECH OUT     TTS: voice selection, error surfacing
@@ -453,6 +455,11 @@ calle_unlocked	milestones already celebrated, so it never fires twice
 calle_seenIntro	whether the first-run intro has been shown
 calle_totals	lifetime reviews, shadow reps, attempts, drills, best combo
 calle_settings	chosen voice, speech rate, sound on/off
+calle_goals	which goals you are training for
+calle_learner	per-skill ability bands and the evidence behind them
+calle_studied	words you have met, for the production coverage check
+calle_vsrs	per-word scheduling state, kept apart from the chunk deck
+calle_talkRota	the dialogue rota and how far through it you are
 Backup and restore
 Settings → Backup exports every key above as one dated JSON file (calle-progress-2026-09-19.json), and Import restores it — on the same device or a new one.
 
@@ -471,6 +478,42 @@ Spanish	Fraunces	every chunk, sentence and dialogue line
 The split is the point: a serif sentence is the language you're learning, sans is the app talking. Fraunces also sets tighter than a system bold, so Spanish sentences wrap less.
 
 ~92KB for both Latin subsets, cached after first load, requested in a single stylesheet with preconnect and font-display: swap so nothing blocks rendering. System stacks remain the fallback (--ui and --es custom properties), and they keep the same sans/serif distinction if the fonts never arrive.
+
+When the page won't load
+Everything the app shows is built by script into an empty <main>, which makes a
+blank page the default failure rather than an unlikely one. Two layers exist so
+that it is never what you actually get, and they cover different failures.
+
+The in-app failsafe is the first thing the main script defines, before any
+content, and it catches anything thrown on the way to the first paint — a
+corrupt saved value, a bad id, a bug in a render function. It replaces the page
+with what went wrong and a button that clears this app's saved data and
+reloads. render() is wrapped in it too, so a throw in any single view reports
+itself instead of blanking the screen.
+
+The boot watchdog covers the failure the failsafe cannot, because they would
+both be lost together: the main script never running at all. The app is one
+~350KB block, so a transfer cut off partway, or a half-written copy kept in a
+cache, leaves it unterminated and unparseable — and the failsafe inside it never
+registers. That is what a genuine white screen is, and it has happened twice.
+The watchdog is a separate, deliberately tiny block in <head>, small enough to
+always arrive whole. If the app has not signalled a first paint 2.5s after the
+document loads — or 15s in, for a document that never finishes arriving at all —
+it paints a page saying so, with two buttons: fetch a fresh copy
+(?fresh=<timestamp>, which defeats the cache), or clear saved data and reload.
+It stands down if the app booted or if the in-app failsafe already reported.
+
+Settings shows the build date at the bottom, so it is possible to tell which
+copy a browser is actually running — the point being that a stale cache and a
+bad deploy look identical from the outside.
+
+Verified against a healthy load, a transfer truncated mid-script, the
+GitHub-web-editor truncation that caused the first incident, and a top-level
+throw: the first boots, the next two get the watchdog, the last gets the
+failsafe. None of the four is blank.
+
+If you hit a blank page: load the URL with ?fresh=1 on the end. That bypasses
+the cached copy, and your progress is stored separately and survives it.
 
 Browser support
 Playback	Mic scoring
