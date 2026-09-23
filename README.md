@@ -45,9 +45,39 @@ Correct answers flash green and play a short rising tone; wrong ones flash red. 
 
 All tones are synthesised with the Web Audio API, so there are no audio files and it works with the network off. Toggle in Settings; on by default.
 
+When Spanish speaks by itself
+Every speaker button (🔊) plays on tap, everywhere. On top of that, one
+line of Spanish speaks on its own the moment it appears, under a single rule:
+the app says it when it is there to be learned, and stays quiet while it is
+the thing being recalled.
+
+Mode	Speaks by itself
+Learn	the chunk, once per card, as the card opens
+Review	the example sentence, on reveal — never on the prompt
+Words	the word with its article, when new, and on reveal
+Listen	the sentence, which is the whole exercise
+Shadow	the line you are about to say
+Conversations	each line the other person speaks
+Sentence Lab	the finished sentence, once you have built it
+
+Learn and Words used not to follow it. Both drew their speaker buttons — four
+to six of them on a Learn card — and then said nothing, while Listen, Shadow
+and Review all played by themselves. So the one screen where a phrase is
+introduced was the screen that read as broken, and it was the screen where
+hearing it matters most.
+
+Only the chunk itself speaks on a Learn card, not its examples: firing four to
+six sentences on open would be a wall of audio. The buttons are still there for
+those. Nothing repeats on a re-render — each card tracks what it has already
+said, so grading, revealing or returning to a card does not replay it.
+
+Words says "la esposa", not "esposa". The article is half of what a noun card
+is teaching, and the produce branch used to speak the bare word on tap and then
+the full form on reveal, talking over itself.
+
 The eight modes
 Mode	What it trains	Needs
-Learn	Meeting a new chunk with its examples and audio	—
+Learn	Meeting a new chunk — speaks it, with examples and notes	—
 Review	Recall, via cloze or translation prompt	—
 Listen	Understanding with no text on screen	—
 Shadow	Saying it out loud, scored word by word	mic + net

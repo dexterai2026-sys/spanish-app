@@ -5169,6 +5169,7 @@ function flowNext(){
   if(!flow) return false;
   flow.i++;
   session = null; earCard = null; learnCard = null; wordCard = null; labCard = null;
+  learnSpoke = null; wordSpoke = null;
   go(flow.i >= flow.stages.length ? "sessionDone" : flow.stages[flow.i]);
   return true;
 }
@@ -5229,6 +5230,8 @@ function renderSessionDone(){
 
 /* ----- Learn ----- */
 let learnCard = null;
+/* Which card has already been spoken, so a re-render does not repeat it. */
+let learnSpoke = null;
 function renderLearn(){
   const pool = newCards();
   if(!pool.length){
@@ -5259,6 +5262,14 @@ function renderLearn(){
       <button class="btn primary" data-learn="add">Got it — keep this one</button>
       <div class="center"><button class="lnk tiny" data-learn="skip">Not this one</button></div>
     </div>`;
+
+  /* The moment you first meet a phrase is exactly when you need to hear it.
+     Learn drew four to six speaker buttons and then never said anything,
+     while Listen, Shadow and Review all play by themselves — so the one
+     screen where a chunk is introduced was the one that read as broken.
+     The chunk only, once per card: firing every example would be a wall of
+     audio nobody asked for, and the buttons are still there for those. */
+  if(learnSpoke !== c.id){ learnSpoke = c.id; speak(c.chunk); }
 }
 
 /* ----- Review ----- */
@@ -5373,6 +5384,8 @@ function renderPractice(){
    spoken; a due one asks for recall from the English before revealing, and is
    graded on the same four buttons as a chunk, through the same scheduler. */
 let wordCard = null, wordShown = false;
+/* Word id + phase, so a word speaks when new and again when revealed. */
+let wordSpoke = null;
 
 function nextWord(){
   wordShown = false;
@@ -5473,6 +5486,12 @@ function renderWords(){
         <button class="btn primary" data-word="add">Got it — keep this one</button>
       </div>`}
     ${left != null ? `<p class="tiny muted center" style="margin-top:10px">${left} left in this session</p>` : ""}`;
+
+  /* Same rule Review already follows: speak once the Spanish is on screen,
+     never while it is still the thing being recalled. */
+  const revealed = !review || wordShown || wordCard.pick;
+  const spokeKey = w.id + (review ? ":shown" : ":new");
+  if(revealed && wordSpoke !== spokeKey){ wordSpoke = spokeKey; speak(w.es); }
 }
 
 /* ----- Sentence Lab: the plug-in method -----
@@ -5804,7 +5823,7 @@ function leaveMode(){
   clearDrillTimer();
   drillCard = null; drillRound = null;
   labCard = null; labRound = null;
-  wordCard = null; wordShown = false;
+  wordCard = null; wordShown = false; wordSpoke = null;
   earCard = null; earQ = null;
   shadowQ = null;
   dlg = null;
@@ -6719,7 +6738,9 @@ document.addEventListener("click", e => {
     vsrs[wordCard.w.id] = schedule(vsrs[wordCard.w.id], right ? GRADE.good : GRADE.again);
     saveVsrs(); markStudied();
     right ? gotItRight() : gotItWrong();
-    speak(wordCard.w.bare);
+    /* The reveal in renderWords does the speaking now, and says "la esposa"
+       rather than "esposa" — the article is half of what a noun card is
+       teaching. Speaking here too just talked over it. */
     render(); return;
   }
   if(t.dataset.word){
