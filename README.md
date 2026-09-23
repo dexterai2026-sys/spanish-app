@@ -92,6 +92,8 @@ Each chunk carries its own speed level and ramps as you prove yourself:
 slow      easy      normal    fast
 Right answer moves you up, wrong moves you down. A turtle button gives a one-off slow replay without costing a level. Ten items to a round, then a score.
 
+Wrong options are matched for length. They used not to be, and a third of items could be answered without hearing anything: "When?" beside three full sentences gives itself away, and a learner picking by shape was being promoted up the speed ramp for recognising sentence lengths rather than Spanish. Matching the band drops that to one item in ten, which is about what guessing between four plausible options should cost.
+
 Shadow
 Plays a sentence, you repeat it aloud, and the mic scores you. Three reps per phrase, eight phrases to a round. See Pronunciation scoring.
 

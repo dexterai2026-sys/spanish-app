@@ -2418,6 +2418,7 @@ function vocabOptions(spec){
     && (!spec.nounOnly || !w.isAdj)
     && (!spec.stateOnly || STATE_ADJ.has(w.bare))
     && (!spec.traitOnly || !STATE_ADJ.has(w.bare))
+    && (!spec.not || spec.not.indexOf(w.es) === -1)
     && (w.dom !== "verb" || !BARE_VERB_NO.has(w.bare))
     /* "unos papás" is not how anyone says it, so plurals stay out of the
        indefinite frames. */
@@ -2513,7 +2514,11 @@ const PATTERNS = [
 
   P(null, ["tengo","I have"], [
     S("what", [["un hermano","a brother"],["una pregunta","a question"]],
-      false, {doms:["family"], form:"indef", nounOnly:true})]),
+      false, {doms:["family"], form:"indef", nounOnly:true,
+              /* You do not say "tengo un papá" — everyone has one. Only the
+                 relations you can sensibly count belong in this frame. */
+              not:["el papá","la mamá","los papás","el esposo","la esposa",
+                   "el abuelo","la abuela","la gente","el nombre","el apellido"]})]),
 
   P(null, ["necesito","I need"], [
     S("what", [["la llave","the key"],["el recibo","the receipt"]],
@@ -5517,6 +5522,23 @@ function renderBuild(){
 /* ----- Listen: audio-first recognition with a speed ramp ----- */
 /* Reading the text while hearing it teaches reading. Hiding the text is the
    only way to train the ear for fast, reduced Mexican speech. */
+/* Wrong options have to be about as long as the right one. Otherwise "When?"
+   sits beside three full sentences and the answer is visible without hearing
+   anything — which was true of a third of items, and quietly promoted people
+   up the speed ramp for recognising sentence shapes rather than Spanish. */
+function nearLength(right, pool, n){
+  const target = right.length;
+  const uniq = [];
+  pool.forEach(x => { if(x !== right && uniq.indexOf(x) === -1) uniq.push(x); });
+  return uniq
+    .map(x => ({x, d: Math.abs(x.length - target)}))
+    .sort((a,b) => a.d - b.d)
+    .slice(0, Math.max(n * 3, 8))          // a near band, then shuffled for variety
+    .sort(() => Math.random() - 0.5)
+    .slice(0, n)
+    .map(o => o.x);
+}
+
 const EAR_RATES = [0.7, 0.85, 1.0, 1.15];
 const EAR_LABELS = ["slow", "easy", "normal", "fast"];
 const earLevel = id => Math.min(EAR_RATES.length - 1, ears[id] || 0);
@@ -5547,7 +5569,7 @@ function buildEarCard(){
      replies, so it cannot be passed by picking the only plausible sentence. */
   if(c.answers && Math.random() < 0.34){
     const ans = c.answers[Math.floor(Math.random()*c.answers.length)];
-    const wrongA = shuffle(ALL_ANSWERS.filter(a => a.en !== ans.en)).slice(0, 3).map(a => a.en);
+    const wrongA = nearLength(ans.en, ALL_ANSWERS.filter(a => a.en !== ans.en).map(a => a.en), 3);
     earCard = {c, ex: ans, reply: true, options: shuffle([ans.en, ...wrongA])};
     earPick = null;
     earPlayed = null;
@@ -5555,8 +5577,10 @@ function buildEarCard(){
   }
 
   const ex = pickExample(c, srs[c.id]);
-  const wrong = shuffle(CHUNKS.filter(o => o.id !== id && o.category === c.category))
-    .slice(0, 3).map(o => o.examples[0].en);
+  const sameCat = CHUNKS.filter(o => o.id !== id && o.category === c.category).map(o => o.examples[0].en);
+  const anyOther = CHUNKS.filter(o => o.id !== id).map(o => o.examples[0].en);
+  let wrong = nearLength(ex.en, sameCat, 3);
+  if(wrong.length < 3) wrong = nearLength(ex.en, sameCat.concat(anyOther), 3);
   while(wrong.length < 3){
     const r = CHUNKS[Math.floor(Math.random()*CHUNKS.length)];
     if(r.id !== id && !wrong.includes(r.examples[0].en)) wrong.push(r.examples[0].en);
