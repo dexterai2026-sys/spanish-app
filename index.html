@@ -2836,6 +2836,70 @@ const SOUNDS = {
   "con todo":          "kon-TÓ-do",
   "¿pica?":            "PÍ-ka",
 };
+/* The chunks added later arrived without any of this, so a learner meeting
+   soy or ¿por qué? got a bare card while ahorita got three kinds of note.
+   Same treatment for the same kind of gap: only where speech and spelling
+   genuinely part company. */
+Object.assign(SOUNDS, {
+  /* the forms with no way round them */
+  "soy + noun":        "SÓI — one syllable, rhymes with “boy”",
+  "estoy + adjective": "es-TÓI (fast: “'toy cansado”)",
+  "es + adjective":    "ÉS",
+  "está + adjective":  "es-TÁ — and in speech often just “'tá bien”",
+  "hay":               "ÁI — one syllable, the h is silent",
+  "tengo + noun":      "TÉN-go",
+  "me gusta + noun":   "me-GÚS-ta",
+  "¿dónde está...?":   "dón-des-TÁ — the words run together",
+  /* the past */
+  "fui a":             "FUÍ-a — one syllable then the a",
+  "fue":               "FUÉ — one syllable",
+  "estuvo":            "es-TÚ-bo — the v is a b",
+  "me dijo":           "me-DÍ-jo — the j is a throaty h",
+  "ya lo hice":        "ya-lo-Í-se — silent h, and c before e is an s",
+  "tuve que + verb":   "TÚ-be-ke",
+  "no pude":           "no-PÚ-de",
+  "estaba":            "es-TÁ-ba",
+  /* the little words */
+  "lo / la":           "never stressed — it leans on the verb after it",
+  "me lo / te lo":     "ME-lo / TE-lo — said as one word with the verb",
+  "le":                "le — unstressed, almost swallowed",
+  /* money and the clock */
+  "son + number + pesos": "son … PÉ-sos",
+  "cien / mil":        "SIÉN / MIL — cien sounds like “sien”, no th",
+  "¿a cómo?":          "a-KÓ-mo",
+  "un kilo / medio kilo": "un-KÍ-lo / MÉ-dio-KÍ-lo",
+  "dos de + noun":     "DÓS-de",
+  "¿tiene cambio?":    "tié-ne-KÁM-bio",
+  "¿qué hora es?":     "ké-Ó-ra-ÉS — silent h, all one phrase",
+  "son las + number":  "son-las",
+  "a las + number":    "a-las",
+  "y media / y cuarto":"i-MÉ-dia / i-KUÁR-to",
+  "de la mañana / de la noche": "de-la-ma-ÑÁ-na / de-la-NÓ-che",
+  "el lunes / el jueves": "el-LÚ-nes / el-JUÉ-bes",
+  "mañana / pasado mañana": "ma-ÑÁ-na — the ñ is the ny in “canyon”",
+  "ayer / antier":     "a-YÉR / an-TIÉR",
+  "el fin de semana":  "el-FÍN-de-se-MÁ-na — usually cut to “el fin”",
+  /* the question words */
+  "¿por qué?":         "por-KÉ — two words, stress on the end",
+  "¿qué?":             "KÉ",
+  "¿quién?":           "KIÉN",
+  "¿cuándo?":          "KUÁN-do",
+  "¿cuál?":            "KUÁL",
+  "¿cuánto?":          "KUÁN-to",
+  "¿cómo?":            "KÓ-mo",
+  "¿dónde?":           "DÓN-de",
+  /* saying why you believe */
+  "creo en Dios":      "KRÉ-o-en-DIÓS",
+  "soy cristiano":     "soi-kris-TIÁ-no — the ti is “tya”",
+  "me dio paz":        "me-DIÓ-PÁS — paz ends in an s sound",
+  "antes yo...":       "ÁN-tes-yo",
+  "me sentía vacío":   "me-sen-TÍ-a-ba-SÍ-o — v is b, c is s",
+  "desde entonces":    "des-den-TÓN-ses — runs into one word",
+  "no es religión, es relación": "re-li-JIÓN / re-la-SIÓN",
+  "Dios me ayudó":     "diós-me-a-yu-DÓ",
+  "¿tú qué piensas?":  "tu-ké-PIÉN-sas",
+  "te entiendo":       "ten-TIÉN-do — the two e's merge into one",
+});
 CHUNKS.forEach(c => { if(SOUNDS[c.chunk]) c.sounds = SOUNDS[c.chunk]; });
 
 /* ---------- 1b2. WHAT NOBODY TELLS YOU ----------
@@ -2872,6 +2936,32 @@ const NOTES = {
   "¿qué onda?":
     "The default greeting among friends and the single most Mexican thing in this collection. Fine with anyone your own age, too casual for a job interview or your partner's grandmother.",
 };
+/* Same gap on the later chunks: the ones where the translation is right and
+   the meaning still goes missing. */
+Object.assign(NOTES, {
+  "soy cristiano":
+    "Worth knowing before you say it: in Mexico <b>cristiano</b> usually means evangelical or Protestant specifically, not Christian in general. A Catholic will normally say <b>soy católico</b>. Saying <b>soy cristiano</b> to someone who assumes the narrower meaning tells them which church you belong to, not just that you believe.",
+  "soy + noun":
+    "<b>Soy</b> is for what you are and stays true — where you're from, your work, your faith. For how you are right now, tired or lost or ready, it's <b>estoy</b>. Getting these the wrong way round is the single most common mistake English speakers make in Spanish, and using <b>soy</b> with a feeling can sound like you're claiming it as a permanent trait.",
+  "estoy + adjective":
+    "The passing half of the pair. <b>Estoy cansado</b> is I'm tired right now; <b>soy cansado</b> would claim being a tired person by nature. The rule that actually works: if it could change by tomorrow, it's <b>estoy</b>.",
+  "hay":
+    "One word covering there is, there are, is there and are there — it never changes for singular or plural. <b>¿Hay baño?</b> and <b>¿Hay tacos?</b> are both right. It is also the single most useful word for asking whether a place has a thing at all.",
+  "¿por qué?":
+    "Two words with an accent is the question, <b>why?</b> One word without is <b>porque</b>, the answer, <b>because</b>. They sound nearly identical in speech, so the context does the work — and a bare <b>¿por qué?</b> can sound blunt, which is why <b>¿por qué preguntas?</b> softens it.",
+  "cien / mil":
+    "<b>Cien</b> is exactly a hundred; for a hundred and something it becomes <b>ciento</b> — ciento veinte. Prices are usually said without the word pesos at all: <b>son ciento veinte</b> is the whole sentence.",
+  "lo / la":
+    "Goes <i>in front of</i> the verb, which is the opposite of English and the thing that takes longest to feel natural. <b>Ya lo vi</b>, never <b>ya vi lo</b>. With two verbs it can hook onto the end instead — <b>voy a verlo</b> — and both are correct.",
+  "fui a":
+    "Does double duty: <b>fui</b> is both I went and I was. <b>Fui al mercado</b> is I went; <b>fui maestro</b> is I was a teacher. Context separates them and nobody is ever confused in practice.",
+  "hermano":
+    "Among believers it is a normal way to address someone you have just met, and it carries real warmth rather than sounding stiff. Outside that, between friends it's closer to <b>mate</b>. <b>Carnal</b> is the street version of the same thing.",
+  "te entiendo":
+    "The thing to say when someone disagrees with you, and it does more work than agreeing would. It concedes that their position makes sense without conceding the point, which keeps a conversation open that a counter-argument would close.",
+  "el fin de semana":
+    "Almost always shortened to <b>el fin</b> in speech — <b>¿qué hiciste el fin?</b> The full phrase is not wrong, it just marks you as reading rather than talking.",
+});
 CHUNKS.forEach(c => { if(NOTES[c.chunk]) c.note = NOTES[c.chunk]; });
 
 /* ---------- 1b3. WHAT COMES BACK ----------

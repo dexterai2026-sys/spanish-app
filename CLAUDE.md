@@ -41,6 +41,14 @@ before the first paint leaves a blank page, which is why `fatal()` is
 registered at the top of the script and `render()` is wrapped. Don't remove
 that safety net, and don't let a change depend on helpers defined below it.
 
+**New chunks need the layers, not just examples.** A card is chunk, meaning,
+register, `SOUNDS`, `NOTES` where the meaning does not survive translation, a
+literal gloss where it helps, and sentences. Content added in bulk tends to
+arrive with examples only, which a learner notices as the cards getting
+thinner partway through — it happened once already, to all 52 chunks added
+after the original 316. When adding chunks, add their `SOUNDS` and `NOTES`
+entries in the same commit.
+
 **The Sentence Lab generates Spanish.** That means it can generate wrong
 Spanish. New blocks carry their constraints — nouns list the engines they
 combine with, person-marked verbs pick a side, motion verbs refuse place

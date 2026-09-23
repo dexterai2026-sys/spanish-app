@@ -70,7 +70,7 @@ Where speech and spelling diverge, it shows how it actually sounds:
 
 ¿qué onda? — sounds like ké-ÓN-da — one word, no gap ahorita — sounds like o-RÍ-ta — the h is silent (often just "orita") ¿verdad? — sounds like ver-DÁ — the final d disappears
 
-CAPS marks the stressed syllable. 104 chunks carry one; a chunk without a note sounds the way it looks. This is the gap that makes fast Mexican Spanish unintelligible to people who can read it perfectly — silent h, seseo, yeísmo, para → pa, está → tá, nada más → namás, final -d dropping.
+CAPS marks the stressed syllable. 156 chunks carry one; a chunk without a note sounds the way it looks. This is the gap that makes fast Mexican Spanish unintelligible to people who can read it perfectly — silent h, seseo, yeísmo, para → pa, está → tá, nada más → namás, final -d dropping.
 
 One primary action — Got it — adds it to your deck. Passing is a secondary link, because a beginner has no basis to judge a chunk they've just met, and making that a 50/50 decision on every card is friction dressed as choice. A skipped chunk is remembered and sinks below ones you haven't seen.
 
@@ -190,7 +190,9 @@ Sixteen of the highest-value questions carry the three or four replies you will 
 Register, and what nobody tells you
 Every chunk carries casual, neutral or vulgar, and the card says who it is for — friends and people your own age, or safe with anyone, or close friends and read the room. This is the difference between güey and mucho gusto, and it is not visible from a translation.
 
-Fourteen chunks also carry a culture note, for the cases where the words survive translation and the meaning does not. ahorita earns the longest: it can mean now, in twenty minutes, or never, and nothing shorter than a paragraph conveys that. Also mande, provecho, con permiso, ¿me regalas?, ni modo and güey — the ones where the mistake is social rather than grammatical.
+Twenty-five chunks also carry a culture note, for the cases where the words survive translation and the meaning does not. ahorita earns the longest: it can mean now, in twenty minutes, or never, and nothing shorter than a paragraph conveys that. Also mande, provecho, con permiso, ¿me regalas?, ni modo and güey — the ones where the mistake is social rather than grammatical. The most consequential of the later ones is soy cristiano: in Mexico that usually means evangelical or Protestant specifically rather than Christian in general, so it tells someone which church you belong to and not merely that you believe.
+
+Material added to the collection has to arrive with these, not just with examples. The chunks added after the original 316 landed with no pronunciation notes and no culture notes at all, so a learner meeting soy or ¿por qué? got a bare card while ahorita got three kinds of note — visible as a drop in quality partway through the first week. They now carry the same layers.
 
 Salty language can be switched off in Settings, which keeps the two vulgar chunks out of the deck without pretending they are not said.
 
