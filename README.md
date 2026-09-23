@@ -70,7 +70,9 @@ Where speech and spelling diverge, it shows how it actually sounds:
 
 ¿qué onda? — sounds like ké-ÓN-da — one word, no gap ahorita — sounds like o-RÍ-ta — the h is silent (often just "orita") ¿verdad? — sounds like ver-DÁ — the final d disappears
 
-CAPS marks the stressed syllable. 156 chunks carry one; a chunk without a note sounds the way it looks. This is the gap that makes fast Mexican Spanish unintelligible to people who can read it perfectly — silent h, seseo, yeísmo, para → pa, está → tá, nada más → namás, final -d dropping.
+CAPS marks the stressed syllable. 277 chunks carry one — 82% of the first hundred and twenty a learner meets; a chunk without a note sounds the way it looks, and 91 of them genuinely do. This is the gap that makes fast Mexican Spanish unintelligible to people who can read it perfectly — silent h, seseo, yeísmo, para → pa, está → tá, nada más → namás, final -d dropping.
+
+The test for whether a chunk needs one is whether an English reader would get it wrong: h read aloud, c and z read as they look rather than as s, v as v rather than b, ll as a double l, j and g before e or i as English j and g, qu as kw, a final d pronounced. Anything that passes all of those is left bare on purpose. A note on a word that already sounds the way it looks is noise, and noise teaches a learner to stop reading the notes.
 
 One primary action — Got it — adds it to your deck. Passing is a secondary link, because a beginner has no basis to judge a chunk they've just met, and making that a 50/50 decision on every card is friction dressed as choice. A skipped chunk is remembered and sinks below ones you haven't seen.
 
