@@ -1,7 +1,7 @@
 Calle — real-world Mexican Spanish
 A single-file PWA that teaches spoken Mexican Spanish through the chunks, fillers and fixed phrases natives actually reuse — not grammar tables and formal tenses. An adaptive curriculum keeps the carrier sentence at the learner's level and uses their goals to choose relevant contexts.
 
-Everything lives in one index.html: 368 chunks, 564 everyday words, 835 example sentences, 16 dialogues, 41 sentence patterns, a spaced-repetition engine, a pronunciation scorer and nine study modes. No build step, no dependencies, no backend, no network calls.
+Everything lives in one index.html: 368 chunks, 564 everyday words, 835 example sentences, 20 dialogues, 52 sentence patterns, a spaced-repetition engine, a pronunciation scorer and eight study modes. No build step, no dependencies, no backend, no network calls.
 
 Calle is Spanish for "street" — the register this teaches.
 
@@ -45,14 +45,13 @@ Correct answers flash green and play a short rising tone; wrong ones flash red. 
 
 All tones are synthesised with the Web Audio API, so there are no audio files and it works with the network off. Toggle in Settings; on by default.
 
-The nine modes
+The eight modes
 Mode	What it trains	Needs
 Learn	Meeting a new chunk with its examples and audio	—
 Review	Recall, via cloze or translation prompt	—
 Listen	Understanding with no text on screen	—
 Shadow	Saying it out loud, scored word by word	mic + net
 Quick-fire	Production against a 5-second clock	mic + net
-Build it	Filling a frame's slot — production without a mic	—
 Sentence Lab	Assembling a whole sentence from blocks	—
 Words	Everyday vocabulary, scheduled in its own right	—
 Conversations	Turn-taking — holding your end of an exchange	—
@@ -116,7 +115,7 @@ Quick-fire
 English prompt, 5-second countdown, say it in Spanish. Recall with unlimited thinking time doesn't build the sub-second retrieval real conversation needs; this does. Reuses the same scorer. Eight prompts to a round.
 
 Conversations
-Sixteen exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are plausible but off, usually in register rather than meaning:
+Twenty exchanges built from chunks already in the collection. You take one side and choose your reply from three options — where the wrong ones are plausible but off, usually in register rather than meaning:
 
 Them: ¿Qué le damos, joven?
 
@@ -141,6 +140,8 @@ Talking about a tradition	6
 The bus is late	6
 Paying at the market	8
 Goal-matched conversations sort to the top and are badged for you. Finishing replays the whole exchange with per-line audio.
+
+The session's closing conversation is a rota, not a choice. The first version took a goal-matched one and fell back to "your weakest", which does not rotate: simulated over ninety days it served the same exchange 87 times out of 88 and never once reached 14 of the 16. A daily habit cannot end on the same scene every day. Goal-matched dialogues come first, then the rest, each used once before anything repeats — 20 distinct over 90 sessions, nothing more than five times. Four conversations were added at the same time because faith had only two, so even a rota came round every other day.
 
 Sentence Lab
 The plug-in method. Almost everything a beginner needs to say is a lead plus one or two slots:
@@ -175,16 +176,6 @@ Plurals excluded from indefinite frames	tengo unos papás
 English gloss follows the surface used	where is kitchen
 
 Goals steer it. A pattern belonging to a goal is three times as likely to come up for someone who picked that goal, so a faith learner builds quiero orar por ti and ¿puedo compartir algo contigo? rather than sentences about buying things — roughly 44% of their round. The universal shapes still appear, because every conversation needs them whatever it is about.
-
-Build it
-The frames are the best thing in the collection — voy a + verb really does replace the future tense — and they used to be taught as though they were sentences: a card to recognise, never a thing to build with. Build it shows the English and an empty slot, and asks which filler belongs in it.
-
-voy a ___        I'm going to rest
-                 → descansar · pasar · cancelar · invitarte
-
-Twelve frames, six fillers each, eight to a round. The wrong options come from other frames, so they are real Spanish that simply does not fit this slot; same-frame fillers would usually be just as correct, and the discrimination worth training is which frame takes what.
-
-It needs no microphone. Shadow and Quick-fire are the only other production modes and neither runs on an iPhone, where the Web Speech API has no recognition in any browser — so half the audience had recognition practice and nothing asking them to produce.
 
 What comes back
 The collection has fifty-two ways to ask something and used to teach nothing about the reply, which is the failure people actually have: you ask ¿por dónde queda? well enough to convince someone you speak Spanish, and they answer at full speed.
@@ -338,7 +329,11 @@ interval ≥ 21 days	A1–B2
 The effective maximum is min(chunk maturity, learner skill ceiling). Mastering o sea therefore cannot expose an A1 learner to a B1 carrier sentence. If nothing fits, Calle takes only the gentlest available example rather than opening the entire set. When several eligible examples exist, selected goals break the tie in favor of useful personal contexts.
 
 Milestones
-Progress reads as capabilities, not card counts — "Order without English 7/10" beats "20 mastered". Eight milestones, each a hand-picked bundle of chunks:
+Progress reads as capabilities, not card counts — "Order without English 7/10" beats "20 mastered". Sixteen milestones, each a hand-picked bundle of chunks.
+
+Eight of them ask for five chunks rather than ten. Ten is the right size for a claim about capability and too slow to work as a reward: simulated over ninety days only four of nine ever unlocked, and the first came around day forty-five — through the whole month where somebody decides if this is worth keeping up. The smaller ones are drawn from what the opening fortnight hands over, so the first unlocks land near day fourteen and seven are out by day ninety.
+
+The ten-chunk capabilities:
 
 🌮 Order without English · 👋 Greet like a local · 😲 React like you mean it · 💬 Stall like a native · 🧠 Hold an opinion · 📖 Tell a story · 🛟 Survive being lost · 🤝 Make plans
 
@@ -367,7 +362,6 @@ Mode	Leads with
 Quick-fire	today's chunks ~65% of prompts, the rest pulled back from the wider deck
 Shadow	today's first, then the rest of the deck
 Listen	today's first, within the chunks already in the deck
-Build it	only frames you have actually met, today's first
 Sentence Lab	patterns matching your goals
 
 The stretch matters as much as the reinforcement — a round that only ever asks for what you just met is a memory test, not recall — which is why none of them draws from today alone. The session summary closes the loop: it names the chunks you just did and offers to drill or build with them rather than dropping you back on the home screen.
@@ -389,6 +383,18 @@ Talk	hold your end of a conversation
 Building and talking used to live behind the Practice tab, which meant the daily loop — the thing the home screen tells you to do — was recognition from end to end and never once asked the learner to produce a sentence or hold an exchange. For an app whose whole point is conversational fluency, that was the loop teaching everything except the goal. The closing conversation is chosen rather than browsed: a goal-matched one you have not done, else your weakest.
 
 The older description, for reference: up to 20 due reviews, then a pace-sized batch of new chunks, then the listening quota — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
+
+Sharing
+Everything the app manufactures that somebody would want to show — a streak, a milestone, the first conversation held without English — used to be visible only inside it. There was no share affordance anywhere, which for something meant to spread is the whole story.
+
+A card is drawn on a canvas and handed to the system share sheet, falling back to a download where that is unavailable. It carries the achievement, the streak, and a line of Spanish the learner can now say.
+
+The Spanish line is the point. A number is a boast; "La verdad me cambió la vida" is a thing the person reading it wants for themselves, which is the only reason anyone forwards anything. It is picked from mastered chunks, at least four words long, and only where the learner could produce the whole sentence — so it is a real claim rather than a slogan.
+
+Offered at the unlock celebration, on the session summary once a streak reaches three days, and from Progress.
+
+Progress, and what it leaves out
+Three tiles answer the only question the screen is really asked — mastered, words, capabilities unlocked — followed by the four skill bands and a share button. Category coverage, ear training, the thirteen-week heatmap and deck health sit behind one fold. They were all on the surface, and thirteen category bars reporting "Slang 8/44" is a data dump rather than a reason to come back.
 
 Two speaking scores, kept apart
 Shadow and Quick-fire both score speech, but they measure different skills:

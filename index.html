@@ -3746,6 +3746,57 @@ const DIALOGUES = [
     YOU("Deme medio kilo, porfa.", "Give me half a kilo, please.",
         ["No me gustan los mangos.", "Mejor la próxima, gracias."]),
   ]),
+
+  /* Rotating the closing conversation exposed how thin the goal pools were:
+     faith had two, so a rota still came round every other day. Appended, so
+     existing ids keep their dialogues. */
+  D("Praying with someone", "A friend has just told you about a hard week.", [
+    THEM("Ha estado pesada la semana, la verdad.", "It's been a rough week, honestly."),
+    YOU("¿Puedo orar por ti? Nada más si quieres.", "Can I pray for you? Only if you want.",
+        ["Deberías orar más seguido.", "Ay, qué mala onda, ni modo."]),
+    THEM("Pues... sí, está bien. Gracias.", "Well... yes, alright. Thanks."),
+    YOU("No tiene que ser ahorita. Cuando gustes.", "It doesn't have to be now. Whenever you like.",
+        ["Órale, cierra los ojos.", "Es que Dios te está probando."]),
+    THEM("No, ahorita está bien.", "No, now is fine."),
+    YOU("Va. Gracias por dejarme.", "Alright. Thank you for letting me.",
+        ["Perfecto, entonces empiezo.", "Qué bueno, ya te hacía falta."]),
+  ]),
+
+  D("Invited to church", "Someone invites you along on Sunday.", [
+    THEM("Oye, ¿no quieres venir el domingo a la iglesia?", "Hey, do you want to come to church on Sunday?"),
+    YOU("¿A qué hora es? Depende de la hora.", "What time is it? Depends on the time.",
+        ["No, gracias, no me interesa.", "Sí, claro, siempre voy."]),
+    THEM("A las once. Es tranquilo, no te preocupes.", "At eleven. It's relaxed, don't worry."),
+    YOU("Va, ahí te caigo. ¿Queda lejos?", "Alright, I'll be there. Is it far?",
+        ["Pues ni modo, ahí veré.", "No sé, luego te digo."]),
+    THEM("Está a dos cuadras del mercado.", "It's two blocks from the market."),
+    YOU("Perfecto. Nos vemos el domingo.", "Perfect. See you Sunday.",
+        ["Bueno, si me acuerdo.", "Ahorita vemos."]),
+  ]),
+
+  D("Someone disagrees", "A friend pushes back on what you believe.", [
+    THEM("Yo la verdad no creo en nada de eso.", "Honestly I don't believe in any of that."),
+    YOU("Te entiendo. Yo pensaba igual.", "I understand you. I used to think the same.",
+        ["Pues estás equivocado.", "La Biblia dice que sí."]),
+    THEM("¿Y qué te cambió?", "And what changed for you?"),
+    YOU("Me dio paz que no tenía. Nada más eso.", "It gave me a peace I didn't have. That's all.",
+        ["Es que tienes que creer.", "Ya verás cuando te pase algo."]),
+    THEM("Pues qué bueno por ti, en serio.", "Well, good for you, really."),
+    YOU("Gracias por escucharme. ¿Tú qué piensas?", "Thanks for hearing me out. What do you think?",
+        ["Deberías intentarlo.", "Bueno, ya te dije todo."]),
+  ]),
+
+  D("Catching up after a while", "You run into someone you haven't seen in months.", [
+    THEM("¡Cuánto tiempo! ¿Cómo has estado?", "Long time! How have you been?"),
+    YOU("Aquí nomás, chambeando. ¿Y tú qué tal?", "Just here, working. And how about you?",
+        ["Estoy muy bien, muchas gracias señor.", "Pues ahí, no sé."]),
+    THEM("Ahí la llevo. Oye, ¿sigues estudiando español?", "Getting by. Hey, are you still studying Spanish?"),
+    YOU("Sí, estoy aprendiendo. Ten paciencia conmigo.", "Yes, I'm learning. Be patient with me.",
+        ["No, ya lo dejé.", "Sí, ya lo hablo perfecto."]),
+    THEM("¡No manches, si se te oye bien!", "No way, you sound good!"),
+    YOU("¿Neta? Qué padre, gracias.", "Really? That's great, thanks.",
+        ["No es cierto, hablo mal.", "Obvio, practico mucho."]),
+  ]),
 ];
 DIALOGUES.forEach((d,i) => d.id = "d" + (i+1));
 
@@ -3756,6 +3807,8 @@ const DIALOGUE_GOALS = {
   "Reacting to big news":"friends", "At the corner shop":"food",
   "Making weekend plans":"friends", "Sharing your faith":"faith",
   "At the bus station":"travel", "Talking about music":"culture",
+  "Praying with someone":"faith", "Invited to church":"faith",
+  "Someone disagrees":"faith", "Catching up after a while":"friends",
   "Setting up a meeting":"work",
   "Someone asks what you believe":"faith", "Talking about a tradition":"culture",
   "The bus is late":"travel", "Paying at the market":"food",
@@ -4115,12 +4168,122 @@ function speak(text, rate){
   setTimeout(() => { if(SS.paused) SS.resume(); }, 150);
 }
 
+/* ---------- 3a2. SHARING ----------
+   Everything this app manufactures that somebody would want to show — a
+   streak, a milestone, the first conversation held without English — was
+   visible only inside it. A card is drawn on a canvas and handed to the
+   system share sheet, falling back to a download where that is unavailable.
+
+   The line of Spanish is the point. A number is a boast; "Ya sé pedir tacos
+   sin hablar inglés" is a thing somebody else wants for themselves, which is
+   the only reason anyone forwards it. */
+function shareLine(){
+  /* Worth showing, not merely true. "¿Qué?" is a real thing the learner can
+     say and nobody is impressed by it, so the card wants a whole sentence —
+     from a chunk they have mastered where possible, and long enough to look
+     like Spanish. */
+  const rank = id => statusOf(id) === "mastered" ? 2 : statusOf(id) === "review" ? 1 : 0;
+  const cands = [];
+  Object.keys(srs).filter(id => rank(id) > 0).forEach(id => {
+    const c = byId(id); if(!c) return;
+    c.examples.forEach(e => {
+      const words = e.es.split(/\s+/).length;
+      if(words >= 4 && exampleCoverage(e, c) >= 0.85) cands.push({e, r: rank(id), words});
+    });
+  });
+  if(!cands.length) return null;
+  const best = Math.max.apply(null, cands.map(x => x.r));
+  const top = cands.filter(x => x.r === best);
+  const pick = top[Math.floor(Math.random()*top.length)];
+  return {es: pick.e.es, en: pick.e.en};
+}
+
+function shareCard(headline, sub){
+  const W = 1080, H = 1080;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const x = cv.getContext("2d");
+
+  x.fillStyle = "#12100e"; x.fillRect(0, 0, W, H);
+  x.fillStyle = "#f59e0b";
+  x.fillRect(0, 0, W, 14);
+
+  x.textAlign = "center";
+  x.fillStyle = "#a8a29e";
+  x.font = "600 34px system-ui, sans-serif";
+  x.fillText("CALLE · MEXICAN SPANISH", W/2, 120);
+
+  x.fillStyle = "#fafaf9";
+  x.font = "700 78px Georgia, serif";
+  wrapText(x, headline, W/2, 330, W - 160, 92);
+
+  x.fillStyle = "#f59e0b";
+  x.font = "600 40px system-ui, sans-serif";
+  x.fillText(sub, W/2, 470);
+
+  const line = shareLine();
+  if(line){
+    x.fillStyle = "#1c1917";
+    roundRect(x, 90, 560, W - 180, 300, 32);
+    x.fillStyle = "#2dd4bf";
+    x.font = "600 28px system-ui, sans-serif";
+    x.fillText("I CAN SAY THIS NOW", W/2, 630);
+    x.fillStyle = "#fafaf9";
+    x.font = "italic 600 52px Georgia, serif";
+    wrapText(x, line.es, W/2, 710, W - 260, 64);
+    x.fillStyle = "#a8a29e";
+    x.font = "400 30px system-ui, sans-serif";
+    wrapText(x, line.en, W/2, 810, W - 260, 38);
+  }
+
+  x.fillStyle = "#57534e";
+  x.font = "500 30px system-ui, sans-serif";
+  x.fillText(location.host + location.pathname, W/2, 1000);
+
+  cv.toBlob(blob => {
+    if(!blob) return toast("Couldn't make the image.");
+    const file = new File([blob], "calle.png", {type: "image/png"});
+    const text = headline + " — " + sub;
+    if(navigator.canShare && navigator.canShare({files: [file]})){
+      navigator.share({files: [file], text}).catch(() => {});
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "calle.png"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast("Saved the image — share it from there.");
+  }, "image/png");
+}
+
+function wrapText(ctx, text, cx, y, maxW, lh){
+  const words = String(text).split(" ");
+  let line = "", yy = y;
+  words.forEach(w => {
+    const test = line ? line + " " + w : w;
+    if(ctx.measureText(test).width > maxW && line){
+      ctx.fillText(line, cx, yy); yy += lh; line = w;
+    }else line = test;
+  });
+  if(line) ctx.fillText(line, cx, yy);
+  return yy;
+}
+function roundRect(ctx, x0, y0, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x0 + r, y0);
+  ctx.arcTo(x0 + w, y0, x0 + w, y0 + h, r);
+  ctx.arcTo(x0 + w, y0 + h, x0, y0 + h, r);
+  ctx.arcTo(x0, y0 + h, x0, y0, r);
+  ctx.arcTo(x0, y0, x0 + w, y0, r);
+  ctx.closePath(); ctx.fill();
+}
+
 /* ---------- 3b. BACKUP ----------
    Everything lives in localStorage, which one cleared cache wipes. These move
    it in and out as a plain file. */
 const BACKUP_KEYS = ["srs","streak","scores","ears","dialogDone","drills",
                      "skipped","unlocked","totals","settings","seenIntro","goals",
-                     "learner","studied","vsrs"];
+                     "learner","studied","vsrs","talkRota"];
 
 function backupBlob(){
   const payload = {app:"calle", version:1, exported:new Date().toISOString(), data:{}};
@@ -4537,7 +4700,6 @@ const VIEWS = {
   listen:   () => renderListen(),
   shadow:   () => renderShadow(),
   drill:    () => renderDrill(),
-  build:    () => renderBuild(),
   lab:      () => renderLab(),
   words:    () => renderWords(),
   dialogue: () => renderDialogue(),
@@ -4634,6 +4796,21 @@ const MILESTONES = [
   ["\u{1F4D6}", "Tell a story",           ["entonces","total que","y entonces","fíjate que","imagínate","resulta que","el caso es que","por eso","en fin","aparte"]],
   ["\u{1F6DF}", "Survive being lost",     ["¿me repites?","no te entendí","más despacio, porfa","¿cómo se dice...?","¿mande?","estoy aprendiendo","¿por dónde queda?","derechito","está a la vuelta","¿qué significa...?"]],
   ["\u{1F91D}", "Make plans",             ["¿te late?","¿qué tal si...?","sale","¿cómo quedamos?","al rato","ahorita","te marco","mándame ubicación","¿va?","la próxima"]],
+
+  /* First steps: five chunks each, drawn from what the queue hands over in
+     the opening fortnight. The ten-chunk milestones are the right size for a
+     capability but too slow to be a reward — simulated over ninety days only
+     four of nine ever unlocked, so the motivational surface was static
+     through the month where people decide whether to keep going. These fill
+     that gap without claiming more than they are. */
+  ["\u{1F4AC}", "Say something back",     ["claro","o sea","pues","no sé","¿no?"]],
+  ["\u{2753}", "Ask the six questions",   ["¿qué?","¿quién?","¿cuándo?","¿dónde?","¿por qué?","¿cómo?"]],
+  ["\u{1F64F}", "Be polite about it",     ["porfa","con permiso","una disculpa","no te preocupes","gracias por escucharme"]],
+  ["\u{1F5E3}\u{FE0F}", "Say what you want", ["quiero + verb","puedo + verb","tengo que + verb","voy a + verb","hay que + verb"]],
+  ["\u{1F553}", "Handle a time and a price", ["¿qué hora es?","son las + number","a las + number","¿cuánto es?","son + number + pesos"]],
+  ["\u{1F464}", "Say who you are",        ["soy + noun","estoy + adjective","tengo + noun","me gusta + noun","¿de dónde eres?"]],
+  ["\u{1F6A6}", "Get yourself unstuck",   ["¿mande?","¿me repites?","más despacio, porfa","¿cómo se dice...?","estoy aprendiendo"]],
+  ["\u{1F4D6}", "Tell it in the past",    ["fui a","fue","me dijo","estuvo","ya lo hice"]],
 ];
 
 /* One capability per goal, shown only to people training for it. */
@@ -4675,12 +4852,19 @@ function celebrate(em, name){
       <div class="ctitle">Unlocked</div>
       <div class="cname">${esc(name)}</div>
       <p class="muted tiny" style="margin:10px 0 0">You've got the chunks for this one.</p>
-      <button class="btn primary" style="margin-top:18px">¡Órale!</button>
+      <div class="stack" style="margin-top:18px">
+        <button class="btn primary" data-cel="share">Share it</button>
+        <button class="btn sm ghost" data-cel="close">¡Órale!</button>
+      </div>
     </div>`;
   document.body.appendChild(w);
   const close = () => w.remove();
   w.querySelector("[data-close]").onclick = close;
-  w.querySelector("button").onclick = close;
+  w.querySelector('[data-cel="close"]').onclick = close;
+  w.querySelector('[data-cel="share"]').onclick = () => {
+    shareCard(name, "Unlocked on Calle");
+    close();
+  };
 }
 
 function milestoneProgress(chunkNames){
@@ -4949,6 +5133,7 @@ function renderSessionDone(){
       <p class="es" style="font-size:15px;line-height:1.7;margin:0">${todayNames.map(esc).join(" · ")}</p>
     </div>` : ""}
     <div class="stack" style="margin-top:16px">
+      ${liveStreak() >= 3 ? `<button class="btn sm" data-share="streak">\u{1F525} Share your ${liveStreak()}-day streak</button>` : ""}
       <p class="tiny muted center" style="margin:0 0 4px">Practice leads with what you just did</p>
       ${micReady && Object.keys(srs).length >= 25
         ? `<button class="btn primary" data-go="drill">\u{26A1} Say them cold</button>
@@ -5085,10 +5270,9 @@ function renderPractice(){
     ["listen",  "\u{1F442}", "Listen",      "Understand it with no text on screen", heard ? `${heard} trained` : "Open to start"],
     ["shadow",  "\u{1F3A7}", "Shadow",      "Read it aloud, scored by the mic",     `${totals.shadowReps} said out loud`],
     ["drill",   "\u{26A1}",  "Quick-fire",  "Produce it cold in five seconds",      `${totals.drills || 0} drilled`],
-    ["build",   "\u{1F9F1}", "Build it",    "Fill the frame — no mic needed",       `${FRAMES.length} frames`],
     ["dialogue","\u{1F5E3}\u{FE0F}", "Conversations", "Hold your end of a real exchange", `${Object.keys(dialogDone).length}/${DIALOGUES.length} done`],
   ];
-  view.innerHTML = header("Practice", "Seven ways to make it stick") + `
+  view.innerHTML = header("Practice", "Six ways to make it stick") + `
     <div class="stack">
       ${modes.map(([k,em,title,sub,meta]) => `
         <button class="action" data-go="${k}">
@@ -5365,160 +5549,6 @@ function renderLabCard(inFlow){
        </div>`}`;
 }
 
-/* ----- Build it: the slot drill -----
-   A frame with a gap is worth fifty memorised sentences, and until now the
-   frames were taught as though they were sentences: "voy a + verb" arrived as
-   a card to recall rather than a thing to build with. This asks for the one
-   that fits, so the frame gets used instead of remembered — which is the
-   whole claim the app makes about learning chunks instead of grammar.
-
-   No microphone, deliberately. It is the only production mode an iPhone can
-   run, and production is the half that separates recognising from speaking. */
-const FRAMES = [
-  {frame:"voy a ___", chunk:"voy a + verb", gloss:"I'm going to ...", fills:[
-    {es:"comer", en:"eat"}, {es:"salir", en:"go out"}, {es:"descansar", en:"rest"},
-    {es:"trabajar", en:"work"}, {es:"preguntarle", en:"ask him"}, {es:"regresar", en:"come back"}]},
-  {frame:"tengo que ___", chunk:"tengo que + verb", gloss:"I have to ...", fills:[
-    {es:"irme", en:"get going"}, {es:"pagar", en:"pay"}, {es:"avisarle", en:"let her know"},
-    {es:"levantarme temprano", en:"get up early"}, {es:"terminar esto", en:"finish this"}, {es:"cancelar", en:"cancel"}]},
-  {frame:"quiero ___", chunk:"quiero + verb", gloss:"I want to ...", fills:[
-    {es:"probarlo", en:"try it"}, {es:"aprender", en:"learn"}, {es:"verte", en:"see you"},
-    {es:"entender", en:"understand"}, {es:"quedarme", en:"stay"}, {es:"invitarte", en:"invite you"}]},
-  {frame:"¿puedo ___?", chunk:"puedo + verb", gloss:"Can I ...?", fills:[
-    {es:"pasar", en:"come through"}, {es:"pagar con tarjeta", en:"pay by card"}, {es:"preguntarte algo", en:"ask you something"},
-    {es:"sentarme aquí", en:"sit here"}, {es:"ayudarte", en:"help you"}, {es:"tomar una foto", en:"take a photo"}]},
-  {frame:"hay que ___", chunk:"hay que + verb", gloss:"One has to ... / we should ...", fills:[
-    {es:"apurarse", en:"hurry up"}, {es:"esperar", en:"wait"}, {es:"preguntar", en:"ask"},
-    {es:"tener cuidado", en:"be careful"}, {es:"verlo mañana", en:"look at it tomorrow"}, {es:"aprovechar", en:"make the most of it"}]},
-  {frame:"acabo de ___", chunk:"acabo de + verb", gloss:"I've just ...", fills:[
-    {es:"llegar", en:"arrived"}, {es:"comer", en:"eaten"}, {es:"hablar con él", en:"spoken to him"},
-    {es:"despertarme", en:"woken up"}, {es:"verlo", en:"seen it"}, {es:"salir", en:"left"}]},
-  {frame:"me gusta ___", chunk:"me gusta + noun", gloss:"I like ...", fills:[
-    {es:"mucho", en:"it a lot"}, {es:"caminar", en:"walking"}, {es:"la comida de aquí", en:"the food here"},
-    {es:"esa canción", en:"that song"}, {es:"tu idea", en:"your idea"}, {es:"madrugar", en:"getting up early"}]},
-  {frame:"tengo ganas de ___", chunk:"tener ganas de", gloss:"I feel like ...", fills:[
-    {es:"salir", en:"going out"}, {es:"un café", en:"a coffee"}, {es:"dormir", en:"sleeping"},
-    {es:"platicar", en:"chatting"}, {es:"nada", en:"nothing"}, {es:"algo dulce", en:"something sweet"}]},
-  {frame:"estoy ___", chunk:"estoy + adjective", gloss:"I'm ... (right now)", fills:[
-    {es:"cansado", en:"tired"}, {es:"listo", en:"ready"}, {es:"perdido", en:"lost"},
-    {es:"ocupado", en:"busy"}, {es:"aprendiendo", en:"learning"}, {es:"en camino", en:"on my way"}]},
-  {frame:"tuve que ___", chunk:"tuve que + verb", gloss:"I had to ...", fills:[
-    {es:"salir temprano", en:"leave early"}, {es:"cancelar", en:"cancel"}, {es:"esperar mucho", en:"wait a long time"},
-    {es:"regresar", en:"go back"}, {es:"pagar en efectivo", en:"pay cash"}, {es:"pedir ayuda", en:"ask for help"}]},
-  {frame:"nos vemos a las ___", chunk:"a las + number", gloss:"See you at ...", fills:[
-    {es:"ocho", en:"eight"}, {es:"dos y media", en:"half past two"}, {es:"seis", en:"six"},
-    {es:"nueve y cuarto", en:"quarter past nine"}, {es:"cinco", en:"five"}, {es:"once", en:"eleven"}]},
-  {frame:"dos de ___", chunk:"dos de + noun", gloss:"Two ... (ordering)", fills:[
-    {es:"pastor", en:"pastor"}, {es:"asada", en:"asada"}, {es:"pollo", en:"chicken"},
-    {es:"queso", en:"cheese"}, {es:"chorizo", en:"chorizo"}, {es:"lo que sea", en:"whatever"}]},
-];
-const BUILD_ROUND = 8;
-let buildCard = null, buildPick = null, buildRound = null;
-
-function buildBuildCard(){
-  /* Drill the frames this learner has actually met, leading with any met
-     today. A frame nobody has been taught is a guess, and the whole point of
-     practice is to work the material the session just put down. */
-  const met = FRAMES.filter(f => {
-    const c = CHUNKS.find(x => x.chunk === f.chunk);
-    return c && srs[c.id];
-  });
-  const fresh = met.filter(f => {
-    const c = CHUNKS.find(x => x.chunk === f.chunk);
-    return c && studied.ids.indexOf(c.id) !== -1;
-  });
-  const bag = (fresh.length && Math.random() < 0.55) ? fresh : (met.length ? met : FRAMES);
-  const f = bag[Math.floor(Math.random()*bag.length)];
-  const right = f.fills[Math.floor(Math.random()*f.fills.length)];
-  /* Distractors come from other frames, so the wrong answers are real Spanish
-     that simply does not fit this slot — which is the discrimination that
-     matters. Same-frame fills would often be equally correct. */
-  const others = [];
-  FRAMES.forEach(o => { if(o !== f) o.fills.forEach(x => others.push(x)); });
-  const wrong = shuffle(others.filter(x => x.en !== right.en && x.es !== right.es)).slice(0, 3);
-  buildCard = {f, right, options: shuffle([right, ...wrong])};
-  buildPick = null;
-}
-
-function startBuildRound(){
-  buildRound = {done:0, right:0};
-  buildBuildCard();
-}
-
-function answerBuild(es){
-  if(buildPick) return;
-  buildPick = es;
-  const ok = es === buildCard.right.es;
-  /* Counts as vocabulary rather than speaking: choosing the filler proves you
-     know what the frame takes, not that you can say it. */
-  recordSkill("vocabulary", ok, 1);
-  if(ok){ buildRound.right++; gotItRight(); }
-  else { gotItWrong(); }
-  speak(buildCard.f.frame.replace("___", buildCard.right.es));
-  render();
-}
-
-function nextBuild(){
-  buildRound.done++;
-  if(buildRound.done >= BUILD_ROUND){ render(); return; }
-  buildBuildCard();
-  render();
-}
-
-function renderBuild(){
-  if(!Object.keys(srs).length){
-    view.innerHTML = header("Build it", "Use the frame, don't recall it") +
-      empty("\u{1F9F1}", "Learn a few chunks first",
-            "Frames like voy a + verb come alive once you've met a couple of them.") +
-      `<button class="btn primary" data-go="learn">Learn some chunks</button>`;
-    return;
-  }
-  if(!buildRound) startBuildRound();
-
-  if(buildRound.done >= BUILD_ROUND){
-    const pct = Math.round(buildRound.right / BUILD_ROUND * 100);
-    view.innerHTML = header("Build it", "Round done") + `
-      <div class="card center">
-        <div style="font-size:42px">${pct >= 80 ? "\u{1F389}" : pct >= 50 ? "\u{1F44D}" : "\u{1F4AA}"}</div>
-        <h2 style="margin:6px 0 2px">${buildRound.right} of ${BUILD_ROUND}</h2>
-        <p class="muted tiny">built from the frame, cold</p>
-      </div>
-      <div class="stack" style="margin-top:16px">
-        <button class="btn primary" data-build="again">Another round</button>
-        <button class="btn sm ghost" data-go="practice">Back to practice</button>
-      </div>`;
-    return;
-  }
-
-  const {f, options} = buildCard;
-  const done = buildPick != null;
-  const shown = done ? f.frame.replace("___", `<b class="es">${esc(buildCard.right.es)}</b>`)
-                     : f.frame.replace("___", `<span class="slot">?</span>`);
-  view.innerHTML = header("Build it", `${buildRound.done + 1} of ${BUILD_ROUND}`) + `
-    <div class="card center">
-      <p class="sec-label" style="margin:0 0 10px">Say this</p>
-      <div style="font-size:18px;margin-bottom:6px">${esc(f.gloss.replace("...", buildCard.right.en))}</div>
-      <div class="chunk-hero"><div class="es" style="font-size:24px">${shown}</div></div>
-    </div>
-    <p class="sec-label" style="margin:18px 0 8px">Which one fits?</p>
-    <div class="stack">
-      ${options.map(o => {
-        let cls = "btn opt es-text";
-        if(done){
-          if(o.es === buildCard.right.es) cls += " opt-right";
-          else if(o.es === buildPick) cls += " opt-wrong";
-          else cls += " opt-dim";
-        }
-        return `<button class="${cls}" data-fill="${esc(o.es)}">${esc(o.es)}
-          <span class="tiny muted"> — ${esc(o.en)}</span></button>`;
-      }).join("")}
-    </div>
-    ${done ? `<div class="stack" style="margin-top:16px">
-        ${speakerBtn(f.frame.replace("___", buildCard.right.es))}
-        <button class="btn primary" data-build="next">Next</button>
-      </div>` : ""}`;
-}
-
 /* ----- Listen: audio-first recognition with a speed ramp ----- */
 /* Reading the text while hearing it teaches reading. Hiding the text is the
    only way to train the ear for fast, reduced Mexican speech. */
@@ -5690,7 +5720,6 @@ function leaveMode(){
   shadowSpoken = null;
   clearDrillTimer();
   drillCard = null; drillRound = null;
-  buildCard = null; buildRound = null; buildPick = null;
   labCard = null; labRound = null;
   wordCard = null; wordShown = false;
   earCard = null; earQ = null;
@@ -5834,6 +5863,34 @@ function beginListening(){
 /* ----- Conversations ----- */
 let dlg = null;   // {d, turn, picked, right, total}
 
+/* Which conversation the session closes with. The first version took a
+   goal-matched one and fell back to "lowest score", which does not rotate:
+   simulated over ninety days it served the same exchange 87 times out of 88
+   and never touched 14 of the 16. A daily habit cannot end on the same scene
+   every day, so this is a rota — goal-matched first, then the rest, each used
+   once before any repeats. */
+let talkRota = LS.get("talkRota", null);
+const saveRota = () => LS.set("talkRota", talkRota);
+
+function buildRota(){
+  const mine = shuffle(DIALOGUES.filter(d => myGoals.indexOf(d.goal) !== -1).map(d => d.id));
+  const rest = shuffle(DIALOGUES.filter(d => myGoals.indexOf(d.goal) === -1).map(d => d.id));
+  talkRota = {ids: mine.concat(rest), i: 0};
+  saveRota();
+}
+function nextTalk(){
+  if(!talkRota || !talkRota.ids.length || talkRota.i >= talkRota.ids.length) buildRota();
+  /* A dialogue dropped from the collection must not strand the rota. */
+  let d = DIALOGUES.find(x => x.id === talkRota.ids[talkRota.i]);
+  while(!d && talkRota.i < talkRota.ids.length - 1){
+    talkRota.i++;
+    d = DIALOGUES.find(x => x.id === talkRota.ids[talkRota.i]);
+  }
+  talkRota.i++;
+  saveRota();
+  return d || DIALOGUES[0];
+}
+
 function startDialogue(id){
   const d = DIALOGUES.find(x => x.id === id);
   dlg = {d, turn: 0, picked: null, right: 0, total: d.turns.filter(t => t.who === "you").length, opts: null};
@@ -5846,17 +5903,7 @@ function prepDialogueTurn(){
 }
 
 function renderDialogue(){
-  /* In a session this stage is one conversation, chosen rather than browsed:
-     a goal-matched one you have not done, else your weakest, else anything. */
-  if(flow && !dlg){
-    const mine = DIALOGUES.filter(d => myGoals.indexOf(d.goal) !== -1);
-    const pool = mine.length ? mine : DIALOGUES;
-    const unseen = pool.filter(d => dialogDone[d.id] == null);
-    const pick = unseen.length
-      ? unseen[0]
-      : pool.slice().sort((a,b) => (dialogDone[a.id]||0) - (dialogDone[b.id]||0))[0];
-    startDialogue(pick.id);
-  }
+  if(flow && !dlg) startDialogue(nextTalk().id);
   if(!dlg){
     view.innerHTML = header("Conversations", "Hold your end of a real exchange") + `
       <div class="card">
@@ -6099,6 +6146,10 @@ function renderDrillDone(){
 function renderStats(){
   const deck = Object.keys(srs);
   const mastered = deck.filter(id => statusOf(id) === "mastered").length;
+  const all = activeMilestones();
+  const unlocked_count = all.filter(([em, name, names]) => {
+    const pr = milestoneProgress(names); return pr.got >= pr.total;
+  }).length;
   const learning = deck.filter(id => statusOf(id) === "learning").length;
   const avg = a => a.length ? Math.round(a.reduce((x,y) => x+y, 0) / a.length) : 0;
   const scored  = Object.values(scores),  avgScore = avg(scored);
@@ -6132,10 +6183,11 @@ function renderStats(){
     </div>
 
     <div class="stat-row" style="margin-top:12px">
-      <div class="stat"><b>${deck.length}</b><span>In deck</span></div>
-      <div class="stat"><b>${totals.reviews}</b><span>Reviews</span></div>
-      <div class="stat"><b>${totals.shadowReps}</b><span>Out loud</span></div>
+      <div class="stat"><b>${mastered}</b><span>Mastered</span></div>
+      <div class="stat"><b>${Object.keys(vsrs).length}</b><span>Words</span></div>
+      <div class="stat"><b>${unlocked_count}/${all.length}</b><span>Can do</span></div>
     </div>
+    <button class="btn sm" style="margin-top:10px" data-share="progress">Share where you're at</button>
 
     <div class="card" style="margin-top:12px">
       <p class="sec-label">Where the course has you</p>
@@ -6158,6 +6210,9 @@ function renderStats(){
           ? "Still settling — it needs about eight answers before it will move."
           : "Adjusting as you go."}</p>
     </div>
+
+    <details class="more-ex" style="margin-top:14px">
+      <summary>The detail — category coverage, ear training, deck health</summary>
 
     ${earTrained ? `
     <div class="card" style="margin-top:12px">
@@ -6212,6 +6267,7 @@ function renderStats(){
       <div class="bar-row"><span class="nm">Reviewing</span><span class="track"><i style="width:${deck.length?(deck.length-learning-mastered)/deck.length*100:0}%;background:var(--blue)"></i></span><span class="v">${deck.length-learning-mastered}</span></div>
       <div class="bar-row"><span class="nm">Mastered</span><span class="track"><i style="width:${deck.length?mastered/deck.length*100:0}%;background:var(--green)"></i></span><span class="v">${mastered}</span></div>
     </div>
+    </details>
 
     <button class="btn ghost" style="margin-top:12px" data-sheet="settings">Settings</button>`;
 }
@@ -6538,7 +6594,7 @@ function openSettings(){
 
 /* ---------- 7. EVENTS ---------- */
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-fill],[data-build],[data-lab],[data-lab-pick],[data-word],[data-wgrade],[data-wpick]");
+  const t = e.target.closest("[data-speak],[data-go],[data-learn],[data-reveal],[data-grade],[data-shadow],[data-sheet],[data-filter],[data-open],[data-add],[data-ear],[data-ear-pick],[data-drill],[data-dlg],[data-dlg-pick],[data-dlg-act],[data-session],[data-intro],[data-goal],[data-lab],[data-lab-pick],[data-word],[data-wgrade],[data-wpick],[data-share]");
   if(!t) return;
 
   if(t.dataset.speak !== undefined){ speak(t.dataset.speak); return; }
@@ -6559,7 +6615,15 @@ document.addEventListener("click", e => {
     startSessionFlow(); return;
   }
 
-  if(t.dataset.fill !== undefined){ answerBuild(t.dataset.fill); return; }
+  if(t.dataset.share){
+    const mastered = Object.keys(srs).filter(id => statusOf(id) === "mastered").length;
+    if(t.dataset.share === "streak")
+      shareCard(liveStreak() + " days of Mexican Spanish", mastered + " phrases mastered");
+    else
+      shareCard(Object.keys(srs).length + " phrases, " + Object.keys(vsrs).length + " words",
+                liveStreak() + "-day streak on Calle");
+    return;
+  }
   if(t.dataset.wpick){
     if(wordCard.pick) return;
     wordCard.pick = t.dataset.wpick;
@@ -6605,11 +6669,6 @@ document.addEventListener("click", e => {
   if(t.dataset.lab){
     if(t.dataset.lab === "again"){ startLabRound(); render(); }
     else nextLab();
-    return;
-  }
-  if(t.dataset.build){
-    if(t.dataset.build === "again"){ startBuildRound(); render(); }
-    else nextBuild();
     return;
   }
 
