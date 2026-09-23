@@ -5159,7 +5159,7 @@ function startSessionFlow(reviewsOnly){
   if(p.talk)   stages.push("dialogue");
   flow = {stages, i:0,
           left:{learn:p.fresh, words:p.words, wordRev:p.wordRev, lab:p.build, listen:p.listen},
-          plan:p, did:{review:0, learn:0, words:0, lab:0, listen:0, talk:0}};
+          plan:p, passed:0, did:{review:0, learn:0, words:0, lab:0, listen:0, talk:0}};
   session = null; earCard = null; learnCard = null;
   go(stages[0]);
 }
@@ -5179,8 +5179,20 @@ function flowTick(stage){
   if(stage === "review") return false;          // review ends when its queue empties
   return --flow.left[stage] <= 0 ? flowNext() : false;
 }
+/* Passing on a chunk still spends one of the day's slots. Without this the
+   Learn stage had no end: "Not this one" decremented nothing, so the queue
+   went on handing over chunks — all 368 of them — while the session counter
+   sat at "1 of 24" and the bar never moved. Reported from real use as
+   learning that simply never finishes. Counted apart from did.learn, so a
+   pass moves the session along without being reported as something learned. */
+function flowPass(stage){
+  if(!flow) return false;
+  flow.passed++;
+  return --flow.left[stage] <= 0 ? flowNext() : false;
+}
 const flowDone = () => flow
-  ? flow.did.review + flow.did.learn + (flow.did.words||0) + (flow.did.lab||0) + flow.did.listen + (flow.did.talk||0)
+  ? flow.did.review + flow.did.learn + (flow.did.words||0) + (flow.did.lab||0) + flow.did.listen
+    + (flow.did.talk||0) + (flow.passed||0)
   : 0;
 function flowBar(){
   if(!flow) return "";
@@ -5189,7 +5201,8 @@ function flowBar(){
 
 function renderSessionDone(){
   const d = flow ? flow.did : {review:0, learn:0, words:0, lab:0, listen:0, talk:0};
-  const total = d.review + d.learn + (d.words||0) + (d.lab||0) + d.listen + (d.talk||0);
+  const passed = flow ? (flow.passed||0) : 0;
+  const total = d.review + d.learn + (d.words||0) + (d.lab||0) + d.listen + (d.talk||0) + passed;
   const todayNames = studied.ids.map(id => { const c = byId(id); return c && c.chunk; })
                                 .filter(Boolean).slice(0, 14);
   /* Quick-fire needs a microphone and a deck worth drilling. Offering it to
@@ -5211,6 +5224,7 @@ function renderSessionDone(){
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F9EA} Built</span><span class="v">${d.lab || 0}</span></div>
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F442} Heard</span><span class="v">${d.listen}</span></div>
       <div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F5E3}\u{FE0F} Talked</span><span class="v">${d.talk || 0}</span></div>
+      ${passed ? `<div class="bar-row"><span class="nm" style="flex:1;width:auto">\u{1F644} Passed on</span><span class="v">${passed}</span></div>` : ""}
     </div>
     ${todayNames.length ? `<div class="card" style="margin-top:12px">
       <p class="sec-label">Today's chunks</p>
@@ -6880,6 +6894,7 @@ document.addEventListener("click", e => {
       /* Persisted, so a skip actually sticks instead of resurfacing next visit. */
       skipped[learnCard.id] = Date.now(); saveSkipped();
       learnCard = null;
+      if(flowPass("learn")) return;
     }
     render(); return;
   }

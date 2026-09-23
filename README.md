@@ -414,6 +414,20 @@ Building and talking used to live behind the Practice tab, which meant the daily
 
 The older description, for reference: up to 20 due reviews, then a pace-sized batch of new chunks, then the listening quota — with a progress bar across the whole thing and a summary of what got done. Stages with nothing to do are skipped, and leaving mid-way abandons the session cleanly.
 
+Every stage is a fixed number of decisions, and a session ends. That sounds
+too obvious to state, but the Learn stage used not to: "Not this one" saved the
+skip and moved to the next chunk without spending a slot, so the quota never
+ran down. The counter sat at "Session · 1 of 24" while chunks kept arriving,
+and a learner who passed on things could be handed all 368 without the session
+ever finishing. Reported from real use as learning that has no end.
+
+A pass now costs a slot, exactly as keeping one does, so the stage is bounded
+by the day's intake however you answer. It is counted separately from what you
+kept: the summary reports "Learned" and "Passed on" as different rows, and the
+progress bar counts both, because a pass is still a decision you made about a
+chunk. Passing remains sticky — a passed chunk sinks in the queue rather than
+resurfacing next visit.
+
 Sharing
 Everything the app manufactures that somebody would want to show — a streak, a milestone, the first conversation held without English — used to be visible only inside it. There was no share affordance anywhere, which for something meant to spread is the whole story.
 
